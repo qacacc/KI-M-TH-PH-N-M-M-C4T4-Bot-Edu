@@ -4,9 +4,12 @@ import type { BootstrapState } from "../types";
 import { formatBytes } from "../utils/format";
 import { emptyTrashBin as emptyTrashBinLocal, getTrashItems as getTrashItemsLocal, restoreFromTrash as restoreFromTrashLocal, type TrashItem } from "../utils/trashBin";
 import { emptyTrashBin, listTrashItems, moveFileToTrash, restoreTrashItem, type TrashItemRecord } from "../tauriApi";
+import { openExternalUrl } from "../tauriApi";
+import { getSchoolOption, readSchoolProfile } from "../schoolProfile";
 
 export function FilesPage({ bootstrap }: { bootstrap: BootstrapState | null }) {
-  const [activeTab, setActiveTab] = useState<"samples" | "trash">("samples");
+  const [activeTab, setActiveTab] = useState<"school" | "samples" | "trash">("school");
+  const school = getSchoolOption(readSchoolProfile());
   const [query, setQuery] = useState("");
   const [semesterFilter, setSemesterFilter] = useState<"all" | "1">("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -121,9 +124,10 @@ export function FilesPage({ bootstrap }: { bootstrap: BootstrapState | null }) {
   return (
     <div className="page-card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <h2>Vùng file do ứng dụng quản lý</h2>
+        <h2>Tài liệu</h2>
         {/* TABS NỔI */}
         <div className="segmented-control">
+          <button className={activeTab === "school" ? "selected" : ""} onClick={() => setActiveTab("school")}><FolderOpen size={14} />Tài liệu trường</button>
           <button
             className={activeTab === "samples" ? "selected" : ""}
             onClick={() => setActiveTab("samples")}
@@ -150,16 +154,22 @@ export function FilesPage({ bootstrap }: { bootstrap: BootstrapState | null }) {
         </div>
       )}
 
-      <p>v1.0.1 hiển thị dữ liệu mẫu, mở/copy qua luồng chat có xác nhận và cho phép chuyển file local vào thùng rác quản lý.</p>
+      {activeTab === "school" && <>
+        <p className="empty-state">Chưa đồng bộ tài liệu từ tài khoản trường. Bạn có thể xem tài liệu trên hệ thống học tập chính thức.</p>
+        <button className="settings-btn-secondary" disabled={!school.lmsPortalUrl} onClick={() => {
+          if (school.lmsPortalUrl) void openExternalUrl(school.lmsPortalUrl).catch(() => setNotice("Không mở được hệ thống học tập. Hãy thử lại."));
+        }}><FolderOpen size={16} />Mở hệ thống học tập {school.shortName}</button>
+      </>}
+      {activeTab === "samples" && <p>Tài liệu minh họa của ứng dụng, không phải tài liệu đã lấy từ tài khoản trường.</p>}
       
-      <dl className="path-list" style={{ marginBottom: "18px" }}>
+      {activeTab === "samples" && <dl className="path-list" style={{ marginBottom: "18px" }}>
         <dt>Managed Workspace</dt>
         <dd>{bootstrap?.paths.managedWorkspace ?? "Đang khởi tạo"}</dd>
         <dt>Sample Documents</dt>
         <dd>{bootstrap?.paths.sampleDocuments ?? "Đang khởi tạo"}</dd>
         <dt>Downloads</dt>
         <dd>{bootstrap?.paths.downloads ?? "Đang khởi tạo"}</dd>
-      </dl>
+      </dl>}
 
       {/* TAB 1: TÀI LIỆU MẪU */}
       {activeTab === "samples" && (

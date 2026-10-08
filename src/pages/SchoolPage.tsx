@@ -13,8 +13,7 @@ import {
   Trash2,
   UserCheck,
   Wifi,
-  WifiOff,
-  CheckCircle2,
+  Info,
   AlertTriangle,
   Sparkles,
 } from "lucide-react";
@@ -29,7 +28,6 @@ import {
 
 import {
   openExternalUrl,
-  syncEmbeddedSchoolData,
   openUthLoginWindow,
   onUthSyncResult,
   getConnectorSyncStatus,
@@ -37,11 +35,13 @@ import {
   deleteConnectorData,
   type ConnectorSyncStatus,
 } from "../tauriApi";
+import { ACADEMIC_CACHE_UPDATED_EVENT } from "../academicData";
 
 export function SchoolPage() {
   const [profile, setProfile] = useState(() => readSchoolProfile());
   const [notice, setNotice] = useState("");
   const [syncStatus, setSyncStatus] = useState<ConnectorSyncStatus | null>(null);
+  const [openingPortal, setOpeningPortal] = useState(false);
   
   // Accordion state cho khu vực Nâng cao & Developer tools
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -56,25 +56,31 @@ export function SchoolPage() {
 
   useEffect(() => {
     const codeToQuery = profile.studentCode.trim();
-    if (!codeToQuery) {
+    let cancelled = false;
+    setSyncStatus(null);
+    if (!codeToQuery || profile.schoolId !== "uth") {
       setSyncStatus(null);
       return;
     }
     void getConnectorSyncStatus(codeToQuery)
       .then((status) => {
+        if (cancelled) return;
         if (status) {
           setSyncStatus(status);
         } else {
           setSyncStatus(null);
         }
       })
-      .catch(() => setSyncStatus(null));
-  }, [profile.studentCode]);
+      .catch(() => { if (!cancelled) setNotice("Không đọc được trạng thái đồng bộ. Cache đã lưu được giữ nguyên."); });
+    return () => { cancelled = true; };
+  }, [profile.studentCode, profile.schoolId]);
 
   // Tự động nhận kết quả khi người dùng đăng nhập trong WebView UTH (Xác nhận 1 lần)
   useEffect(() => {
     let unlistenFn: (() => void) | undefined;
+    let disposed = false;
     void onUthSyncResult((result) => {
+      if (disposed || !isUthSelected) return;
       if (result.success) {
         const nextCode = result.studentCode || profile.studentCode;
         const nextName = result.studentName || profile.displayName;
@@ -93,16 +99,18 @@ export function SchoolPage() {
           `🎉 Đăng nhập & đồng bộ thành công! Đã nạp ${result.schedulesCount ?? 0} buổi học và ${result.examsCount ?? 0} môn thi vào máy.`
         );
         if (nextCode) {
-          void getConnectorSyncStatus(nextCode).then((st) => setSyncStatus(st));
+          void getConnectorSyncStatus(nextCode).then((st) => { if (!disposed) setSyncStatus(st); }).catch(() => { if (!disposed) setNotice("Đã nhận kết quả đồng bộ nhưng không đọc được trạng thái cache."); });
         }
       } else {
         setNotice(`⚠️ Đồng bộ thất bại: ${result.message}`);
       }
     }).then((unsub) => {
+      if (disposed) { unsub(); return; }
       unlistenFn = unsub;
-    });
+    }).catch(() => { if (!disposed) setNotice("Không đăng ký được thông báo đồng bộ. Hãy mở lại trang kết nối."); });
 
     return () => {
+      disposed = true;
       if (unlistenFn) unlistenFn();
     };
   }, [profile]);
@@ -133,8 +141,15 @@ export function SchoolPage() {
       setNotice(`Trường đang chọn chưa có URL cổng sinh viên trong manifest local.`);
       return;
     }
-    openExternalUrl(targetUrl);
-    setNotice(`Đã mở Portal ${selectedSchool.shortName} (${targetUrl}) bằng trình duyệt mặc định. → Đăng nhập trên trình duyệt, sau đó nhập MSSV vào ô phíd trên để app nhận biết bạn.`);
+    setOpeningPortal(true);
+    try {
+      await openExternalUrl(targetUrl);
+      setNotice(`Đã yêu cầu mở Portal ${selectedSchool.shortName} trên trình duyệt. Đăng nhập ở trình duyệt không tự kết nối phiên với app; MSSV nhập tay chỉ là hồ sơ tự khai.`);
+    } catch {
+      setNotice("Không mở được cổng trường. Hãy kiểm tra trình duyệt mặc định rồi thử lại.");
+    } finally {
+      setOpeningPortal(false);
+    }
   }
 
   async function handleOpenUthWebViewExperimental() {
@@ -150,35 +165,6 @@ export function SchoolPage() {
     }
   }
 
-  async function handlePrototypeSync() {
-    const targetCode = profile.studentCode.trim() || "DEMO123456";
-    try {
-      const res = await syncEmbeddedSchoolData(
-        profile.schoolId,
-        targetCode,
-        profile.displayName || "Sinh viên Mô phỏng",
-      );
-      if (res.success) {
-        const next = {
-          ...profile,
-          displayName: profile.displayName || res.studentName || "Sinh viên Mô phỏng",
-          studentCode: res.studentCode || targetCode,
-          mode: "student" as const,
-          schoolName: selectedSchool.name,
-          updatedAt: new Date().toISOString(),
-        };
-        saveSchoolProfile(next);
-        setProfile(next);
-        const updated = await getConnectorSyncStatus(next.studentCode);
-        setSyncStatus(updated);
-        setNotice(`✅ ${res.message}`);
-      } else {
-        setNotice(`⚠️ ${res.message}`);
-      }
-    } catch (err) {
-      setNotice(`Lỗi prototype sync: ${String(err)}`);
-    }
-  }
 
   async function handleLogoutPortal() {
     if (!window.confirm("Bạn có chắc chắn muốn đăng xuất khỏi phiên Cổng trường? Dữ liệu cache thời khóa biểu cũ vẫn sẽ được giữ lại để sử dụng offline.")) {
@@ -202,33 +188,13 @@ export function SchoolPage() {
     try {
       await deleteConnectorData(profile.studentCode);
       setSyncStatus(null);
+      window.dispatchEvent(new Event(ACADEMIC_CACHE_UPDATED_EVENT));
       setNotice("Đã xóa toàn bộ dữ liệu thời khóa biểu & lịch thi khỏi SQLite Local.");
     } catch (err) {
       setNotice(`Lỗi xóa dữ liệu: ${String(err)}`);
     }
   }
 
-  function confirmAndOpenSchoolPortal() {
-    const next = {
-      ...profile,
-      mode: "student" as const,
-      schoolName: selectedSchool.name,
-      updatedAt: new Date().toISOString(),
-    };
-    saveSchoolProfile(next);
-    setProfile(next);
-
-    const targetUrl = selectedSchool.studentPortalUrl || selectedSchool.portalUrl;
-
-    if (targetUrl) {
-      openExternalUrl(targetUrl);
-      setNotice(
-        `Đã mở Cổng Portal Sinh viên của ${selectedSchool.name} (${targetUrl}) trên trình duyệt mặc định.`,
-      );
-    } else {
-      setNotice("Trường đang chọn chưa có URL cổng sinh viên công khai trong manifest local.");
-    }
-  }
 
   function handleClearProfile() {
     if (!window.confirm("Bạn có chắc chắn muốn xóa hồ sơ sinh viên local tự khai không?")) {
@@ -250,8 +216,8 @@ export function SchoolPage() {
       </div>
 
       {notice && (
-        <div className="school-notice">
-          <CheckCircle2 size={15} style={{ color: "var(--accent)", flexShrink: 0 }} />
+        <div className="school-notice" role="status">
+          <Info size={15} style={{ color: "var(--accent)", flexShrink: 0 }} />
           <span>{notice}</span>
         </div>
       )}
@@ -355,12 +321,12 @@ export function SchoolPage() {
           <div className="school-connector-row">
             <Shield size={13} style={{ color: "var(--muted)", flexShrink: 0 }} />
             <span className="school-connector-label">Lưu token/cookie</span>
-            <span className="settings-status-pill neutral">App không lưu</span>
+            <span className="settings-status-pill neutral">Phiên thử nghiệm chỉ trong RAM</span>
           </div>
           <div className="school-connector-row">
             <UserCheck size={13} style={{ color: "var(--muted)", flexShrink: 0 }} />
             <span className="school-connector-label">Xác thực</span>
-            <span className="settings-status-pill neutral">Qua website trường</span>
+            <span className="settings-status-pill neutral">Hồ sơ tự khai chưa xác thực</span>
           </div>
         </div>
 
@@ -374,7 +340,7 @@ export function SchoolPage() {
             <p className="school-explain-note" style={{ marginTop: 0 }}>
               <Sparkles size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
               <span style={{ color: "var(--foreground)", fontSize: "13px", fontWeight: 500 }}>
-                Chỉ cần xác nhận 1 lần: Đăng nhập trong cửa sổ app, hệ thống sẽ tự động đồng bộ thời khóa biểu &amp; lịch thi vào SQLite Local rồi tự đóng cửa sổ.
+                Đồng bộ tài khoản UTH đang thử nghiệm, chưa xác minh đăng nhập và tải dữ liệu đầy đủ. Mở portal để xem dữ liệu trực tiếp từ trường.
               </span>
             </p>
 
@@ -382,20 +348,20 @@ export function SchoolPage() {
               <button
                 className="settings-btn-primary"
                 style={{ padding: "11px 24px", fontSize: "14px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}
-                onClick={handleOpenUthWebViewExperimental}
+                onClick={handleOpenSchoolPortalPrimary}
+                disabled={!hasPortalUrl || openingPortal}
               >
                 <Sparkles size={16} />
-                Đăng nhập &amp; Tự động lấy dữ liệu (Chỉ 1 lần)
+                {openingPortal ? "Đang mở portal..." : "Mở portal UTH trên trình duyệt"}
               </button>
 
               <button
                 className="settings-btn-secondary"
                 style={{ padding: "10px 18px", fontSize: "13px" }}
-                onClick={handleOpenSchoolPortalPrimary}
-                disabled={!hasPortalUrl}
+                onClick={handleOpenUthWebViewExperimental}
               >
                 <ExternalLink size={14} />
-                Hoặc mở Portal trên trình duyệt ngoài
+                Thử nghiệm WebView UTH
               </button>
             </div>
           </>
@@ -403,7 +369,7 @@ export function SchoolPage() {
           <>
             <p className="school-explain-note" style={{ marginTop: 0 }}>
               <span style={{ color: "var(--muted)", fontSize: "12px" }}>
-                Sau khi đăng nhập xong trên trình duyệt, quay lại app và điền MSSV vào ô "Mã số sinh viên" phía trên rồi nhấn Lưu hồ sơ.
+                Hồ sơ nhập tay chưa phải xác thực tài khoản trường. Trường này chưa có connector đồng bộ dữ liệu vào app.
               </span>
             </p>
 
@@ -412,7 +378,7 @@ export function SchoolPage() {
                 className="settings-btn-primary"
                 style={{ padding: "10px 22px", fontSize: "14px", fontWeight: 600 }}
                 onClick={handleOpenSchoolPortalPrimary}
-                disabled={!hasPortalUrl}
+                disabled={!hasPortalUrl || openingPortal}
               >
                 <MonitorCheck size={16} />
                 {hasPortalUrl
@@ -436,12 +402,12 @@ export function SchoolPage() {
           <StatusTile
             title="Lịch học cache"
             value={syncStatus ? `${syncStatus.schedulesCount} buổi học` : "0 buổi học"}
-            detail={syncStatus ? "Đã lưu vào SQLite Local" : "Sử dụng dữ liệu JSON mẫu đóng gói (0 cache)"}
+            detail={syncStatus ? "Cache local; kiểm tra nguồn và thời điểm đồng bộ" : "Chưa đồng bộ dữ liệu tài khoản trường"}
           />
           <StatusTile
             title="Lịch thi cache"
             value={syncStatus ? `${syncStatus.examsCount} môn thi` : "0 môn thi"}
-            detail={syncStatus ? "Đã lưu vào SQLite Local" : "Sử dụng dữ liệu JSON mẫu đóng gói (0 cache)"}
+            detail={syncStatus ? "Cache local; lịch thi cần đối chiếu cổng trường" : "Chưa đồng bộ dữ liệu tài khoản trường"}
           />
           <StatusTile
             title="Nguồn dữ liệu"
@@ -450,9 +416,9 @@ export function SchoolPage() {
                 ? syncStatus.sourceName === "uth-portal"
                   ? "UTH Portal Experimental"
                   : "Prototype Mock"
-                : "Mẫu local (JSON đóng gói)"
+                : "Chưa có dữ liệu trường"
             }
-            detail="Local-First Domain Arbitration"
+            detail="Dữ liệu mô phỏng không được dùng trong lịch học và lịch thi"
           />
           <StatusTile
             title="Lần đồng bộ gần nhất"
@@ -491,7 +457,7 @@ export function SchoolPage() {
             <div className="advanced-group">
               <h4>Thao tác Thử nghiệm &amp; Phiên Đăng nhập</h4>
               <div className="school-block-actions">
-                <button className="settings-btn-secondary" onClick={confirmAndOpenSchoolPortal}>
+                <button className="settings-btn-secondary" onClick={handleOpenSchoolPortalPrimary} disabled={openingPortal || !hasPortalUrl}>
                   <ExternalLink size={14} />
                   Mở portal trên trình duyệt ngoài
                 </button>
@@ -501,10 +467,6 @@ export function SchoolPage() {
                     Thử nghiệm WebView UTH
                   </button>
                 )}
-                <button className="settings-btn-secondary" onClick={handlePrototypeSync}>
-                  <WifiOff size={14} />
-                  Thử nghiệm Prototype Sync (Mock Data)
-                </button>
                 {syncStatus && (
                   <button className="settings-btn-secondary" onClick={handleLogoutPortal}>
                     <LogOut size={14} />

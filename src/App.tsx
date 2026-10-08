@@ -31,6 +31,9 @@ import {
   Pin,
   GraduationCap,
   History,
+  Minus,
+  Square,
+  X,
 } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -79,10 +82,6 @@ import {
   getStorageSummary,
   initApp,
   listActionLogs,
-  listAnnouncements,
-  listDocuments,
-  listExams,
-  listSchedule,
   openDocument,
   openDownloadsFolder,
   saveSetting,
@@ -92,6 +91,7 @@ import {
 } from "./tauriApi";
 import { ChatHistoryPage, type ChatSession } from "./pages/ChatHistoryPage";
 import appLogo from "./assets/logo.png";
+import { ACADEMIC_CONNECTION_REQUIRED, loadAcademicSchedule, loadAcademicExams } from "./academicData";
 import type {
   ActionLogEntry,
   BootstrapState,
@@ -429,11 +429,7 @@ export default function App() {
           const fallbackBootstrap: BootstrapState = {
             theme: "dark",
             accentColor: "#3b82f6",
-            subjects: [
-              { id: "network-programming", name: "Lập trình mạng", aliases: ["lap trinh mang", "ltm"] },
-              { id: "data-mining", name: "Khai thác dữ liệu", aliases: ["khai thac du lieu", "ktdl"] },
-              { id: "ai-intro", name: "Trí tuệ nhân tạo", aliases: ["tri tue nhan tao", "ai"] },
-            ],
+            subjects: [],
             documents: [],
             announcements: [],
             scheduleItems: [],
@@ -792,6 +788,12 @@ export default function App() {
         return;
       }
       case "NEEDS_SUBJECT":
+        if (!bootstrap?.subjects.length) {
+          setConversation(null);
+          setView("files");
+          appendAssistant("Chưa có danh sách môn và tài liệu từ tài khoản trường. Mở hệ thống học tập trong trang Tài liệu để tra cứu nguồn chính thức.");
+          return;
+        }
         setConversation({
           flow: "FIND_DOCUMENTS",
           step: "WAITING_FOR_SUBJECT",
@@ -959,34 +961,17 @@ export default function App() {
     }
   }
 
-  async function showDocuments(subjectId: string, subjectName: string, semester: number) {
-    setIsBusy(true);
-    try {
-      const docs = await listDocuments(subjectId, semester);
-      setConversation({
-        flow: "FIND_DOCUMENTS",
-        step: "SHOWING_DOCUMENTS",
-        data: { subjectId, subjectName, semester, documentIds: docs.map((doc) => doc.id) },
-      });
-      appendAssistant(
-        docs.length === 0
-          ? `Không tìm thấy tài liệu mẫu cho ${subjectName}, học kỳ ${semester}.`
-          : `Tui tìm thấy ${docs.length} tài liệu môn ${subjectName}, học kỳ ${semester}. Chọn một file bằng nút hoặc nhập "mở 1" / "copy 1".`,
-        { documents: docs },
-      );
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setIsBusy(false);
-    }
+  async function showDocuments(_subjectId: string, subjectName: string, _semester: number) {
+    setConversation(null);
+    setView("files");
+    appendAssistant(`Chưa có tài liệu môn ${subjectName} được đồng bộ từ tài khoản trường. Mở hệ thống học tập trong trang Tài liệu để xem nguồn chính thức. Tài liệu mẫu nằm ở tab minh họa riêng.`);
   }
 
   async function showAnnouncements() {
     setIsBusy(true);
     try {
-      const announcements = await listAnnouncements();
       setView("announcements");
-      appendAssistant(`Có ${announcements.length} thông báo mẫu local.`, { announcements });
+      appendAssistant("Chưa có thông báo trường được đồng bộ. Bạn có thể mở website chính thức trong trang Thông báo.");
     } catch (err) {
       setError(String(err));
     } finally {
@@ -997,9 +982,9 @@ export default function App() {
   async function showSchedule(semester?: number) {
     setIsBusy(true);
     try {
-      const scheduleItems = await listSchedule(semester);
+      const scheduleItems = await loadAcademicSchedule(readSchoolProfile());
       setView("schedule");
-      appendAssistant(`Có ${scheduleItems.length} buổi học mẫu${semester ? ` học kỳ ${semester}` : ""}.`, { scheduleItems });
+      appendAssistant(scheduleItems.length ? `Có ${scheduleItems.length} buổi học trong cache tài khoản trường.${semester ? " Cache chưa có thông tin học kỳ để lọc." : ""}` : ACADEMIC_CONNECTION_REQUIRED, { scheduleItems });
     } catch (err) {
       setError(String(err));
     } finally {
@@ -1010,9 +995,9 @@ export default function App() {
   async function showExams(semester?: number) {
     setIsBusy(true);
     try {
-      const examItems = await listExams(semester);
+      const examItems = await loadAcademicExams(readSchoolProfile());
       setView("exams");
-      appendAssistant(`Có ${examItems.length} lịch thi mẫu${semester ? ` học kỳ ${semester}` : ""}.`, { examItems });
+      appendAssistant(examItems.length ? `Có ${examItems.length} lịch thi trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.${semester ? " Cache chưa có thông tin học kỳ để lọc." : ""}` : ACADEMIC_CONNECTION_REQUIRED, { examItems });
     } catch (err) {
       setError(String(err));
     } finally {
@@ -1373,9 +1358,9 @@ export default function App() {
       )}
 
       <div className="titlebar-controls">
-        <button aria-label="Thu nhỏ" onClick={() => void desktopWindow()?.minimize()}>−</button>
-        <button aria-label="Phóng to hoặc khôi phục" onClick={() => void desktopWindow()?.toggleMaximize()}>□</button>
-        <button aria-label="Đóng" onClick={() => void desktopWindow()?.close()}>×</button>
+        <button aria-label="Thu nhỏ" title="Thu nhỏ" disabled={!desktopWindow()} onClick={() => void desktopWindow()?.minimize().catch(() => setError("Không thu nhỏ được cửa sổ."))}><Minus size={15} /></button>
+        <button aria-label="Phóng to hoặc khôi phục" title="Phóng to hoặc khôi phục" disabled={!desktopWindow()} onClick={() => void desktopWindow()?.toggleMaximize().catch(() => setError("Không đổi được kích thước cửa sổ."))}><Square size={13} /></button>
+        <button aria-label="Đóng" title="Đóng" disabled={!desktopWindow()} onClick={() => void desktopWindow()?.close().catch(() => setError("Không đóng được cửa sổ."))}><X size={16} /></button>
       </div>
     </header>
     <main className={view === "settings" ? "app-shell settings-mode" : "app-shell"} style={appLayoutStyle}>
@@ -1551,11 +1536,11 @@ export default function App() {
 
               {messages.length === 1 && !conversation && (
                 <div className="starter-grid">
-                  <button onClick={() => void submitText("tìm tài liệu lập trình mạng", "starter")} disabled={isBusy}><BookOpen size={18} /><span><strong>Tìm tài liệu mẫu</strong><small>Bắt đầu flow FIND_DOCUMENTS</small></span></button>
-                  <button onClick={() => setView("files")} disabled={!bootstrap || isBusy}><FolderOpen size={18} /><span><strong>Xem file mẫu</strong><small>Duyệt metadata local</small></span></button>
-                  <button onClick={() => void submitText("xem thông báo", "starter")} disabled={isBusy}><Bell size={18} /><span><strong>Xem thông báo</strong><small>Dữ liệu mẫu local</small></span></button>
-                  <button onClick={() => void submitText("xem lịch học", "starter")} disabled={isBusy}><CalendarDays size={18} /><span><strong>Xem lịch học</strong><small>Thời khóa biểu mẫu</small></span></button>
-                  <button onClick={() => void submitText("xem lịch thi", "starter")} disabled={isBusy}><ClipboardList size={18} /><span><strong>Xem lịch thi</strong><small>Kế hoạch thi mẫu</small></span></button>
+                  <button onClick={() => void submitText("tìm tài liệu", "starter")} disabled={isBusy}><BookOpen size={18} /><span><strong>Tìm tài liệu</strong><small>Hệ thống học tập của trường</small></span></button>
+                  <button onClick={() => setView("files")} disabled={isBusy}><FolderOpen size={18} /><span><strong>Tài liệu</strong><small>Tài liệu trường và tệp minh họa</small></span></button>
+                  <button onClick={() => void submitText("xem thông báo", "starter")} disabled={isBusy}><Bell size={18} /><span><strong>Xem thông báo</strong><small>Website trường</small></span></button>
+                  <button onClick={() => void submitText("xem lịch học", "starter")} disabled={isBusy}><CalendarDays size={18} /><span><strong>Xem lịch học</strong><small>Cache tài khoản trường</small></span></button>
+                  <button onClick={() => void submitText("xem lịch thi", "starter")} disabled={isBusy}><ClipboardList size={18} /><span><strong>Xem lịch thi</strong><small>Cache tài khoản trường</small></span></button>
                   <button onClick={() => setView("logs")} disabled={!bootstrap || isBusy}><ListChecks size={18} /><span><strong>Kiểm tra nhật ký</strong><small>Chỉ metadata an toàn</small></span></button>
                   <button onClick={() => setView("health")} disabled={!bootstrap || isBusy}><Check size={18} /><span><strong>Kiểm tra app</strong><small>Báo cáo local</small></span></button>
                   <button onClick={() => void submitText("/help", "starter")} disabled={isBusy}><HelpCircle size={18} /><span><strong>Xem lệnh nhanh</strong><small>Danh sách command v1.0</small></span></button>
@@ -1663,9 +1648,9 @@ export default function App() {
         )}
 
         {view === "files" && <FilesPage bootstrap={bootstrap} />}
-        {view === "announcements" && <AnnouncementsPage announcements={bootstrap?.announcements ?? []} />}
-        {view === "schedule" && <SchedulePage scheduleItems={bootstrap?.scheduleItems ?? []} />}
-        {view === "exams" && <ExamsPage exams={bootstrap?.exams ?? []} />}
+        {view === "announcements" && <AnnouncementsPage />}
+        {view === "schedule" && <SchedulePage />}
+        {view === "exams" && <ExamsPage />}
         {view === "gpa" && <GpaPage />}
         {view === "storage" && (
           <StoragePage

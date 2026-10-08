@@ -26,12 +26,13 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 ## Active task
 
-- Không có.
+- Không có task active; CA-080/081 giữ Proposed, cần contract/fixture verified.
 
 ## Done
 
 | ID | Ten | File | Ghi chu |
 | --- | --- | --- | --- |
+| CA-082 | Dữ liệu học tập đúng nguồn và sửa giao diện | `tasks/CA-082-academic-data-truth-and-ui-remediation.md` | Cache-only/GPA manual/portal feedback/UI; 61 Vitest, 37 Rust, audit 0, Playwright local PASS. Native auth/sync chưa verified; CA-080/081 Proposed. |
 | CA-077 | Release Freeze and Final Handoff | `tasks/CA-077-release-freeze-final-handoff.md` | Chốt release freeze 2026-08-02, cập nhật CURRENT_STATE/README, `npm run check:all` pass; build NSIS installer pass tại `.release-target\\release\\bundle\\nsis\\Campus Assistant Local_1.0.1_x64-setup.exe`; MSI all-target bị lỗi WiX/file lock nên không dùng làm artifact cuối. |
 | CA-076 | Fix Theme Default | `tasks/CA-076-fix-theme-default.md` | Sửa `applyAppearanceToDocument()` để auto theme trả quyền cho CSS token bằng `removeProperty`, bổ sung light guard cho settings controls; `npm run check:all` pass, manual visual chưa chạy. |
 | CA-075 | Unified Runtime Flow and Chatbox Stability | `tasks/CA-075-unified-runtime-flow-and-chatbox-stability.md` | Chuẩn hóa nút Gửi, Enter, command suggestion, starter card, composer shortcut và command palette chat action qua `submitUserMessage`; bỏ silent bootstrap return; `npm run check:all` pass. |
@@ -80,7 +81,10 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 | ID | Uu tien | Ten | File | Loai |
 | --- | --- | --- | --- | --- |
 
-Chua co task san sang. Tao task moi truoc khi tiep tuc code.
+| CA-080 | P0 | Xác minh hợp đồng API trường bằng Postman | `tasks/CA-080-postman-school-api-contract-verification.md` | Proposed; cần response thật đã loại PII, không đoán endpoint. |
+| CA-081 | P0 | Sửa parser UTH và tính toàn vẹn đồng bộ | `tasks/CA-081-uth-parser-sync-data-integrity.md` | Proposed / Remediation; phụ thuộc contract verified của CA-080. |
+
+Thứ tự: CA-080 -> CA-081. Chưa kích hoạt runtime task; không coi các request Postman là API đã xác minh. CA-078/CA-079 chưa có file task trong snapshot này; giữ nguyên số đó để tránh xung đột công việc trước.
 
 ## Frozen / Activation-only
 

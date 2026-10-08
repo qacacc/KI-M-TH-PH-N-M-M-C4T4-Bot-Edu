@@ -16,10 +16,10 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
 4. React gọi handleOpenUthWebView() -> tauriApi -> openUthLoginWindow()
 5. Rust Backend mở WebView "uth-login" trỏ tới portal.ut.edu.vn
 6. User đăng nhập trên portal UTH
-7. React gọi syncUthAfterLogin(studentCode, displayName, "") [Truyền JWT rỗng ""]
-8. Rust Backend nhận jwt_token = ""
-9. Rust Backend phát hiện token rỗng -> Trả về lỗi AUTH_REQUIRED
-10. UI hiển thị cảnh báo "Yêu cầu đăng nhập trên cửa sổ Portal UTH trước khi đồng bộ"
+7. Connector thử nghiệm có poller/bridge cố lấy JWT; sự hoạt động trên portal thật chưa E2E verified.
+8. Nếu nhận được session, backend thử lấy profile/lịch và ghi cache; parser còn known gaps CA-081.
+9. Legacy syncUthAfterLogin còn tồn tại; token rỗng trả AUTH_REQUIRED, không coi là đồng bộ thành công.
+10. CA-082: Nút chính mở browser ngoài có phản hồi lỗi; UI nói rõ không tự nối session và MSSV là tự khai.
 ```
 
 ### TARGET FLOW (Mục tiêu Kiến trúc):
@@ -38,7 +38,7 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
 ### BLOCKING GAPS & KNOWN SIDE EFFECTS:
 - **`Auth Extraction Gap`**: Backend chưa có luồng tự rút Session Cookies từ WebView `uth-login`.
 - **`Exam Source Derivation`**: Lịch thi UTH hiện được lọc (derive) từ API `/api/v1/lichhoc/thang` (loại chứa "thi"), chưa phải endpoint lịch thi riêng biệt.
-- **`Transaction Side-Effect Gap`**: Hàm `write_schedules_transaction` và `write_exams_transaction` hiện tại đều gọi `sync_data_transaction` vốn xóa cả `connector_schedules` và `connector_exams` trước khi ghi, dẫn đến rủi ro xóa nhầm cache cũ của domain chưa lỗi.
+- **`Error/Empty Gap`**: Sync chỉ thay miền có danh sách không rỗng; parser/engine còn đổi lỗi thành empty. Vì vậy có thể giữ cache cũ và báo ok sai, chưa xử lý empty hợp lệ/phạm vi snapshot đầy đủ (CA-081).
 
 ---
 

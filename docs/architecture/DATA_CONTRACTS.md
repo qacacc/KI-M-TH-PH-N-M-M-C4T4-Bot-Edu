@@ -1,5 +1,12 @@
 # Data Contracts
 
+## CA-082: nguồn học tập (2026-10-08)
+
+- JSON bên dưới là fixture/contract tham khảo, không phải tài khoản thật. Bootstrap không seed môn/lịch/thi/thông báo.
+- academicData.ts lọc cache source uth-portal, MSSV khớp profile UTH. Semester = 0 nghĩa là chưa biết học kỳ, không phải học kỳ được trường xác nhận.
+- Parser còn default nghiệp vụ; CA-080/081 cần API thật trước khi production-ready.
+- GPA manual_v2 trống mặc định; v1 giữ nguyên, chỉ phục hồi có xác nhận. Quy đổi điểm hiện tham khảo, không phải bảng điểm trường.
+
 ## Subject
 
 ```json

@@ -95,7 +95,7 @@ body,
 body {
   position: relative;
   margin: 0;
-  min-width: 1024px;
+  min-width: 0;
   height: 100vh;
   overflow: hidden;
   font-size: calc(14px * var(--font-scale));
@@ -440,6 +440,7 @@ button:disabled {
   margin-left: auto;
   z-index: 4;
   -webkit-app-region: no-drag;
+  flex-shrink: 0;
 }
 
 .workspace-titlebar .titlebar-controls {
@@ -462,6 +463,8 @@ button:disabled {
   background: transparent !important;
   font-size: 16px;
   transition: color 0.12s ease, background 0.12s ease;
+  min-width: 40px;
+  flex-shrink: 0;
 }
 
 .titlebar-controls button:hover {
@@ -1261,7 +1264,7 @@ body[data-resizing="true"] .resize-handle:hover::before {
   display: grid;
   gap: 10px;
   align-items: center;
-  min-width: 760px;
+  min-width: 720px;
   padding: 10px 12px;
 }
 
@@ -1274,7 +1277,7 @@ body[data-resizing="true"] .resize-handle:hover::before {
 .schedule-table .data-table-row,
 .exam-table .data-table-header,
 .exam-table .data-table-row {
-  grid-template-columns: 100px minmax(230px, 1.5fr) 130px 110px 150px;
+  grid-template-columns: 72px minmax(200px, 1.5fr) 100px minmax(100px, 1fr) minmax(130px, 1fr);
 }
 
 .data-table-header {
@@ -1291,6 +1294,7 @@ body[data-resizing="true"] .resize-handle:hover::before {
 
 .data-table-row span {
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .data-table-row strong,
@@ -5849,6 +5853,18 @@ body,
     var(--customize-width, 312px) !important;
 }
 
+@media (max-width: 1500px) {
+  .app-shell:not(.settings-mode) {
+    grid-template-columns: minmax(0, 1fr) 0 var(--customize-width, 312px) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .app-shell:not(.settings-mode) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
 .sidebar {
   width: 54px !important;
   border-right: 1px solid var(--border) !important;
@@ -6134,7 +6150,26 @@ button:disabled {
   height: 36px !important;
   font-size: 12px !important;
   line-height: 1 !important;
+  border: 0;
+  background: var(--panel-soft);
 }
+
+.academic-header,
+.gpa-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.academic-header > div { min-width: 0; flex: 1 1 240px; }
+.academic-header > button { flex: 0 0 auto; }
+.gpa-toolbar > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.gpa-calculator { min-width: 0; }
+.gpa-table-scroll { max-width: 100%; overflow-x: auto; }
+.gpa-table-scroll table { min-width: 640px; }
+.gpa-table-scroll input, .gpa-table-scroll select { box-sizing: border-box; }
 
 /* CA-073 CORE SIDEBAR NAVIGATION CONTRACT */
 .nav-badge {

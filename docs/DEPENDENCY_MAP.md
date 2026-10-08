@@ -26,10 +26,13 @@ SchoolPage.tsx (School Selector & Connector UI)
            └──> getConnectorSyncStatus -> SQLite: connector_sync_status
 
 
-CampusDataPages.tsx (Schedule, Exams, Documents, Files, Storage, Health Tabs)
+CampusDataPages.tsx / App.tsx (Schedule, Exams)
    │
-   ├──> tauriApi.ts (getConnectorSyncStatus, listTrashItems, moveFileToTrash)
-   └──> SQLite / Sample JSON Loaders
+   ├──> academicData.ts -> tauriApi.ts -> SQLite cache đúng account/source
+   └──> useAcademicCache.ts -> schoolProfile / academicEvents (reload, cleanup)
+
+GpaCalculator.tsx -> gpaData.ts -> LocalStorage manual_v2 (trống mặc định)
+FilesPage.tsx -> tài liệu trường chưa đồng bộ / tab mẫu opt-in / file service
 
 
 AppearancePage.tsx (Theme Presets & Custom Styling)

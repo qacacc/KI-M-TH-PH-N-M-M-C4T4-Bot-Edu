@@ -13,10 +13,10 @@ Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhậ
   - Verification Artifact: Vitest / Cargo test output
   - Verification Scope: AUTOMATED (E2E Auth Bridge: NOT VERIFIED)
 - **Known Gaps & Tracking**:
-  - `Automatic Session Extraction`: **`NOT_IMPLEMENTED`** | Tracking Task: **`CA-070`**
-  - `IPC Contract JWT Parameter`: React vẫn truyền parameter `jwtToken` (hiện truyền `""`) | Tracking Task: **`CA-070`**
-  - `Exam Source Derivation`: Lịch thi hiện lọc từ monthly schedule endpoint | Tracking Task: **`CA-073`**
-  - `Transaction Cache Deletion`: Fail-safe chưa giữ cache cũ khi đồng bộ 1 phần bị lỗi | Tracking Task: **`CA-060`**
+  - Auth bridge có implementation thử nghiệm nhưng chưa E2E verified; browser ngoài không truyền session vào app | CA-080.
+  - Legacy IPC nhận JWT vẫn tồn tại, không coi mọi entry đã backend-owned | CA-080/081.
+  - Lịch thi derive từ lịch tháng; parser còn default nghiệp vụ và nuốt lỗi thành empty | CA-081.
+  - Sync chưa phân biệt đầy đủ lỗi miền và empty hợp lệ | CA-081.
 
 ---
 
@@ -24,11 +24,12 @@ Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhậ
 - **Status**: Implemented
 - **Owner**: Academic Data Manager
 - **Evidence**:
-  - Source: `src/pages/CampusDataPages.tsx`, `src-tauri/src/lib.rs`
-  - Last Verified: 2026-07-27
+  - Source: `src/pages/CampusDataPages.tsx`, `src/academicData.ts`, `src/hooks/useAcademicCache.ts`, `src-tauri/src/lib.rs`
+  - Last Verified: 2026-10-08 (CA-082)
   - Verification Scope: AUTOMATED (`npm run check:all` PASS)
 - **Known Gaps & Tracking**:
-  - None | Status: **`STABLE`** (Source Arbitration rule ENFORCED: SQLite connector cache takes precedence over sample JSON)
+  - Cache-only đúng MSSV/source, không sample mặc định; loading/error/empty riêng. Native auth/parser còn thử nghiệm (CA-080/081), không phải STABLE end-to-end.
+  - Thông báo/tài liệu trường chưa đồng bộ; tab tài liệu mẫu tách riêng. GPA nhập tay trống mặc định, quy đổi tham khảo, không phải bảng điểm trường đã xác thực.
 
 ---
 

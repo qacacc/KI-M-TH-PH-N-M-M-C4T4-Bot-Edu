@@ -25,11 +25,11 @@ fn list_action_logs(limit: Option<i64>) -> Result<Vec<ActionLogEntry>, String> {
 fn init_app() -> Result<BootstrapState, String> {
     let roots = resolve_roots()?;
     ensure_directories(&roots)?;
-    let subjects = load_subjects()?;
+    let subjects = Vec::new();
     let documents = load_documents()?;
-    let announcements = load_announcements()?;
-    let schedule_items = load_schedule()?;
-    let exams = load_exams()?;
+    let announcements = Vec::new();
+    let schedule_items = Vec::new();
+    let exams = Vec::new();
     let conn = open_db(&roots)?;
     seed_sample_documents(&conn, &roots, &documents)?;
     clear_chat_history(&conn)?;

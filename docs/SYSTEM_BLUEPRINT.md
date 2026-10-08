@@ -36,7 +36,7 @@ Campus Assistant Local là ứng dụng desktop hỗ trợ sinh viên quản lý
 ┌────────────────────────────────────────────────────────────────────────┐
 │                            Storage Layer                               │
 │   ├─ SQLite (`campus-assistant.db`) - Connector Schedules & Exams      │
-│   ├─ JSON Fixtures (`data/*.json`, `sample-documents`) - Sample Fallback│
+│   ├─ JSON Fixtures - Test / tab mẫu có chủ ý, không fallback học tập   │
 │   └─ LocalStorage (`campus-assistant-appearance`) - UI Config Only     │
 └────────────────────────────────────────────────────────────────────────┘
 ```
@@ -58,8 +58,8 @@ Campus Assistant Local là ứng dụng desktop hỗ trợ sinh viên quản lý
 - **`CURRENT`**:
   - `list_schedule()` & `list_exams()` đọc dữ liệu mẫu từ **JSON Fixtures** (`src-tauri/data/schedule.json`).
   - `list_connector_schedules()` & `list_connector_exams()` đọc dữ liệu từ **SQLite Database** (`campus-assistant.db`).
-  - Phía UI (`CampusDataPages.tsx`) gọi connector cache và JSON/sample song song, sau đó ưu tiên SQLite connector cache trước. Nếu connector cache trống, UI mới fallback về prop sample JSON hoặc dữ liệu mẫu local.
-- **`TARGET`**: Unified `AcademicDataService` gom logic source arbitration vào một service duy nhất thay vì để page tự quyết định.
+  - CA-082: Chat và trang học tập dùng chung `academicData.ts`; chỉ cache đúng MSSV/source `uth-portal`, không gọi sample commands khi cache rỗng/lỗi. Bootstrap không seed môn/lịch/thông báo mẫu. GPA nhập tay dùng storage v2, không tự phục hồi điểm v1.
+- **`TARGET`**: Xác minh API/auth và parser thật qua CA-080/081 trước khi coi connector production-ready.
 
 ### 4. Storage Security
 - **`CURRENT`**: SQLite unencrypted ở application layer; LocalStorage dùng key `campus-assistant-appearance` cho theme settings và `campus-assistant-custom-presets` cho presets.

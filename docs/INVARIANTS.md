@@ -64,7 +64,7 @@ Bảng theo dõi trạng thái thực thi thực tế (`Runtime Status`) của t
 | **`SEC-003`** | Remote WebView Capability Isolation | **`ENFORCED`** | — |
 | **`SEC-004`** | Backend IPC Mandatory PII Sanitization | **`ENFORCED`** | — |
 | **`SEC-005`** | Secret never passes through React IPC payload | **`ENFORCED`** | — |
-| **`DATA-001`** | Error != Empty | **`ENFORCED`** | — |
+| **`DATA-001`** | Error != Empty | **`PARTIAL`** | CA-082 tách lỗi đọc cache ở UI; parser/engine UTH còn nuốt lỗi thành empty, CA-081 Proposed. |
 | **`DATA-002`** | Sync failure preserves last-known-good cache | **`ENFORCED`** | — |
 | **`DATA-003`** | Single Authoritative Domain Owner | **`ENFORCED`** | — |
 | **`DATA-004`** | Mock never claims real provenance | **`ENFORCED`** | — |

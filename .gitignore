@@ -25,6 +25,8 @@ src-tauri/gen/
 CampusAssistantLocal-Dev.exe
 
 # Logs
+.playwright-cli/
+output/playwright/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

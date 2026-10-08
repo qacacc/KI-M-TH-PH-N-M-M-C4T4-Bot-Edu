@@ -1,4 +1,3 @@
-import { searchPublicSchoolData } from "./connectorEngine";
 import { getStoredSession } from "./schoolVault";
 import { SUPPORTED_UNIVERSITIES } from "./types";
 import { readSchoolProfile } from "../schoolProfile";
@@ -112,19 +111,6 @@ export function handleSchoolChatQuery(query: string): SchoolChatAnswer {
     text += `💰 **Học phí & Tín chỉ:**\n`;
     text += `- Thông tin học phí chỉ có trên cổng cá nhân (sau đăng nhập).\n`;
     text += `- Mở cổng: **Trường & Tài khoản** → **Mở Portal**.\n\n`;
-  }
-
-  // --- Tài liệu công khai từ mock/portal ---
-  const searchResults = searchPublicSchoolData(normalized, profile.schoolId);
-
-  if (searchResults.length > 0) {
-    text += `🏛️ **Tài liệu công khai từ Portal ${profile.schoolName}:**\n\n`;
-    for (const res of searchResults) {
-      for (const doc of res.documents) {
-        text += `- **[${doc.title}](${doc.sourceUrl})** (${doc.date})\n  *${doc.summary}*\n`;
-      }
-    }
-    text += `\n`;
   }
 
   // --- Hướng dẫn mở cổng trường ---

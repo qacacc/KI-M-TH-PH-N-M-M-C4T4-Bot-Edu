@@ -4,6 +4,14 @@ Tài liệu định nghĩa chính thức các máy trạng thái (State Machines
 
 ---
 
+## CA-082: Trạng thái dữ liệu học tập (CURRENT, 2026-10-08)
+
+- Loading: đang đọc cache, không giữ bản ghi account trước.
+- Error: báo lỗi đọc, không fallback sample và không xóa cache.
+- Empty: chưa có nguồn/account hợp lệ, hướng dẫn kết nối.
+- Ready: cache thử nghiệm; không chứng nhận auth/parser.
+- Đổi profile/cache event đọc lại; kết quả async cũ bị bỏ, listener cleanup khi unmount.
+
 ## 1. School Connector Authentication State Machine
 
 Tách biệt hoàn toàn giữa Trạng thái Phiên Đăng nhập (Auth State) và Trạng thái Đồng bộ Dữ liệu (Sync State).

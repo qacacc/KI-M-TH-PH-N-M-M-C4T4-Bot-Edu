@@ -38,7 +38,7 @@ Mỗi flow chưa đủ bằng chứng phải ghi nhãn `ASSUMED`, `UNKNOWN`, `PA
   - `WAITING_FOR_FILE_CONFIRMATION`
   - `COMPLETED`
 - **Data read**:
-  - JSON/local document metadata.
+  - Trang Tài liệu mở mặc định vùng tài liệu trường chưa đồng bộ; JSON/local document metadata chỉ trong tab mẫu do user chủ động chọn (CA-082).
 - **File action**:
   - Mở/copy file chỉ sau xác nhận.
   - Rust kiểm tra managed roots và path traversal.
@@ -80,15 +80,11 @@ Mỗi flow chưa đủ bằng chứng phải ghi nhãn `ASSUMED`, `UNKNOWN`, `PA
 
 ## FLOW: ACADEMIC_SCHEDULE_EXAMS
 
-- **Status**: `CURRENT / CACHE_FIRST_WITH_SAMPLE_FALLBACK`
-- **Entry point**: `src/pages/CampusDataPages.tsx`
-- **Data read order**:
-  - SQLite connector cache nếu có student code và cache hợp lệ.
-  - Prop/sample JSON từ bootstrap.
-  - Mock/default UI fallback nếu cả hai nguồn trên trống.
-- **UI provenance**:
-  - Connector cache hiển thị `local-cache`.
-  - Sample hiển thị `sample-local`.
+- **Status**: `CURRENT / CACHE_ONLY / CONNECTOR_EXPERIMENTAL` (CA-082, 2026-10-08)
+- **Entry point**: `src/App.tsx`, `src/pages/CampusDataPages.tsx`, `src/academicData.ts`, `src/hooks/useAcademicCache.ts`.
+- **Data read**: Chỉ đọc SQLite khi chọn UTH và có MSSV; lọc đúng MSSV và source `uth-portal`. Không dùng sample/prototype khi rỗng hoặc lỗi.
+- **UI provenance**: Cache thử nghiệm, có thể cũ; không coi nhập MSSV là xác thực. Loading/error/empty được tách riêng; đổi hồ sơ bỏ kết quả account cũ.
+- **Known gap**: Parser/auth API thật chưa verified (CA-080/081); cache đúng source chưa chứng minh dữ liệu trường chính xác. Thông báo chưa có connector; GPA chỉ là ước tính từ dữ liệu nhập tay, mặc định trống.
 
 ---
 
@@ -99,6 +95,7 @@ Mỗi flow chưa đủ bằng chứng phải ghi nhãn `ASSUMED`, `UNKNOWN`, `PA
 - **Current**:
   - Mở được portal trường/UTH bằng browser hoặc WebView thử nghiệm.
   - App không nhận mật khẩu trong React.
+  - Mở browser có await/error feedback; đăng nhập browser ngoài không tự nối session vào app. Không còn hứa đồng bộ tự động chỉ bằng nhập MSSV.
 - **Not ready**:
   - SSO production.
   - Automatic cookie/session extraction.

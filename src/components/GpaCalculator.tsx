@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Calculator, Award, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Calculator, RotateCcw } from "lucide-react";
+import { GPA_STORAGE_KEY, GPA_LEGACY_STORAGE_KEY, parseGpaSubjects } from "../gpaData";
 
 export interface GpaSubject {
   id: string;
@@ -8,8 +9,6 @@ export interface GpaSubject {
   letterGrade: string; // A+, A, B+, B, C+, C, D+, D, F
   score10: number;
 }
-
-const STORAGE_KEY = "ca_gpa_calculator_data_v1";
 
 const GRADE_CONVERSION: Record<string, { scale4: number; defaultScore10: number }> = {
   "A+": { scale4: 4.0, defaultScore10: 9.5 },
@@ -23,40 +22,40 @@ const GRADE_CONVERSION: Record<string, { scale4: number; defaultScore10: number 
   F: { scale4: 0.0, defaultScore10: 2.0 },
 };
 
-const DEFAULT_SUBJECTS: GpaSubject[] = [
-  { id: "gpa-01", name: "Lập trình mạng", credits: 3, letterGrade: "A", score10: 8.8 },
-  { id: "gpa-02", name: "Khai thác dữ liệu", credits: 3, letterGrade: "B+", score10: 8.2 },
-  { id: "gpa-03", name: "Trí tuệ nhân tạo", credits: 3, letterGrade: "A+", score10: 9.2 },
-  { id: "gpa-04", name: "Cơ sở dữ liệu nâng cao", credits: 2, letterGrade: "B", score10: 7.5 },
-];
-
 export function GpaCalculator() {
-  const [subjects, setSubjects] = useState<GpaSubject[]>(() => {
+  const [notice, setNotice] = useState("");
+  const [stored] = useState(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return DEFAULT_SUBJECTS;
-      return JSON.parse(raw);
+      return { subjects: parseGpaSubjects(localStorage.getItem(GPA_STORAGE_KEY)), failed: false };
     } catch {
-      return DEFAULT_SUBJECTS;
+      return { subjects: [] as GpaSubject[], failed: true };
     }
   });
+  const storageFailed = stored.failed;
+  const [subjects, setSubjects] = useState<GpaSubject[]>(stored.subjects);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(subjects));
-  }, [subjects]);
+    if (storageFailed) return;
+    try {
+      localStorage.setItem(GPA_STORAGE_KEY, JSON.stringify(subjects));
+    } catch {
+      setNotice("Không lưu được điểm trên thiết bị. Dữ liệu hiện tại chỉ còn trong phiên này.");
+    }
+  }, [subjects, storageFailed]);
 
   function addSubject() {
     const nextItem: GpaSubject = {
-      id: `gpa-${Date.now()}`,
-      name: `Môn học ${subjects.length + 1}`,
-      credits: 3,
-      letterGrade: "B",
-      score10: 7.0,
+      id: crypto.randomUUID(),
+      name: "",
+      credits: 1,
+      letterGrade: "F",
+      score10: 0,
     };
     setSubjects([...subjects, nextItem]);
   }
 
   function removeSubject(id: string) {
+    if (!window.confirm("Xóa môn học đã nhập khỏi bảng điểm trên thiết bị?")) return;
     setSubjects(subjects.filter((s) => s.id !== id));
   }
 
@@ -65,16 +64,19 @@ export function GpaCalculator() {
       subjects.map((s) => {
         if (s.id !== id) return s;
         const updated = { ...s, ...fields };
-        if (fields.letterGrade && GRADE_CONVERSION[fields.letterGrade]) {
-          updated.score10 = GRADE_CONVERSION[fields.letterGrade].defaultScore10;
-        }
         return updated;
       })
     );
   }
 
   function resetToDefault() {
-    setSubjects(DEFAULT_SUBJECTS);
+    if (!window.confirm("Phục hồi dữ liệu điểm phiên bản cũ? Dữ liệu đó có thể chứa điểm mẫu, chưa được xác minh từ trường và sẽ thay bảng hiện tại.")) return;
+    try {
+      setSubjects(parseGpaSubjects(localStorage.getItem(GPA_LEGACY_STORAGE_KEY)));
+      setNotice("Đã phục hồi dữ liệu cũ chưa xác minh. Hãy kiểm tra từng điểm với bảng điểm trường.");
+    } catch {
+      setNotice("Không đọc được dữ liệu cũ; bảng hiện tại không bị thay đổi.");
+    }
   }
 
   // Tính toán chỉ số GPA & CPA
@@ -102,10 +104,12 @@ export function GpaCalculator() {
     return { text: "Yếu / Cảnh báo ⚠️", color: "#ef4444" };
   }
 
-  const classification = getClassification(numGpa4);
+  const classification = totalCredits ? getClassification(numGpa4) : { text: "Chưa có điểm", color: "var(--muted)" };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+    <div className="gpa-calculator" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+      {(notice || storageFailed) && <p role="alert" className="warning-box">{notice || "Không đọc được dữ liệu điểm đã lưu. Dữ liệu cũ được giữ nguyên; điểm mới chỉ ở trong phiên này."}</p>}
+      {!subjects.length && <p className="empty-state">Chưa có bảng điểm. Thêm môn học và nhập điểm của bạn để ước tính.</p>}
       {/* TỔNG QUAN GPA / CPA */}
       <div
         style={{
@@ -145,13 +149,13 @@ export function GpaCalculator() {
 
       {/* BẢNG MÔN HỌC */}
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+        <div className="gpa-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
           <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
-            <Calculator size={16} /> Bảng Điểm Môn Học Cá Nhân (Local Saved)
+            <Calculator size={16} /> Điểm nhập tay trên thiết bị
           </h4>
           <div style={{ display: "flex", gap: "8px" }}>
             <button className="settings-btn-secondary" onClick={resetToDefault} style={{ fontSize: "12px" }}>
-              <RotateCcw size={13} /> Khôi phục mẫu
+              <RotateCcw size={13} /> Phục hồi dữ liệu cũ
             </button>
             <button className="settings-btn-primary" onClick={addSubject} style={{ fontSize: "12px" }}>
               <Plus size={14} /> Thêm môn học
@@ -159,7 +163,7 @@ export function GpaCalculator() {
           </div>
         </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+        <div className="gpa-table-scroll"><table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--muted)", textAlign: "left" }}>
               <th style={{ padding: "8px", width: "40%" }}>Tên môn học</th>
@@ -194,7 +198,7 @@ export function GpaCalculator() {
                     min={1}
                     max={10}
                     value={sub.credits}
-                    onChange={(e) => updateSubject(sub.id, { credits: Number(e.target.value) })}
+                    onChange={(e) => updateSubject(sub.id, { credits: Math.min(10, Math.max(1, Number(e.target.value))) })}
                     style={{
                       width: "100%",
                       padding: "6px 8px",
@@ -235,7 +239,7 @@ export function GpaCalculator() {
                     min={0}
                     max={10}
                     value={sub.score10}
-                    onChange={(e) => updateSubject(sub.id, { score10: Number(e.target.value) })}
+                    onChange={(e) => updateSubject(sub.id, { score10: Math.min(10, Math.max(0, Number(e.target.value))) })}
                     style={{
                       width: "100%",
                       padding: "6px 8px",
@@ -260,7 +264,7 @@ export function GpaCalculator() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

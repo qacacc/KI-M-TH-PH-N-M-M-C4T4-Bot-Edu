@@ -4,6 +4,13 @@ Ma trận kiểm thử hồi quy quy định duy nhất danh sách các bộ tes
 
 ---
 
+## CA-082: bằng chứng 2026-10-08
+
+- npm run check:all PASS: 61 Vitest, 37 Rust, layout/TypeScript/Vite pass, audit 0.
+- academicData.test.ts: 5 test đúng nguồn/account, empty/error không sample; gpaData.test.ts: 3 test empty/validate/bảo toàn; tauriApi.test.ts: 2 test portal awaited/error.
+- Playwright local ca082-check.js và ca082-interactions.js PASS: lịch/thi/GPA/tài liệu/trường, light/dark, 1280/1000, sidebar mở/thu, không tràn trang. Screenshot đã xem trực tiếp, output/playwright không commit.
+- Manual native desktop/window controls/portal login/sync thật CHƯA CHẠY. Installer chưa build lại cho source mới.
+
 ## Comprehensive Regression Matrix
 
 | File / Module được chỉnh sửa | Executive Contract | Test Status | Executable Command / Test | Manual / E2E Verification |

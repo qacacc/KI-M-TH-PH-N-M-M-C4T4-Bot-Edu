@@ -366,6 +366,16 @@
 
 ## Trang thai du an
 
+## Kế hoạch bổ sung 2026-10-08 - Postman và dữ liệu trường
+
+- CONFIRMED: rà soát task hiện có chưa thấy task riêng xác minh contract Postman; các task CA-036/CA-054 là gate thiết kế và nghiệm thu, không thay thế evidence API thật.
+- PLANNED: CA-080 xác minh Profile/Schedule/Exams bằng request thật, fixture loại PII, tham số ngày và response tests; Announcements/Documents/Grades ghi Unknown tới khi có bằng chứng.
+- PLANNED: CA-081 sửa parser và sync theo contract verified, phân biệt Error/Empty, giữ cache khi lỗi và không điền giá trị nghiệp vụ giả.
+- Hai task giữ `Status: Proposed` trong Ready / Proposed; chưa có task active, chưa sửa runtime hoặc collection, chưa gửi request trường.
+- Phạm vi lần này chỉ là lập task và đồng bộ chỉ mục; không xác nhận build/API/E2E đã pass. Các mục release freeze cũ là lịch sử, kế hoạch mới được bổ sung theo yêu cầu user.
+
+## Trạng thái baseline đã ghi trước đây
+
 - Core local app, chat intent, file safety, docs governance va cac trang local da co test/build pass.
 - Connector truong that van o trang thai experimental/partial: da co WebView portal va sync prototype, chua co E2E cookie/session extraction va encrypted persistent secret vault.
 - Thu muc hien tai khong phai Git repository hop le, nen rollback phai dua vao backup/ZIP/file copy neu can.
@@ -378,3 +388,10 @@
 216. Chay `npm run check:all`: pass, gom 51 Vitest, layout regression, TypeScript/Vite build, 35 Rust tests, npm audit 0 vulnerabilities.
 217. `npm run build:installer` all-target khong dung duoc lam artifact cuoi vi MSI/WiX va target mac dinh gap loi Windows file lock / `light.exe`.
 218. Build rieng NSIS bang `npm run tauri build -- --bundles nsis` voi `CARGO_TARGET_DIR=.release-target`: pass, tao `C:\Users\PC\Downloads\bot game\.release-target\release\bundle\nsis\Campus Assistant Local_1.0.1_x64-setup.exe`.
+# CA-082 - Kết quả remediation 2026-10-08
+
+- CURRENT: cache-only đúng MSSV/source cho chat/page; thông báo/tài liệu trường chưa đồng bộ ghi rõ giới hạn, mẫu tách tab riêng.
+- GPA nhập tay trống mặc định, giữ v1; portal await/error, không coi MSSV/browser login là auth app.
+- Sửa Emitter, responsive grid/bảng/avatar/window icons; check:all PASS 61 Vitest/37 Rust/audit 0.
+- Playwright local PASS, screenshots đã xem; native auth/sync/window controls chưa E2E. Installer chưa build lại.
+- CA-082 Done trong scope; CA-080/081 Proposed, không báo kết nối trường hoàn thành.

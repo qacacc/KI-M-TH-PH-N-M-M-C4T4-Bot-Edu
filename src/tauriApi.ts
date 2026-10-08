@@ -1,4 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { ACADEMIC_CACHE_UPDATED_EVENT } from "./academicEvents";
 import type {
   ActionLogEntry,
   AnnouncementRecord,
@@ -79,11 +81,7 @@ export function openDownloadsFolder(): Promise<void> {
 export function openExternalUrl(url: string): Promise<void> {
   if (!url) return Promise.resolve();
   if ("__TAURI_INTERNALS__" in window) {
-    return tauriInvoke<void>("open_external_url", { url })
-      .then(() => {})
-      .catch(() => {
-        triggerAnchorClick(url);
-      });
+    return tauriInvoke<void>("open_external_url", { url });
   }
   triggerAnchorClick(url);
   return Promise.resolve();
@@ -186,8 +184,8 @@ export async function onUthSyncResult(
   if (!("__TAURI_INTERNALS__" in window)) {
     return () => {};
   }
-  const { listen } = await import("@tauri-apps/api/event");
   const unlisten = await listen<UthSyncEventPayload>("uth-sync-result", (event) => {
+    if (event.payload.success) window.dispatchEvent(new Event(ACADEMIC_CACHE_UPDATED_EVENT));
     callback(event.payload);
   });
   return unlisten;
