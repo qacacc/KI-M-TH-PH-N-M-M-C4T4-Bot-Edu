@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ann-001",
+    "title": "Lịch đăng ký học phần học kỳ 1",
+    "category": "Đào tạo",
+    "priority": "important",
+    "publishedAt": "2026-07-01T08:00:00+07:00",
+    "source": "Dữ liệu mẫu local",
+    "summary": "Sinh viên kiểm tra kế hoạch học tập và đăng ký học phần đúng thời gian quy định."
+  },
+  {
+    "id": "ann-002",
+    "title": "Nhắc nộp bài tập thực hành Lập trình mạng",
+    "category": "Môn học",
+    "priority": "normal",
+    "publishedAt": "2026-07-08T09:30:00+07:00",
+    "source": "Dữ liệu mẫu local",
+    "summary": "Bài thực hành socket TCP cần nộp trước buổi học kế tiếp."
+  },
+  {
+    "id": "ann-003",
+    "title": "Bảo trì hệ thống học vụ mẫu",
+    "category": "Hệ thống",
+    "priority": "urgent",
+    "publishedAt": "2026-07-12T17:00:00+07:00",
+    "source": "Dữ liệu mẫu local",
+    "summary": "Thông báo mẫu dùng để kiểm thử mức ưu tiên khẩn cấp, không phải dữ liệu trường thật."
+  },
+  {
+    "id": "ann-004",
+    "title": "Cập nhật tài liệu ôn tập giữa kỳ",
+    "category": "Tài liệu",
+    "priority": "normal",
+    "publishedAt": "2026-07-15T10:15:00+07:00",
+    "source": "Dữ liệu mẫu local",
+    "summary": "Danh sách tài liệu ôn tập đã được cập nhật trong workspace local."
+  }
+]

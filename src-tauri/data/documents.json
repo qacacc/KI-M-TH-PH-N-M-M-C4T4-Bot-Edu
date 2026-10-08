@@ -1,0 +1,201 @@
+[
+  {
+    "id": "doc-001",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "01. Gioi thieu mon hoc.txt",
+    "type": "Tài liệu",
+    "sizeBytes": 1200,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/01-gioi-thieu-mon-hoc.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-002",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "02. Slide chuong 1.txt",
+    "type": "Slide",
+    "sizeBytes": 2800,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/02-slide-chuong-1.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-003",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "03. Slide chuong 2.txt",
+    "type": "Slide",
+    "sizeBytes": 3100,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/03-slide-chuong-2.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-004",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "04. Bai tap socket TCP.txt",
+    "type": "Bài tập",
+    "sizeBytes": 1800,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/04-bai-tap-socket-tcp.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-005",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "05. Thuc hanh lab 1.txt",
+    "type": "Thực hành",
+    "sizeBytes": 2400,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/05-thuc-hanh-lab-1.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-006",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "06. Tham khao giao thuc HTTP.txt",
+    "type": "Tham khảo",
+    "sizeBytes": 2100,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/06-tham-khao-http.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-007",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "07. Slide chuong 3.txt",
+    "type": "Slide",
+    "sizeBytes": 2900,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/07-slide-chuong-3.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-008",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "08. Bai tap UDP.txt",
+    "type": "Bài tập",
+    "sizeBytes": 1700,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/08-bai-tap-udp.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-009",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "09. Thuc hanh lab 2.txt",
+    "type": "Thực hành",
+    "sizeBytes": 2500,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/09-thuc-hanh-lab-2.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-010",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "10. Checklist on tap.txt",
+    "type": "Tài liệu",
+    "sizeBytes": 1500,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/10-checklist-on-tap.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-011",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "11. Tham khao DNS.txt",
+    "type": "Tham khảo",
+    "sizeBytes": 1800,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/11-tham-khao-dns.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-012",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "12. Bai tap tong hop.txt",
+    "type": "Bài tập",
+    "sizeBytes": 2200,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/12-bai-tap-tong-hop.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-013",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "13. Slide chuong 4.txt",
+    "type": "Slide",
+    "sizeBytes": 2700,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/13-slide-chuong-4.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-014",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "14. Thuc hanh lab 3.txt",
+    "type": "Thực hành",
+    "sizeBytes": 2600,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/14-thuc-hanh-lab-3.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-015",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "15. Tham khao TLS.txt",
+    "type": "Tham khảo",
+    "sizeBytes": 2300,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/15-tham-khao-tls.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-016",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "16. Slide on tap.txt",
+    "type": "Slide",
+    "sizeBytes": 2400,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/16-slide-on-tap.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-017",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "17. Tham khao REST API.txt",
+    "type": "Tham khảo",
+    "sizeBytes": 1900,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/17-tham-khao-rest-api.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  },
+  {
+    "id": "doc-018",
+    "subjectId": "network-programming",
+    "semester": 1,
+    "name": "18. Huong dan nop bai.txt",
+    "type": "Tài liệu",
+    "sizeBytes": 1600,
+    "source": "Dữ liệu mẫu local",
+    "localPath": "sample-documents/network-programming/18-huong-dan-nop-bai.txt",
+    "updatedAt": "2026-07-19T00:00:00Z"
+  }
+]
+

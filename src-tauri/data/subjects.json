@@ -1,0 +1,13 @@
+[
+  {
+    "id": "network-programming",
+    "name": "Lập trình mạng",
+    "aliases": ["lap trinh mang", "ltm", "network programming", "mang may tinh"]
+  },
+  {
+    "id": "database-systems",
+    "name": "Cơ sở dữ liệu",
+    "aliases": ["co so du lieu", "csdl", "database"]
+  }
+]
+

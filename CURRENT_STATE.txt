@@ -1,0 +1,39 @@
+=== RELEASE FREEZE - 2026-08-02 ===
+
+Project: Campus Assistant Local
+Version source: 1.0.1
+Status: release freeze / final handoff complete
+
+CURRENT CORE:
+1. Desktop app Tauri + React + TypeScript + Rust backend.
+2. Local-first runtime: khong gui hoi thoai, tai lieu, token/cookie ra server nha phat trien.
+3. Chat intent engine rule-based, khong phai AI chat tong quat.
+4. Chat submit da thong nhat qua `submitUserMessage` cho Enter, nut Gui, starter card, chip/command suggestion.
+5. Document intent khong fallback `subjects[0]`; thieu mon thi hoi user neu can.
+6. Chat history SQLite la opt-in: mac dinh khong luu raw chat; Rust enforce `chatHistoryEnabled`.
+7. File actions chi trong managed workspace, co path guard va action log metadata an toan.
+8. Appearance/theme co draft/apply, Campus Default, Light/Dark token guard va background asset local.
+9. Public admissions search ton tai o muc CURRENT / LIMITED, chi tim nguon cong khai allowlist.
+10. UTH portal/WebView va connector school la experimental/partial, chua production-ready SSO/session/vault.
+
+FROZEN / NOT IN RELEASE:
+1. Reward & Minigame: Frozen / Activation-only (`CA-064`).
+2. AI chat tong quat/BYOK model: Not implemented.
+3. Real school connector production E2E: Not ready.
+4. Archive management UI day du: Not implemented.
+5. Zalo guide/production bot: Not implemented.
+
+LATEST VERIFIED COMMAND:
+- `npm run check:all`
+- Result: PASS
+- 51 Vitest, layout regression, TypeScript/Vite build, 35 Rust tests, npm audit 0 vulnerabilities.
+- `npm run tauri build -- --bundles nsis` with `CARGO_TARGET_DIR=.release-target`
+- Result: PASS
+- Installer: `C:\Users\PC\Downloads\bot game\.release-target\release\bundle\nsis\Campus Assistant Local_1.0.1_x64-setup.exe`
+
+KNOWN RELEASE BUILD NOTE:
+- `npm run build:installer` all-target is not the final artifact command today because MSI/WiX and the default Rust target directory hit Windows file lock / `light.exe` issues.
+- The release artifact for handoff is the NSIS setup `.exe` above.
+
+CURRENT ACTIVE TASK:
+- None.

@@ -1,0 +1,25 @@
+[package]
+name = "campus-assistant-local"
+version = "1.0.1"
+description = "Campus Assistant Local"
+authors = ["Campus Assistant Local"]
+edition = "2021"
+
+[lib]
+name = "campus_assistant_local_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "6"
+opener = "0.7"
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+thiserror = "2"
+ureq = { version = "3", default-features = false, features = ["json", "rustls"] }

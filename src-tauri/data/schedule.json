@@ -1,0 +1,50 @@
+[
+  {
+    "id": "sch-001",
+    "subjectId": "network-programming",
+    "subjectName": "Lập trình mạng",
+    "semester": 1,
+    "weekday": 2,
+    "startTime": "07:00",
+    "endTime": "09:30",
+    "room": "A2-401",
+    "lecturer": "Giảng viên mẫu",
+    "note": "Lý thuyết socket và mô hình client-server."
+  },
+  {
+    "id": "sch-002",
+    "subjectId": "network-programming",
+    "subjectName": "Lập trình mạng",
+    "semester": 1,
+    "weekday": 4,
+    "startTime": "13:00",
+    "endTime": "15:30",
+    "room": "Lab C1-203",
+    "lecturer": "Giảng viên mẫu",
+    "note": "Thực hành TCP/UDP trong môi trường local."
+  },
+  {
+    "id": "sch-003",
+    "subjectId": "database-systems",
+    "subjectName": "Cơ sở dữ liệu",
+    "semester": 1,
+    "weekday": 3,
+    "startTime": "09:45",
+    "endTime": "12:00",
+    "room": "B1-205",
+    "lecturer": "Giảng viên mẫu",
+    "note": "Dữ liệu mẫu cho kiểm thử lịch học."
+  },
+  {
+    "id": "sch-004",
+    "subjectId": "software-engineering",
+    "subjectName": "Công nghệ phần mềm",
+    "semester": 1,
+    "weekday": 6,
+    "startTime": "08:00",
+    "endTime": "10:30",
+    "room": "A1-302",
+    "lecturer": "Giảng viên mẫu",
+    "note": "Thảo luận yêu cầu phần mềm và kiểm thử."
+  }
+]

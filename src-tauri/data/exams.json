@@ -1,0 +1,38 @@
+[
+  {
+    "id": "exam-001",
+    "subjectId": "network-programming",
+    "subjectName": "Lập trình mạng",
+    "semester": 1,
+    "examDate": "2026-08-20",
+    "startTime": "07:30",
+    "durationMinutes": 90,
+    "room": "A2-501",
+    "format": "Tự luận + thực hành",
+    "note": "Mang thẻ sinh viên. Đây là dữ liệu mẫu local."
+  },
+  {
+    "id": "exam-002",
+    "subjectId": "database-systems",
+    "subjectName": "Cơ sở dữ liệu",
+    "semester": 1,
+    "examDate": "2026-08-22",
+    "startTime": "09:30",
+    "durationMinutes": 75,
+    "room": "B1-301",
+    "format": "Trắc nghiệm",
+    "note": "Dữ liệu mẫu cho kiểm thử lịch thi."
+  },
+  {
+    "id": "exam-003",
+    "subjectId": "software-engineering",
+    "subjectName": "Công nghệ phần mềm",
+    "semester": 1,
+    "examDate": "2026-08-25",
+    "startTime": "13:30",
+    "durationMinutes": 90,
+    "room": "A1-401",
+    "format": "Bài viết",
+    "note": "Dữ liệu mẫu cho kiểm thử lịch thi."
+  }
+]
