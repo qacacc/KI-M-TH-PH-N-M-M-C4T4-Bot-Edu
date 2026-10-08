@@ -1,5 +1,9 @@
 # FLOW MAP - CAMPUS ASSISTANT LOCAL
 
+## CA-083 - Luồng UTH CURRENT 2026-10-09
+
+Mô tả thử nghiệm bên dưới là lịch sử trước CA-083. Hiện native từ chối open_uth_login_window/receive_uth_jwt/sync_uth_after_login/list_connector_schedules/list_connector_exams trước mọi xử lý bằng CONTRACT_UNVERIFIED. Không mở WebView thu token, không HTTP/mapping đoán, không ghi DB. Prototype command trả SAMPLE_SYNC_DISABLED. Portal browser độc lập vẫn mở; cache cũ giữ nguyên nhưng cách ly khỏi lịch UI. API/auth thật vẫn PLANNED, CA-080/081.
+
 Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng thái Hiện tại (`CURRENT FLOW`)** và **Mục tiêu Khả thi (`TARGET FLOW`)**, kèm danh sách kẽ hở tắc nghẽn (`BLOCKING GAPS`).
 
 ---

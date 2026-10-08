@@ -1,12 +1,20 @@
 # Campus Assistant Local
 
-Ung dung desktop local ho tro sinh vien tra cuu tai lieu, thong bao, lich hoc va lich thi mau bang chatbox, chay nhe va khong phu thuoc AI.
+Ung dung desktop local-first ho tro sinh vien voi chat intent, lich su opt-in, tai lieu va GPA nhap tay. Khong dung du lieu mau lam du lieu tai khoan truong.
+
+## Trang thai source 2026-10-09 (CA-083)
+
+- Lich hoc/thi va bootstrap khong tu nap sample. GPA nhap tay trong mac dinh, khong tu seed diem.
+- API/auth UTH chua verified: dong bo va doc cache cu bi native gate, khong thu token hay tao lich gia. Cache cu giu nguyen tren may, chua coi la lich chinh thuc.
+- Mo website truong bang browser van hoat dong. Dang nhap browser ngoai khong tu noi session vao app.
+- JSON va tai lieu mau chi la fixture/test hoac tab minh hoa user chu dong chon.
+- Connector that can contract/fixture/security E2E theo CA-080/081; khong co cong tac bypass. Installer 2026-08-02 la artifact cu, chua build lai.
 
 ## Pham vi v1.0.1
 
 - Tauri + React + TypeScript.
 - SQLite local cho settings, session metadata, action log va chat history opt-in.
-- JSON local cho mon hoc, tai lieu, thong bao, lich hoc va lich thi mau.
+- JSON local chi giu fixture/test va tai lieu minh hoa opt-in, khong fallback hoc tap mac dinh.
 - Bon intent local: `FIND_DOCUMENTS`, `FIND_ANNOUNCEMENTS`, `FIND_SCHEDULE`, `FIND_EXAMS`.
 - Dark mode, light mode va accent color.
 - Custom titlebar, sidebar hover rail, chatbox trung tam, utility panel, customize panel va privacy page.

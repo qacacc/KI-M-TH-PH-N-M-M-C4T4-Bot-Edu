@@ -5,7 +5,7 @@ Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhậ
 ---
 
 ## FEATURE: SCHOOL_SYNC_UTH
-- **Status**: Experimental
+- **Status**: Disabled / Contract unverified (CA-083, 2026-10-09)
 - **Owner**: School Connector Engine
 - **Evidence**:
   - Source: `src/pages/SchoolPage.tsx`, `src-tauri/src/connectors/uth.rs`, `src-tauri/src/connectors/connector_engine.rs`
@@ -13,6 +13,7 @@ Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhậ
   - Verification Artifact: Vitest / Cargo test output
   - Verification Scope: AUTOMATED (E2E Auth Bridge: NOT VERIFIED)
 - **Known Gaps & Tracking**:
+  - CA-083: tất cả auth/sync entry native đã gate; parser HTTP suy đoán bị gỡ, command nạp mẫu ngừng ghi. Những gaps baseline bên dưới là việc cần giải quyết khi triển khai connector verified, không phải đường đang được bật.
   - Auth bridge có implementation thử nghiệm nhưng chưa E2E verified; browser ngoài không truyền session vào app | CA-080.
   - Legacy IPC nhận JWT vẫn tồn tại, không coi mọi entry đã backend-owned | CA-080/081.
   - Lịch thi derive từ lịch tháng; parser còn default nghiệp vụ và nuốt lỗi thành empty | CA-081.
@@ -21,14 +22,14 @@ Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhậ
 ---
 
 ## FEATURE: ACADEMIC_SCHEDULE_AND_EXAMS
-- **Status**: Implemented
+- **Status**: UI implemented / UTH data quarantined (CA-083)
 - **Owner**: Academic Data Manager
 - **Evidence**:
   - Source: `src/pages/CampusDataPages.tsx`, `src/academicData.ts`, `src/hooks/useAcademicCache.ts`, `src-tauri/src/lib.rs`
   - Last Verified: 2026-10-08 (CA-082)
   - Verification Scope: AUTOMATED (`npm run check:all` PASS)
 - **Known Gaps & Tracking**:
-  - Cache-only đúng MSSV/source, không sample mặc định; loading/error/empty riêng. Native auth/parser còn thử nghiệm (CA-080/081), không phải STABLE end-to-end.
+  - Native đọc cache UTH bị gate vì dữ liệu cũ chưa verified; UI/chat thông báo an toàn, không fallback mẫu. CA-080/081 cần contract/fixture thật trước bật dữ liệu; không phải STABLE end-to-end.
   - Thông báo/tài liệu trường chưa đồng bộ; tab tài liệu mẫu tách riêng. GPA nhập tay trống mặc định, quy đổi tham khảo, không phải bảng điểm trường đã xác thực.
 
 ---

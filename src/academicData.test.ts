@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { loadAcademicSchedule, loadAcademicExams } from "./academicData";
+import { academicDataErrorMessage, loadAcademicSchedule, loadAcademicExams } from "./academicData";
 import { listConnectorSchedules, listConnectorExams } from "./tauriApi";
 import { createDefaultSchoolProfile } from "./schoolProfile";
 vi.mock("./tauriApi", () => ({ listConnectorSchedules: vi.fn(), listConnectorExams: vi.fn() }));
@@ -9,6 +9,11 @@ const schedule = { id: "schedule", studentCode: "SV-TEST", subjectCode: "TEST", 
 const exam = { id: "exam", studentCode: "SV-TEST", subjectCode: "TEST", subjectName: "Môn kiểm thử", examDate: "2026-10-10", startTime: "08:00", durationMinutes: 60, room: "P1", format: "Thực hành", source: "uth-portal" };
 beforeEach(() => vi.resetAllMocks());
 describe("nguồn học tập tài khoản trường", () => {
+  it("giải thích contract chưa verified và không đưa lỗi nội bộ vào UI", () => {
+    expect(academicDataErrorMessage("CONTRACT_UNVERIFIED: internal")).toContain("chưa được xác minh");
+    expect(academicDataErrorMessage(new Error("CONTRACT_UNVERIFIED"))).toContain("Cache cũ vẫn giữ");
+    expect(academicDataErrorMessage(new Error("secret /private/path"))).not.toContain("/private/path");
+  });
   it("không truy vấn cache UTH khi chưa có MSSV hoặc chọn trường khác", async () => {
     expect(await loadAcademicSchedule(createDefaultSchoolProfile())).toEqual([]);
     expect(await loadAcademicExams({ ...profile, schoolId: "hcmut" })).toEqual([]);

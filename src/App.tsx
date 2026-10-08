@@ -91,7 +91,7 @@ import {
 } from "./tauriApi";
 import { ChatHistoryPage, type ChatSession } from "./pages/ChatHistoryPage";
 import appLogo from "./assets/logo.png";
-import { ACADEMIC_CONNECTION_REQUIRED, loadAcademicSchedule, loadAcademicExams } from "./academicData";
+import { ACADEMIC_CONNECTION_REQUIRED, academicDataErrorMessage, loadAcademicSchedule, loadAcademicExams } from "./academicData";
 import type {
   ActionLogEntry,
   BootstrapState,
@@ -986,7 +986,7 @@ export default function App() {
       setView("schedule");
       appendAssistant(scheduleItems.length ? `Có ${scheduleItems.length} buổi học trong cache tài khoản trường.${semester ? " Cache chưa có thông tin học kỳ để lọc." : ""}` : ACADEMIC_CONNECTION_REQUIRED, { scheduleItems });
     } catch (err) {
-      setError(String(err));
+      setError(academicDataErrorMessage(err));
     } finally {
       setIsBusy(false);
     }
@@ -999,7 +999,7 @@ export default function App() {
       setView("exams");
       appendAssistant(examItems.length ? `Có ${examItems.length} lịch thi trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.${semester ? " Cache chưa có thông tin học kỳ để lọc." : ""}` : ACADEMIC_CONNECTION_REQUIRED, { examItems });
     } catch (err) {
-      setError(String(err));
+      setError(academicDataErrorMessage(err));
     } finally {
       setIsBusy(false);
     }

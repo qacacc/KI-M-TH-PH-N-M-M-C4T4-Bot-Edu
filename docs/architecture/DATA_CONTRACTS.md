@@ -1,5 +1,9 @@
 # Data Contracts
 
+## CA-083 - Contract chưa verified (2026-10-09)
+
+Các ví dụ bên dưới không xác minh API trường. Native UTH hiện trả Err(CONTRACT_UNVERIFIED) trước auth/sync/cache read; không còn parser tự điền giờ/thứ/thời lượng và không gọi endpoint phỏng đoán. Cache cũ cách ly, không xóa. Payload command cũ giữ nguyên; prototype command trả Err(SAMPLE_SYNC_DISABLED). Bật connector cần contract/fixture thật và triển khai CA-080/081, không đổi bool để bỏ gate.
+
 ## CA-082: nguồn học tập (2026-10-08)
 
 - JSON bên dưới là fixture/contract tham khảo, không phải tài khoản thật. Bootstrap không seed môn/lịch/thi/thông báo.

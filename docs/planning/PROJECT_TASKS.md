@@ -395,3 +395,10 @@
 - Sửa Emitter, responsive grid/bảng/avatar/window icons; check:all PASS 61 Vitest/37 Rust/audit 0.
 - Playwright local PASS, screenshots đã xem; native auth/sync/window controls chưa E2E. Installer chưa build lại.
 - CA-082 Done trong scope; CA-080/081 Proposed, không báo kết nối trường hoàn thành.
+# CA-083 - Cách ly connector chưa xác minh (2026-10-09)
+
+- CURRENT: gỡ parser UTH đoán field/giờ/thứ/thời lượng; gate native trước token/WebView/network/DB; prototype command trả lỗi, không tạo cache giả.
+- Cache cũ không xóa nhưng không đưa vào lịch chính thức; chat/page cùng giải thích contract chưa verified, không error->empty.
+- UI khóa đồng bộ có lý do; portal browser vẫn mở. Không đổi schema, không thu secret, không bật API chưa xác minh.
+- check:all PASS 62 Vitest/39 Rust/build/layout/audit 0; Playwright local 1280/1000 PASS và screenshot đã xem. Native auth/cache IO E2E chưa chạy.
+- CA-083 Done chỉ scope cách ly an toàn. CA-080/081 Proposed; không báo full project/connector Done, installer chưa build lại.

@@ -32,6 +32,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 | ID | Ten | File | Ghi chu |
 | --- | --- | --- | --- |
+| CA-083 | Cách ly connector chưa xác minh | `tasks/CA-083-unverified-connector-quarantine.md` | Gỡ mapper đoán/gate auth-sync-cache/prototype, dữ liệu cũ giữ nguyên; 62 Vitest/39 Rust/audit 0, Playwright local PASS. Không claim connector thật hoàn thành. |
 | CA-082 | Dữ liệu học tập đúng nguồn và sửa giao diện | `tasks/CA-082-academic-data-truth-and-ui-remediation.md` | Cache-only/GPA manual/portal feedback/UI; 61 Vitest, 37 Rust, audit 0, Playwright local PASS. Native auth/sync chưa verified; CA-080/081 Proposed. |
 | CA-077 | Release Freeze and Final Handoff | `tasks/CA-077-release-freeze-final-handoff.md` | Chốt release freeze 2026-08-02, cập nhật CURRENT_STATE/README, `npm run check:all` pass; build NSIS installer pass tại `.release-target\\release\\bundle\\nsis\\Campus Assistant Local_1.0.1_x64-setup.exe`; MSI all-target bị lỗi WiX/file lock nên không dùng làm artifact cuối. |
 | CA-076 | Fix Theme Default | `tasks/CA-076-fix-theme-default.md` | Sửa `applyAppearanceToDocument()` để auto theme trả quyền cho CSS token bằng `removeProperty`, bổ sung light guard cho settings controls; `npm run check:all` pass, manual visual chưa chạy. |

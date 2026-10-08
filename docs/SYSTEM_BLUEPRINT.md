@@ -1,5 +1,9 @@
 # SYSTEM BLUEPRINT - CAMPUS ASSISTANT LOCAL
 
+## CA-083 - Ranh giới dữ liệu UTH hiện tại (2026-10-09)
+
+uth.rs chỉ còn lỗi CONTRACT_UNVERIFIED; không còn request/parser tự điền dữ liệu trường. Connector auth/sync/cache entry bị gate trước IO; fixture chỉ test. SQLite cũ giữ nguyên, không đưa vào lịch chính thức. Phần kiến trúc cache-only CA-082 bên dưới vẫn là nền tảng UI nhưng đọc UTH hiện bị cách ly. Connector thật cần CA-080/081 và security E2E, không có bypass.
+
 ## Overview
 Campus Assistant Local là ứng dụng desktop hỗ trợ sinh viên quản lý lịch học, lịch thi, tài liệu và tra cứu thông tin với triết lý **Local-First** và **Privacy-Preserving**.
 

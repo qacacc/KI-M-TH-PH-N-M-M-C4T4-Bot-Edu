@@ -1,5 +1,12 @@
 # RUNTIME FLOW OVERVIEW - CAMPUS ASSISTANT LOCAL
 
+## CA-083 - CURRENT từ 2026-10-09 (thay thế mô tả UTH trước đó)
+
+- UTH auth/sync và đọc cache lịch/thi bị native gate CONTRACT_UNVERIFIED trước WebView/token/network/DB. Không có parser HTTP/default nghiệp vụ được dùng; command prototype trả SAMPLE_SYNC_DISABLED.
+- Cache cũ giữ trong SQLite nhưng không được đưa vào lịch chính thức, vì có thể chứa giá trị parser tự điền. Chat và page báo chung lỗi an toàn qua academicDataErrorMessage, không biến lỗi thành empty.
+- Mở website trường bằng browser vẫn có, không tự nối session. Để đọc dữ liệu tài khoản thật phải hoàn thành CA-080/081 và security E2E; không có công tắc bỏ qua verification.
+- Tab tài liệu mẫu opt-in và fixtures test vẫn tồn tại, không phải dữ liệu trường. Không claim dự án/connector hoàn thành.
+
 Tài liệu này mô tả hành vi **CURRENT** đã được xác minh từ source hiện tại. Tính năng `TARGET`, `PLANNED`, `FROZEN` hoặc `NOT_IMPLEMENTED` không được mô tả như runtime đang hoạt động.
 
 Mỗi flow chưa đủ bằng chứng phải ghi nhãn `ASSUMED`, `UNKNOWN`, `PARTIAL`, `PLANNED` hoặc `FROZEN`.

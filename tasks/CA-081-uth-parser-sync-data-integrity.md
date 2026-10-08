@@ -12,6 +12,8 @@
 
 ## Truth check
 
+Ghi chú 2026-10-09 CA-083: các dòng uth.rs/engine dưới đây là baseline commit 215341e, không còn runtime active hiện tại. Parser HTTP/default bị gỡ, auth/sync/cache gate CONTRACT_UNVERIFIED; prototype bị chặn. Task này vẫn Proposed vì chưa có verified contract/fixture để xây lại parser/sync thật. Không chuyển Done vì cách ly không tương đương sửa hoàn chỉnh connector.
+
 - CONFIRMED: `src-tauri/src/connectors/uth.rs:78` đặt `is_authenticated = true` trong parser Profile; hàm chưa kiểm tra đầy đủ field định danh bắt buộc.
 - CONFIRMED: `uth.rs:113` đổi response Schedule không đúng cấu trúc thành danh sách rỗng.
 - CONFIRMED: `uth.rs:143`, `157`, `267` có giá trị mặc định giờ, thứ và thời lượng thi.

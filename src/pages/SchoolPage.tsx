@@ -315,13 +315,13 @@ export function SchoolPage() {
             <Wifi size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
             <span className="school-connector-label">Đồng bộ {selectedSchool.shortName}</span>
             <span className={isUthSelected ? "settings-status-pill warning" : "settings-status-pill neutral"}>
-              {isUthSelected ? "Thử nghiệm (UTH)" : "Mở trình duyệt"}
+              {isUthSelected ? "Chưa sẵn sàng" : "Chưa hỗ trợ"}
             </span>
           </div>
           <div className="school-connector-row">
             <Shield size={13} style={{ color: "var(--muted)", flexShrink: 0 }} />
             <span className="school-connector-label">Lưu token/cookie</span>
-            <span className="settings-status-pill neutral">Phiên thử nghiệm chỉ trong RAM</span>
+            <span className="settings-status-pill neutral">Chưa bật thu phiên đăng nhập</span>
           </div>
           <div className="school-connector-row">
             <UserCheck size={13} style={{ color: "var(--muted)", flexShrink: 0 }} />
@@ -340,7 +340,7 @@ export function SchoolPage() {
             <p className="school-explain-note" style={{ marginTop: 0 }}>
               <Sparkles size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
               <span style={{ color: "var(--foreground)", fontSize: "13px", fontWeight: 500 }}>
-                Đồng bộ tài khoản UTH đang thử nghiệm, chưa xác minh đăng nhập và tải dữ liệu đầy đủ. Mở portal để xem dữ liệu trực tiếp từ trường.
+                Đồng bộ UTH đang tạm khóa vì API và phiên đăng nhập chưa được xác minh. Ứng dụng không nạp lịch mô phỏng. Mở portal để xem dữ liệu trực tiếp từ trường; cache cũ vẫn được giữ.
               </span>
             </p>
 
@@ -359,9 +359,11 @@ export function SchoolPage() {
                 className="settings-btn-secondary"
                 style={{ padding: "10px 18px", fontSize: "13px" }}
                 onClick={handleOpenUthWebViewExperimental}
+                disabled
+                title="Chưa xác minh contract API và bảo mật phiên đăng nhập UTH"
               >
                 <ExternalLink size={14} />
-                Thử nghiệm WebView UTH
+                Đồng bộ UTH chưa sẵn sàng
               </button>
             </div>
           </>

@@ -1,10 +1,9 @@
 use crate::connectors::models::{CanonicalExamEntry, CanonicalScheduleEntry, SyncResult};
 use crate::connectors::sync_service::{
-    delete_connector_data, read_exams_from_db, read_schedules_from_db, write_schedules_transaction,
-    write_sync_status,
+    delete_connector_data, read_exams_from_db, read_schedules_from_db, write_sync_status,
 };
 use crate::connectors::uth::{
-    fetch_uth_exams, fetch_uth_profile, fetch_uth_schedule, fetch_uth_schedules_prototype,
+    ensure_uth_contract_verified, fetch_uth_exams, fetch_uth_profile, fetch_uth_schedule,
 };
 use crate::db::open_db;
 use crate::paths::{ensure_directories, resolve_roots};
@@ -123,6 +122,7 @@ fn is_allowed_auth_url(url: &Url) -> bool {
 /// Rust lắng nghe on_navigation change → parse JWT → gọi sync tự động.
 #[tauri::command]
 pub fn open_uth_login_window(app: AppHandle) -> Result<(), String> {
+    ensure_uth_contract_verified()?;
     use tauri::WebviewWindowBuilder;
 
     // Nếu đã có cửa sổ uth-login, focus vào đó thay vì mở mới
@@ -138,52 +138,49 @@ pub fn open_uth_login_window(app: AppHandle) -> Result<(), String> {
 
     let app_clone = app.clone();
 
-    let window = WebviewWindowBuilder::new(
-        &app,
-        "uth-login",
-        tauri::WebviewUrl::External(portal_url),
-    )
-    .title("Đăng nhập Portal UTH — Campus Assistant (1 lần)")
-    .on_navigation(move |url| {
-        if !is_allowed_auth_url(&url) {
-            return false;
-        }
+    let window =
+        WebviewWindowBuilder::new(&app, "uth-login", tauri::WebviewUrl::External(portal_url))
+            .title("Đăng nhập Portal UTH — Campus Assistant (1 lần)")
+            .on_navigation(move |url| {
+                if !is_allowed_auth_url(&url) {
+                    return false;
+                }
 
-        // Sau mỗi lần navigate thành công → inject JS poller để bắt JWT
-        let app_ref = app_clone.clone();
-        if let Some(win) = app_ref.get_webview_window("uth-login") {
-            let _ = win.eval(UTH_JWT_POLLER_SCRIPT);
+                // Sau mỗi lần navigate thành công → inject JS poller để bắt JWT
+                let app_ref = app_clone.clone();
+                if let Some(win) = app_ref.get_webview_window("uth-login") {
+                    let _ = win.eval(UTH_JWT_POLLER_SCRIPT);
 
-            // Lắng nghe page title thay đổi (JWT title trick fallback)
-            // Đọc title sau 2 giây để tránh race với poller
-            let win_ref = win.clone();
-            std::thread::spawn(move || {
-                std::thread::sleep(std::time::Duration::from_secs(2));
-                // Poller sẽ tự xử lý qua eval, không cần thêm gì ở đây
-                let _ = win_ref;
-            });
-        }
-        true
-    })
-    .inner_size(980.0, 720.0)
-    .min_inner_size(800.0, 600.0)
-    .resizable(true)
-    .visible(true)
-    .center()
-    .build()
-    .map_err(|e| format!("Không mở được cửa sổ UTH Portal: {}", e))?;
+                    // Lắng nghe page title thay đổi (JWT title trick fallback)
+                    // Đọc title sau 2 giây để tránh race với poller
+                    let win_ref = win.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_secs(2));
+                        // Poller sẽ tự xử lý qua eval, không cần thêm gì ở đây
+                        let _ = win_ref;
+                    });
+                }
+                true
+            })
+            .inner_size(980.0, 720.0)
+            .min_inner_size(800.0, 600.0)
+            .resizable(true)
+            .visible(true)
+            .center()
+            .build()
+            .map_err(|e| format!("Không mở được cửa sổ UTH Portal: {}", e))?;
 
     let _ = window.show();
     let _ = window.set_focus();
     Ok(())
 }
 
-
 /// Nhận JWT từ WebView UTH sau khi user đăng nhập.
 /// Command này được gọi từ JS inject trong WebView (đường dẫn an toàn, không qua React localStorage).
 /// Tự động chạy sync và emit kết quả về main window để React hiển thị.
 #[tauri::command]
 pub fn receive_uth_jwt(app: AppHandle, jwt_token: String) -> Result<(), String> {
+    ensure_uth_contract_verified()?;
     use crate::connectors::sync_service::sync_data_transaction;
     use chrono::Utc;
 
@@ -200,10 +197,13 @@ pub fn receive_uth_jwt(app: AppHandle, jwt_token: String) -> Result<(), String> 
         let profile = match fetch_uth_profile(&jwt) {
             Ok(p) => p,
             Err(e) => {
-                let _ = app_clone.emit("uth-sync-result", serde_json::json!({
-                    "success": false,
-                    "message": format!("Xác thực JWT thất bại: {}", e)
-                }));
+                let _ = app_clone.emit(
+                    "uth-sync-result",
+                    serde_json::json!({
+                        "success": false,
+                        "message": format!("Xác thực JWT thất bại: {}", e)
+                    }),
+                );
                 return;
             }
         };
@@ -212,10 +212,13 @@ pub fn receive_uth_jwt(app: AppHandle, jwt_token: String) -> Result<(), String> 
         let student_name = profile.display_name.clone();
 
         if student_code.is_empty() {
-            let _ = app_clone.emit("uth-sync-result", serde_json::json!({
-                "success": false,
-                "message": "Không lấy được MSSV từ token. Vui lòng kiểm tra lại tài khoản."
-            }));
+            let _ = app_clone.emit(
+                "uth-sync-result",
+                serde_json::json!({
+                    "success": false,
+                    "message": "Không lấy được MSSV từ token. Vui lòng kiểm tra lại tài khoản."
+                }),
+            );
             return;
         }
 
@@ -233,16 +236,28 @@ pub fn receive_uth_jwt(app: AppHandle, jwt_token: String) -> Result<(), String> 
                 return;
             }
         };
-        let exams = fetch_uth_exams(&jwt, &student_code).unwrap_or_default();
+        let exams = match fetch_uth_exams(&jwt, &student_code) {
+            Ok(exams) => exams,
+            Err(error) => {
+                let _ = app_clone.emit("uth-sync-result", serde_json::json!({
+                    "success": false,
+                    "message": format!("Tải lịch thi thất bại; cache được giữ nguyên: {}", error)
+                }));
+                return;
+            }
+        };
 
         // 4. Ghi vào SQLite
         let roots = match crate::paths::resolve_roots() {
             Ok(r) => r,
             Err(e) => {
-                let _ = app_clone.emit("uth-sync-result", serde_json::json!({
-                    "success": false,
-                    "message": format!("Lỗi đường dẫn: {}", e)
-                }));
+                let _ = app_clone.emit(
+                    "uth-sync-result",
+                    serde_json::json!({
+                        "success": false,
+                        "message": format!("Lỗi đường dẫn: {}", e)
+                    }),
+                );
                 return;
             }
         };
@@ -250,16 +265,26 @@ pub fn receive_uth_jwt(app: AppHandle, jwt_token: String) -> Result<(), String> 
         let mut conn = match crate::db::open_db(&roots) {
             Ok(c) => c,
             Err(e) => {
-                let _ = app_clone.emit("uth-sync-result", serde_json::json!({
-                    "success": false,
-                    "message": format!("Lỗi mở DB: {}", e)
-                }));
+                let _ = app_clone.emit(
+                    "uth-sync-result",
+                    serde_json::json!({
+                        "success": false,
+                        "message": format!("Lỗi mở DB: {}", e)
+                    }),
+                );
                 return;
             }
         };
 
         let batch_id = format!("auto-{}", Utc::now().timestamp());
-        match sync_data_transaction(&mut conn, &student_code, "uth-portal", &schedules, &exams, &batch_id) {
+        match sync_data_transaction(
+            &mut conn,
+            &student_code,
+            "uth-portal",
+            &schedules,
+            &exams,
+            &batch_id,
+        ) {
             Ok((sched_count, exam_count)) => {
                 // Đóng cửa sổ WebView sau khi sync thành công
                 if let Some(win) = app_clone.get_webview_window("uth-login") {
@@ -276,10 +301,13 @@ pub fn receive_uth_jwt(app: AppHandle, jwt_token: String) -> Result<(), String> 
                 }));
             }
             Err(e) => {
-                let _ = app_clone.emit("uth-sync-result", serde_json::json!({
-                    "success": false,
-                    "message": format!("Ghi SQLite thất bại: {}", e)
-                }));
+                let _ = app_clone.emit(
+                    "uth-sync-result",
+                    serde_json::json!({
+                        "success": false,
+                        "message": format!("Ghi SQLite thất bại: {}", e)
+                    }),
+                );
             }
         }
     });
@@ -295,6 +323,7 @@ pub fn sync_uth_after_login(
     student_name: String,
     jwt_token: String,
 ) -> Result<SyncResult, String> {
+    ensure_uth_contract_verified()?;
     let roots = resolve_roots()?;
     ensure_directories(&roots)?;
     let mut conn = open_db(&roots)?;
@@ -327,29 +356,26 @@ pub fn sync_uth_after_login(
     // Thử lấy profile thật từ API
     let profile = fetch_uth_profile(&jwt_token)
         .map_err(|e| format!("Xác thực thất bại (AUTH_INVALID): {}", e))?;
-    let verified_name = if profile.display_name.is_empty() {
-        name
-    } else {
-        profile.display_name
-    };
-
-    // Lưu session vào bộ nhớ RAM backend
-    set_backend_session("uth-portal", &jwt_token);
+    let verified_name = profile.display_name;
 
     // Ràng buộc MSSV
-    if !profile.student_code.is_empty() && profile.student_code != code {
+    if profile.student_code.is_empty() || profile.student_code != code {
         return Err(format!(
             "MSSV của tài khoản vừa đăng nhập ({}) không khớp với MSSV hồ sơ local ({}).",
             profile.student_code, code
         ));
     }
 
+    // Chỉ giữ session sau khi định danh khớp; gate vẫn chặn contract chưa verified.
+    set_backend_session("uth-portal", &jwt_token);
+
     // Lấy lịch học từ API thật (Không tự động fallback sang mock nếu lỗi)
     let schedules = fetch_uth_schedule(&jwt_token, &code)
         .map_err(|e| format!("Tải lịch học thất bại (FETCH_FAILED): {}", e))?;
 
     // Lấy lịch thi từ API thật
-    let exams = fetch_uth_exams(&jwt_token, &code).unwrap_or_default();
+    let exams = fetch_uth_exams(&jwt_token, &code)
+        .map_err(|e| format!("Tải lịch thi thất bại (FETCH_FAILED): {}", e))?;
 
     // Ghi toàn bộ dữ liệu vào SQLite bằng 1 Transaction duy nhất (Rollback nếu lỗi)
     use crate::connectors::sync_service::sync_data_transaction;
@@ -381,6 +407,7 @@ pub fn sync_uth_after_login(
 pub fn list_connector_schedules(
     student_code: String,
 ) -> Result<Vec<CanonicalScheduleEntry>, String> {
+    ensure_uth_contract_verified()?;
     let roots = resolve_roots()?;
     ensure_directories(&roots)?;
     let conn = open_db(&roots)?;
@@ -390,6 +417,7 @@ pub fn list_connector_schedules(
 /// Đọc lịch thi từ SQLite local
 #[tauri::command]
 pub fn list_connector_exams(student_code: String) -> Result<Vec<CanonicalExamEntry>, String> {
+    ensure_uth_contract_verified()?;
     let roots = resolve_roots()?;
     ensure_directories(&roots)?;
     let conn = open_db(&roots)?;
@@ -466,7 +494,11 @@ pub fn clear_backend_session(school_id: &str) {
 /// Ngắt kết nối Connector (Xóa session bộ nhớ backend + đóng WebView login window + đổi status)
 /// KHÔNG xóa dữ liệu lịch học/lịch thi đã cache để xem offline.
 #[tauri::command]
-pub fn disconnect_connector(app: AppHandle, school_id: String, student_code: String) -> Result<(), String> {
+pub fn disconnect_connector(
+    app: AppHandle,
+    school_id: String,
+    student_code: String,
+) -> Result<(), String> {
     // 1. Xóa session khỏi bộ nhớ backend
     clear_backend_session(&school_id);
 
@@ -509,66 +541,61 @@ pub fn disconnect_uth_connector(student_code: String) -> Result<(), String> {
     delete_connector_data_cmd(student_code)
 }
 
-/// Kiểm thử Prototype Sync (không cần JWT, dùng mock data)
+/// Giữ tên command cũ để trả lỗi rõ, không còn ghi dữ liệu mô phỏng vào SQLite.
 #[tauri::command]
 pub fn sync_embedded_school_data(
     school_id: String,
     student_code: String,
     student_name: String,
 ) -> Result<SyncResult, String> {
-    let code = if student_code.trim().is_empty() {
-        "Chưa khai báo".to_string()
-    } else {
-        student_code.trim().to_string()
-    };
-
-    let name = if student_name.trim().is_empty() {
-        "Sinh viên tự khai".to_string()
-    } else {
-        student_name.trim().to_string()
-    };
-
-    if school_id.to_lowercase() != "uth" {
-        return Ok(SyncResult {
-            success: false,
-            student_code: code,
-            student_name: name,
-            schedules_count: 0,
-            exams_count: 0,
-            message: "Trường này chưa hỗ trợ Connector prototype. Hiện chỉ thử nghiệm với UTH."
-                .to_string(),
-        });
-    }
-
-    // Ghi prototype mock data vào SQLite để test offline fallback
-    let roots = resolve_roots()?;
-    ensure_directories(&roots)?;
-    let mut conn = open_db(&roots)?;
-
-    let batch_id = format!("proto-{}", Utc::now().timestamp());
-    let schedules = fetch_uth_schedules_prototype(&code);
-    let sched_written =
-        write_schedules_transaction(&mut conn, &schedules, &code, &batch_id).unwrap_or(0);
-    let _ = write_sync_status(&conn, "prototype-mock", &code, "ok", sched_written, 0, None);
-
-    Ok(SyncResult {
-        success: true,
-        student_code: code.clone(),
-        student_name: name.clone(),
-        schedules_count: sched_written,
-        exams_count: 0,
-        message: format!(
-            "[Prototype Mode] Đã nạp {} buổi học mô phỏng UTH vào SQLite Local để kiểm thử UI. (Chưa kết nối xác thực Portal thật)",
-            sched_written
-        ),
-    })
+    let _ = (school_id, student_code, student_name);
+    Err("SAMPLE_SYNC_DISABLED: Đã ngừng nạp lịch mô phỏng. Chỉ đồng bộ khi connector dữ liệu trường được xác minh.".to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::connectors::sync_service::{write_schedules_transaction, write_sync_status};
     use crate::paths::roots_from_bases;
     use std::fs;
+
+    fn synthetic_schedule(student_code: &str) -> Vec<CanonicalScheduleEntry> {
+        vec![CanonicalScheduleEntry {
+            id: "synthetic-schedule".into(),
+            student_code: student_code.into(),
+            subject_code: "TEST".into(),
+            subject_name: "Fixture kiểm thử".into(),
+            weekday: 2,
+            start_time: "08:00".into(),
+            end_time: "09:00".into(),
+            room: "TEST".into(),
+            lecturer: "Fixture".into(),
+            source: "test-fixture".into(),
+        }]
+    }
+
+    #[test]
+    fn sync_entries_reject_unverified_contract_and_mock_before_database_access() {
+        let error = sync_uth_after_login(
+            "test-account".into(),
+            "Test".into(),
+            "synthetic-token".into(),
+        )
+        .unwrap_err();
+        assert!(error.contains("CONTRACT_UNVERIFIED"));
+        assert!(list_connector_schedules("test-account".into())
+            .unwrap_err()
+            .contains("CONTRACT_UNVERIFIED"));
+        assert!(list_connector_exams("test-account".into())
+            .unwrap_err()
+            .contains("CONTRACT_UNVERIFIED"));
+        for school in ["uth", "other"] {
+            let error =
+                sync_embedded_school_data(school.into(), "test-account".into(), "Test".into())
+                    .unwrap_err();
+            assert!(error.contains("SAMPLE_SYNC_DISABLED"));
+        }
+    }
 
     #[test]
     fn test_disconnect_connector_clears_data() {
@@ -584,9 +611,10 @@ mod tests {
         let mut conn = open_db(&roots).unwrap();
         let student_code = "2251120001";
 
-        // Seed mock schedules
-        let schedules = fetch_uth_schedules_prototype(student_code);
-        let written = write_schedules_transaction(&mut conn, &schedules, student_code, "batch-1").unwrap();
+        // Fixture chỉ có trong test, không được dùng từ command runtime.
+        let schedules = synthetic_schedule(student_code);
+        let written =
+            write_schedules_transaction(&mut conn, &schedules, student_code, "batch-1").unwrap();
         assert!(written > 0);
         let _ = write_sync_status(&conn, "uth-portal", student_code, "ok", written, 0, None);
 

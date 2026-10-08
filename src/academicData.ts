@@ -5,6 +5,14 @@ import type { ExamRecord, ScheduleRecord } from "./types";
 export { ACADEMIC_CACHE_UPDATED_EVENT } from "./academicEvents";
 export const ACADEMIC_CONNECTION_REQUIRED = "Chưa có dữ liệu học tập từ tài khoản trường. Mở Trường & tài khoản để kiểm tra kết nối.";
 
+export function academicDataErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  if (message.includes("CONTRACT_UNVERIFIED")) {
+    return "Dữ liệu UTH chưa được xác minh. Cache cũ vẫn giữ trên máy nhưng chưa được dùng làm lịch học/lịch thi chính thức. Mở website trường để xem dữ liệu trực tiếp.";
+  }
+  return "Không đọc được cache học tập. Dữ liệu đã lưu vẫn được giữ; hãy thử mở lại trang.";
+}
+
 export async function loadAcademicSchedule(profile: SchoolProfile): Promise<ScheduleRecord[]> {
   if (profile.schoolId !== "uth" || !profile.studentCode.trim()) return [];
   const records = await listConnectorSchedules(profile.studentCode.trim());

@@ -1,8 +1,15 @@
-=== SOURCE VERIFICATION - 2026-10-08 / CA-082 ===
+=== SOURCE VERIFICATION - 2026-10-09 / CA-083 ===
 
 Project: Campus Assistant Local
 Version source: 1.0.1
 Status: scoped academic data/UI remediation verified; real school auth NOT READY.
+
+CURRENT CA-083 (thay the hanh vi cache CA-082 ben duoi):
+- Native UTH auth/sync/cache read bi gate CONTRACT_UNVERIFIED truoc token/WebView/network/DB.
+- Parser HTTP/default gia duoc go; command prototype khong ghi mau, tra SAMPLE_SYNC_DISABLED.
+- Cache cu van giu SQLite nhung cach ly khoi lich chinh thuc; chat/page thong bao contract chung an toan.
+- Portal browser van mo duoc; sync button disabled va giai thich ro. Khong co bypass verification.
+- CA-083 Done trong scope cach ly; CA-080/081 van Proposed, connector that chua trien khai/verified.
 
 CURRENT CA-082:
 - Chat/page dung academicData.ts: chi UTH cache dung MSSV/source, khong fallback sample.
@@ -35,7 +42,7 @@ FROZEN / NOT IN RELEASE:
 LATEST VERIFIED COMMAND:
 - `npm run check:all`
 - Result: PASS
-- 61 Vitest, layout regression, TypeScript/Vite build, cargo check, 37 Rust tests, npm audit 0 vulnerabilities.
+- 62 Vitest, layout regression, TypeScript/Vite build, cargo check, 39 Rust tests, npm audit 0 vulnerabilities.
 
 HISTORICAL INSTALLER - 2026-08-02 (chua build lai cho source CA-082):
 - `npm run tauri build -- --bundles nsis` with `CARGO_TARGET_DIR=.release-target`

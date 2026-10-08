@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ACADEMIC_CACHE_UPDATED_EVENT } from "../academicData";
+import { ACADEMIC_CACHE_UPDATED_EVENT, academicDataErrorMessage } from "../academicData";
 import { readSchoolProfile, SCHOOL_PROFILE_UPDATED_EVENT, type SchoolProfile } from "../schoolProfile";
 
 export function useAcademicCache<T>(load: (profile: SchoolProfile) => Promise<T[]>) {
@@ -23,8 +23,8 @@ export function useAcademicCache<T>(load: (profile: SchoolProfile) => Promise<T[
     setLoading(true);
     void load(readSchoolProfile()).then((records) => {
       if (!cancelled) setItems(records);
-    }).catch(() => {
-      if (!cancelled) setError("Không đọc được cache học tập. Dữ liệu đã lưu vẫn được giữ; hãy thử mở lại trang.");
+    }).catch((error: unknown) => {
+      if (!cancelled) setError(academicDataErrorMessage(error));
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });

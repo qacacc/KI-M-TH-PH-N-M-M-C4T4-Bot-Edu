@@ -1,5 +1,13 @@
 # REGRESSION MATRIX - CAMPUS ASSISTANT LOCAL
 
+## CA-083 - Xác minh 2026-10-09
+
+- check:all PASS: 62 Vitest, 39 Rust, layout/TypeScript/Vite/cargo check pass, audit 0.
+- 2 Rust test mới: fetch/gate không trả hồ sơ auth hay dữ liệu mẫu; sync/prototype/cache commands từ chối contract chưa verified. Source kiểm tra gate trước token/WebView/resolve_roots/DB; không đổi sync_service/schema/cache cũ.
+- 1 Vitest mới: thông báo contract riêng, không lộ lỗi nội bộ; chat/page chung helper.
+- rg default giờ/thời lượng, prototype loader và unwrap_or_default lịch thi trong uth/engine: 0 kết quả, exit 1 expected.
+- Playwright local ca083-check.js PASS 1280/1000: sync disabled, portal button enabled, thông báo rõ, không tràn trang; screenshot 1000 đã xem. Native auth/window/cache IO E2E chưa chạy; không claim kết nối thật.
+
 Ma trận kiểm thử hồi quy quy định duy nhất danh sách các bộ test tự động và kiểm tra thủ công bắt buộc phải chạy tương ứng với từng file hoặc module khi có thay đổi.
 
 ---
