@@ -39,7 +39,7 @@ Kiểm tra và chuẩn hóa hệ thống `<button>` cùng parent spacing layout 
 
 ## File duoc phep sua
 
-- `tasks/CA-057-global-button-layout-audit.md` [NEW]
+- `tasks/done/CA-057-global-button-layout-audit.md` [NEW]
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`
 - `src/styles.css`

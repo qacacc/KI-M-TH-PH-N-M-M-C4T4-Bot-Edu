@@ -20,7 +20,7 @@ Sửa và hoàn thiện theme mặc định "Campus Default" và cơ chế khôi
 
 ## Duoc phep lam
 
-- Sửa `tasks/CA-076-fix-theme-default.md` [NEW]
+- Sửa `tasks/done/CA-076-fix-theme-default.md` [NEW]
 - Sửa `src/pages/AppearancePage.tsx`
 - Sửa `src/hooks/useAppearanceDraft.ts`
 - Sửa `src/styles.css`

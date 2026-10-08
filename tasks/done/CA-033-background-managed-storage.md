@@ -52,7 +52,7 @@ Hien Appearance co the luu anh nen dang data URL. Cach nay tien cho MVP nhung kh
 - `BACKEND_GUIDELINES.md`
 - `SECURITY_NOTES.md`
 - `DATA_CONTRACTS.md`
-- `tasks/CA-033-background-managed-storage.md`
+- `tasks/done/CA-033-background-managed-storage.md`
 
 ## Hanh vi phai giu
 

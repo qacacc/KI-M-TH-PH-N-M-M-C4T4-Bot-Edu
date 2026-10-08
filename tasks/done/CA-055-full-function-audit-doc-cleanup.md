@@ -39,7 +39,7 @@ Kiem tra baseline chuc nang hien tai, them regression cho cau chat random ngoai 
 - `docs/REGRESSION_MATRIX.md`
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`
-- `tasks/CA-055-full-function-audit-doc-cleanup.md`
+- `tasks/done/CA-055-full-function-audit-doc-cleanup.md`
 - Artifact/dead files duoc xac minh bang `rg`
 
 ## Hanh vi phai giu

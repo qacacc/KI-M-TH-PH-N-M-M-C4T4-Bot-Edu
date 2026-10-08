@@ -48,7 +48,7 @@ Connector truong that lien quan credential, cookie, token, lich hoc, lich thi, t
 - `BACKEND_GUIDELINES.md`
 - `SECURITY_NOTES.md`
 - `DATA_CONTRACTS.md`
-- `tasks/CA-036-school-connector-threat-model.md`
+- `tasks/done/CA-036-school-connector-threat-model.md`
 
 ## Hanh vi phai giu
 

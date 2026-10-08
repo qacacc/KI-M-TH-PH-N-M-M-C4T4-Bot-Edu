@@ -41,7 +41,7 @@ npm run check:all
 
 ## File duoc phep sua
 
-- `tasks/CA-065-sidebar-planned-items-history.md` [NEW]
+- `tasks/chua-xong/CA-065-sidebar-planned-items-history.md` [NEW]
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`
 - `src/App.tsx`

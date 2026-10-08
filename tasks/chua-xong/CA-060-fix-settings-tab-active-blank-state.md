@@ -30,7 +30,7 @@ Quy tắc toàn cục `button:hover:not(:disabled)` trong `src/styles.css` đè
 
 ## File duoc phep sua
 
-- `tasks/CA-060-fix-settings-tab-active-blank-state.md` [NEW]
+- `tasks/chua-xong/CA-060-fix-settings-tab-active-blank-state.md` [NEW]
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`
 - `src/styles.css`

@@ -43,7 +43,7 @@ npm run check:all
 
 ## File duoc phep sua
 
-- `tasks/CA-069-unified-app-logo-system.md` [NEW]
+- `tasks/chua-xong/CA-069-unified-app-logo-system.md` [NEW]
 - `src/assets/logo.png` [NEW]
 - `src/App.tsx`
 - `src/styles.css`

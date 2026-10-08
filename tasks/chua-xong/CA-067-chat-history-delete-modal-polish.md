@@ -46,7 +46,7 @@ npm run check:all
 
 ## File duoc phep sua
 
-- `tasks/CA-067-chat-history-delete-modal-polish.md` [NEW]
+- `tasks/chua-xong/CA-067-chat-history-delete-modal-polish.md` [NEW]
 - `src/pages/ChatHistoryPage.tsx`
 - `src/styles.css`
 - `tools/layout-regression-check.cjs`

@@ -39,8 +39,8 @@ Sửa trực tiếp giao diện mặc định sáng/tối của Campus Assistant
 
 ## File duoc phep sua
 
-- `tasks/CA-063-codex-default-runtime-theme.md`
-- `tasks/CA-062-actual-codex-layout-visual-fix.md`
+- `tasks/chua-xong/CA-063-codex-default-runtime-theme.md`
+- `tasks/chua-xong/CA-062-actual-codex-layout-visual-fix.md`
 - `tasks/TASK_INDEX.md`
 - `PROJECT_TASKS.md`
 - `src/styles.css`

@@ -5,7 +5,7 @@ File nay la hop dong lam viec bat buoc cho moi AI/coding agent khi sua Campus As
 ## Nguyen tac chinh
 
 1. Moi lan lam viec chi co mot task active.
-2. Task active phai nam trong `tasks/CA-XXX-*.md`.
+2. Task active phai nam trong `tasks/chua-xong/CA-XXX-*.md`.
 3. Khong sua code khi chua doc task active va cac file bat buoc.
 4. Khong mo rong scope vi "tien the".
 5. Khong them dependency neu task khong cho phep.
@@ -19,7 +19,7 @@ File nay la hop dong lam viec bat buoc cho moi AI/coding agent khi sua Campus As
 ## File bat buoc doc truoc moi task
 
 - `AI_PROJECT_RULES.md`
-- `tasks/CA-XXX-*.md`
+- `tasks/chua-xong/CA-XXX-*.md`
 - `README.md`
 - `ARCHITECTURE.md`
 - `SECURITY_NOTES.md`

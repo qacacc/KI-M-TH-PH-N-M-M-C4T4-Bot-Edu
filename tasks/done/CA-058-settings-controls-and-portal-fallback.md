@@ -31,7 +31,7 @@ Sửa các nút/control có bằng chứng chưa hoạt động hoặc gây hi�
 
 ## File duoc phep sua
 
-- `tasks/CA-058-settings-controls-and-portal-fallback.md`
+- `tasks/done/CA-058-settings-controls-and-portal-fallback.md`
 - `tasks/TASK_INDEX.md`
 - `PROJECT_TASKS.md`
 - `src/pages/SchoolPage.tsx`

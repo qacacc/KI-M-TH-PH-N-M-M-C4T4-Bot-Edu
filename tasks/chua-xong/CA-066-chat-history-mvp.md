@@ -52,7 +52,7 @@ npm run check:all
 
 ## File duoc phep sua
 
-- `tasks/CA-066-chat-history-mvp.md` [NEW]
+- `tasks/chua-xong/CA-066-chat-history-mvp.md` [NEW]
 - `src/pages/ChatHistoryPage.tsx` [NEW]
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`

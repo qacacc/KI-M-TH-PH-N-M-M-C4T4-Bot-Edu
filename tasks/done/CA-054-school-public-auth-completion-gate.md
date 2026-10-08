@@ -35,7 +35,7 @@ Nguoi dung khong muon AI bao cao som khi moi co UI hoac placeholder. Chuc nang t
 - `BACKEND_GUIDELINES.md`
 - `tasks/_TEMPLATE.md`
 - `tasks/TASK_INDEX.md`
-- `tasks/CA-054-school-public-auth-completion-gate.md`
+- `tasks/done/CA-054-school-public-auth-completion-gate.md`
 
 ## Hanh vi phai giu
 

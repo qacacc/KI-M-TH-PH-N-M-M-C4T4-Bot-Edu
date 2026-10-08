@@ -53,7 +53,7 @@ Tach `src-tauri/src/lib.rs` thanh cac module noi bo nho hon ma khong doi Tauri c
 - `BACKEND_GUIDELINES.md`
 - `SECURITY_NOTES.md`
 - `DATA_CONTRACTS.md`
-- `tasks/CA-035-backend-module-split.md`
+- `tasks/done/CA-035-backend-module-split.md`
 
 ## Hanh vi phai giu
 

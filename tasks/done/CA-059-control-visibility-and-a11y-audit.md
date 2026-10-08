@@ -36,7 +36,7 @@ Lỗi nút chỉ hiển thị viền tím trống không có icon/text thường
 
 ## File duoc phep sua
 
-- `tasks/CA-059-control-visibility-and-a11y-audit.md` [NEW]
+- `tasks/done/CA-059-control-visibility-and-a11y-audit.md` [NEW]
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`
 - `src/styles.css`

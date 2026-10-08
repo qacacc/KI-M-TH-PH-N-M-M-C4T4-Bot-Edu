@@ -42,7 +42,7 @@ Sidebar da la hover rail, nhung can them polish de giong hanh vi app chat hien d
 - `ARCHITECTURE.md`
 - `UX_UI_GUIDELINES.md`
 - `README.md`
-- `tasks/CA-032-sidebar-rail-polish.md`
+- `tasks/done/CA-032-sidebar-rail-polish.md`
 
 ## Hanh vi phai giu
 

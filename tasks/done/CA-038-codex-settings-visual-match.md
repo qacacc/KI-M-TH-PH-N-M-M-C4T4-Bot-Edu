@@ -43,7 +43,7 @@ Anh tham chieu Codex Settings khong dung sidebar con trong trang. Ban CA-037 da 
 - `UX_UI_GUIDELINES.md`
 - `README.md`
 - `SECURITY_NOTES.md`
-- `tasks/CA-038-codex-settings-visual-match.md`
+- `tasks/done/CA-038-codex-settings-visual-match.md`
 
 ## Hanh vi phai giu
 

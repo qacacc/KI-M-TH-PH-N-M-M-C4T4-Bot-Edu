@@ -45,7 +45,7 @@ npm run check:all
 
 ## File duoc phep sua
 
-- `tasks/CA-069B-logo-size-and-background-fix.md` [NEW]
+- `tasks/done/CA-069B-logo-size-and-background-fix.md` [NEW]
 - `src/vite-env.d.ts` [NEW]
 - `src/App.tsx`
 - `src/styles.css`

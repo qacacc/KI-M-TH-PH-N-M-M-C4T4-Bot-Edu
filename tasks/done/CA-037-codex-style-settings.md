@@ -44,7 +44,7 @@ Settings hien co dung tab ngang va card lon, cam giac nang va chua giong workflo
 - `UX_UI_GUIDELINES.md`
 - `README.md`
 - `SECURITY_NOTES.md`
-- `tasks/CA-037-codex-style-settings.md`
+- `tasks/done/CA-037-codex-style-settings.md`
 
 ## Hanh vi phai giu
 

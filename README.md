@@ -106,7 +106,7 @@ File bat buoc doc truoc khi AI sua code:
 - `AI_PROJECT_RULES.md`
 - `ARCHITECTURE.md`
 - `SECURITY_NOTES.md`
-- Task active trong `tasks/CA-XXX-*.md`
+- Task active trong `tasks/chua-xong/CA-XXX-*.md`; task hoàn thành ở `tasks/done/`, game/phần thưởng và mini pet hoãn ở `tasks/hoan-lam/`.
 
 File theo loai task:
 

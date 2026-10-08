@@ -63,7 +63,7 @@ Task này chỉ sửa **giao diện mặc định**. Không đụng hệ thống
 
 ## File duoc phep sua
 
-- `tasks/CA-061-default-big-layout-codex-visual.md` [NEW]
+- `tasks/chua-xong/CA-061-default-big-layout-codex-visual.md` [NEW]
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`
 - `src/styles.css`

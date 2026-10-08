@@ -51,7 +51,7 @@ Trang Trường & Tài khoản trước đây hiển thị quá nhiều nút k�
 
 ## File duoc phep sua
 
-- `tasks/CA-056-school-account-ux-cleanup.md`
+- `tasks/done/CA-056-school-account-ux-cleanup.md`
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`
 - `src/pages/SchoolPage.tsx`

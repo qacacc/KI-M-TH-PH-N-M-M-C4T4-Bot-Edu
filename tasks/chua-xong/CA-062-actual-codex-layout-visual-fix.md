@@ -49,7 +49,7 @@ npm run check:all
 
 ## File duoc phep sua
 
-- `tasks/CA-062-actual-codex-layout-visual-fix.md` [NEW]
+- `tasks/chua-xong/CA-062-actual-codex-layout-visual-fix.md` [NEW]
 - `PROJECT_TASKS.md`
 - `tasks/TASK_INDEX.md`
 - `src/styles.css`

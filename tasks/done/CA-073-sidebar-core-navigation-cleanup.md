@@ -88,7 +88,7 @@ npm run check:all
 
 - `rg -n "Khám phá|Minigame|Phần thưởng|handlePlannedFeatureClick|planned-item-placeholder|soon-badge|Gamepad2|Gift" src/App.tsx src/styles.css`: không có kết quả.
 - `rg -n "Gần đây|Xem tất cả lịch sử|Học tập|GPA / CPA|Kết nối|Trường & tài khoản" src/App.tsx`: xác nhận các entry core tồn tại.
-- `rg -n "CA-064|Status: Frozen|Activation-only" tasks/CA-064-special-reward-minigame-activation.md tasks/TASK_INDEX.md`: xác nhận CA-064 vẫn Frozen / Activation-only.
+- `rg -n "CA-064|Status: Frozen|Activation-only" tasks/hoan-lam/CA-064-special-reward-minigame-activation.md tasks/TASK_INDEX.md`: xác nhận CA-064 vẫn Frozen / Activation-only.
 - `npm run check:all`: pass; 51 Vitest, layout check, build, 35 Rust tests, npm audit 0 vulnerabilities.
 
 ## Manual visual

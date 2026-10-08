@@ -44,7 +44,7 @@ npm run check:all
 
 ## File duoc phep sua
 
-- `tasks/CA-070-default-theme-reset-and-light-mode-border-fix.md` [NEW]
+- `tasks/done/CA-070-default-theme-reset-and-light-mode-border-fix.md` [NEW]
 - `src/pages/AppearancePage.tsx`
 - `src/hooks/useAppearanceDraft.ts`
 - `src/styles.css`

@@ -10,7 +10,7 @@
 
 ## Task dac biet dang dong bang
 
-- `CA-064`: Reward & Minigame (`tasks/CA-064-special-reward-minigame-activation.md`).
+- `CA-064`: Reward & Minigame (`tasks/hoan-lam/CA-064-special-reward-minigame-activation.md`).
 - Trang thai: Frozen / Activation-only.
 - Muc dich: giu y tuong ve reward local-first, XP/coin/streak, daily tasks va minigame hoc tap.
 - Quy tac: khong duoc tu dong trien khai. Chi duoc mo khi user noi ro `kich hoat CA-064` hoac yeu cau bat dau lam reward va minigame.
@@ -332,7 +332,7 @@
 ## CA-062 superseded by CA-063
 
 149. CA-062 không được tính Done vì chưa đủ runtime cascade winner và vẫn có nguy cơ bị rule cũ đè khi kiểm tra visual thực tế.
-150. Mọi sửa tiếp theo cho default Codex-like layout phải đi qua `tasks/CA-063-codex-default-runtime-theme.md`.
+150. Mọi sửa tiếp theo cho default Codex-like layout phải đi qua `tasks/chua-xong/CA-063-codex-default-runtime-theme.md`.
 
 ## Vua sua trong lan nay - CA-061 (Default Big Layout & Codex-like Visual System)
 
@@ -402,3 +402,18 @@
 - UI khóa đồng bộ có lý do; portal browser vẫn mở. Không đổi schema, không thu secret, không bật API chưa xác minh.
 - check:all PASS 62 Vitest/39 Rust/build/layout/audit 0; Playwright local 1280/1000 PASS và screenshot đã xem. Native auth/cache IO E2E chưa chạy.
 - CA-083 Done chỉ scope cách ly an toàn. CA-080/081 Proposed; không báo full project/connector Done, installer chưa build lại.
+# Tổng hợp task theo yêu cầu user - 2026-10-09
+
+- Tổng hợp ban đầu 31 file có Status: Done và 23 file chưa chốt rõ; cấu trúc cuối được cập nhật theo yêu cầu thư mục bên dưới.
+- Ghi riêng CA-080/081, các lỗi GPA/test Sourcery, học kỳ, auth/sync native và installer mới. Reward/Minigame vẫn Frozen; Superseded không làm lại.
+- Ghi mâu thuẫn CA-060, thiếu Status CA-044..053, trùng mã CA-063/064 và dòng index CA-056/057; không tự đổi task cũ thành Done hay renumber.
+- Chỉ sửa tài liệu và liên kết, không đổi runtime/schema/collection, không di chuyển/xóa task chi tiết. Tổng hợp không phải nghiệm thu lại mọi chức năng.
+- Kiểm chứng: 54 file được phân loại đúng một lần, liên kết tồn tại; git diff --check pass; check:all pass 62 Vitest/39 Rust/build/layout/audit 0, không chạy native auth E2E mới.
+
+## Phân thư mục task và hoãn mini pet - 2026-10-09
+
+- CURRENT: chuyển 54 spec cũ vào tasks/done (31), tasks/chua-xong (22), tasks/hoan-lam (1); giữ trạng thái/evidence, cập nhật đường dẫn tham chiếu.
+- PLANNED / Frozen: thêm CA-085 cho mini pet trong hoan-lam theo yêu cầu user. Không triển khai mascot, game hay reward, không kích hoạt CA-064.
+- Tổng cộng 55 spec: 31 done, 22 chua-xong, 2 hoan-lam. Chua-xong gồm cả chờ đối chiếu/thiếu Status/Superseded, không đồng nghĩa cần viết lại tất cả.
+- Chỉ sửa tài liệu/cấu trúc task; không đổi runtime/schema/collection hay trạng thái task cũ.
+- Kiểm chứng sau chuyển thư mục: 55 spec đúng nhóm và có liên kết README; git diff --check pass; npm run check:all pass 62 Vitest/39 Rust/layout/build/cargo check, audit 0. Không nghiệm thu lại native auth hoặc UI cũ.

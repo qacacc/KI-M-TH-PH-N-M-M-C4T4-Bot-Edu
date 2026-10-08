@@ -46,7 +46,7 @@ Preview hien tai chua du dai dien cho cac page khac nhau. User can thay theme an
 - `UX_UI_GUIDELINES.md`
 - `README.md`
 - `SECURITY_NOTES.md`
-- `tasks/CA-031-theme-preview.md`
+- `tasks/done/CA-031-theme-preview.md`
 
 ## Hanh vi phai giu
 

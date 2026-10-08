@@ -42,7 +42,7 @@ Nhieu loi UX/UI chi thay bang mat. Can test tu dong truoc khi tiep tuc don CSS l
 - `ARCHITECTURE.md`
 - `UX_UI_GUIDELINES.md`
 - `OPTIMIZATION_TARGETS.md`
-- `tasks/CA-034-visual-regression.md`
+- `tasks/done/CA-034-visual-regression.md`
 
 ## Hanh vi phai giu
 
