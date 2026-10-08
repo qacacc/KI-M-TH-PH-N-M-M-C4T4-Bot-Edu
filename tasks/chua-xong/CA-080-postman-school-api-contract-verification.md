@@ -12,6 +12,8 @@ Xác minh request và response thật trước khi sửa connector Rust. Postman
 
 ## Truth check
 
+Audit 2026-10-09: các tham chiếu parser uth.rs dưới đây là baseline trước CA-083, không còn parser runtime hiện tại. Source hiện gate CONTRACT_UNVERIFIED. Request/collection chưa được chạy hoặc xác minh trong audit; không coi collection là contract. Coverage Announcements/Documents/Grades/LMS vẫn UNKNOWN, không lấy mock thay dữ liệu thật.
+
 - CONFIRMED: `Campus_Assistant_API.postman_collection.json:37` có request Profile; dòng 68 có Schedule với ngày cố định; dòng 106 có Exams `/api/v1/lichthi/all`.
 - CONFIRMED: collection có 3 request, chưa có test script; có hai bản YAML cùng nội dung request trong `postman/collections/`.
 - CONFIRMED: `src-tauri/src/connectors/uth.rs:190` dùng endpoint lịch học cho lịch thi, khác collection.

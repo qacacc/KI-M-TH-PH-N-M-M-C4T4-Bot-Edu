@@ -55,6 +55,20 @@ Tài liệu này chứa các **Bất biến Hệ thống (System Invariants)**. 
 
 ## 7. Current Enforcement Status & Remediation Map
 
+### Audit override - 2026-10-09
+
+[Audit source](SOURCE_AUDIT_2026-10-09.md) phát hiện các giới hạn mà bảng lịch sử bên dưới chưa bao phủ. Không dùng ENFORCED để bỏ qua remediation:
+
+- DATA-001: PARTIAL ngoài connector: public all-fetch-failure thành no-match, history load failure thành welcome; CA-093/087.
+- DATA-003: PARTIAL: native trash/localStorage fallback và hai owner preset; CA-091/095.
+- DATA-004 / UI-001: PARTIAL: public docs mock trong Settings ghi như tự động tải, auto-sync không scheduler; CA-089.
+- DATA-005: PARTIAL: trash schema CREATE ngoài user_version; CA-091.
+- UI-002: PARTIAL: ErrorBoundary clear localStorage không confirm, init legacy history cleanup theo marker chưa consent; CA-090/087.
+- FILE-001..003: file action canonical guards có evidence test; theme/trash-metadata root hardening còn cần native/symlink tests CA-094/091. Không claim đã có exploit.
+- SEC-003/005: CA-083 gate chặn auth runtime; legacy token bridge vẫn source, production auth boundary cần CA-080/094. Không bật gate từ bảng này.
+
+Các fix đều PLANNED, không thay runtime trong audit. CA-097 sẽ đồng bộ bảng canonical với source/evidence.
+
 Bảng theo dõi trạng thái thực thi thực tế (`Runtime Status`) của từng Invariant và Task xử lý tương ứng (`Remediation Task`). AI không được coi vi phạm hiện có là cớ để tạo thêm vi phạm mới.
 
 | Invariant | Description | Runtime Status | Remediation Task |

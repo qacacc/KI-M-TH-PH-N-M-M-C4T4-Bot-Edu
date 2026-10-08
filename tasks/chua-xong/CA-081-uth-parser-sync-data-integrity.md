@@ -25,6 +25,8 @@ Ghi chú 2026-10-09 CA-083: các dòng uth.rs/engine dưới đây là baseline 
 
 ## Phạm vi tối thiểu
 
+Audit bổ sung 2026-10-09: trước mở gate cần sửa sync_data_transaction snapshot empty/scope source-account-semester, key collision giữa account/source, validator ngày/giờ thực và transactional delete_connector_data. Source sync helper còn tồn tại nhưng đang quarantined; không mô tả là connector đang live. Giữ trạng thái Proposed.
+
 - Parse và validate từng miền theo fixture verified; Profile thiếu định danh hợp lệ phải báo lỗi, không công nhận đã xác thực.
 - Phân biệt HTTP/auth/schema/business error với danh sách rỗng hợp lệ; không nuốt lỗi.
 - Không gán giờ, thứ, ngày hoặc thời lượng giả. Trường thiếu được biểu diễn Unknown nếu model cho phép; nếu bắt buộc thì trả lỗi validation an toàn.

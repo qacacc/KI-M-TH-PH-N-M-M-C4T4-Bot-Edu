@@ -2,6 +2,28 @@
 
 Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhận đúng sự thật hiện tại (`CURRENT`) và mục tiêu (`TARGET`), kèm bằng chứng kiểm thử (`Evidence`), khe hở kỹ thuật (`Known Gaps`) và mã task theo dõi (`Tracking Task`).
 
+## Audit override - 2026-10-09
+
+Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source hiện tại](SOURCE_AUDIT_2026-10-09.md). Không có nghiệm thu native/API/visual mới trong audit.
+
+| Feature | Known gap CURRENT / tracking |
+| --- | --- |
+| APP_BOOTSTRAP | Lifecycle StrictMode/degraded cần CA-086 |
+| CHAT_HISTORY_LOCAL | Session/atomic append/CRUD error/archive accessibility cần CA-087 |
+| GPA_CALCULATOR | Recovery, draft F0 và persistence cần CA-088 |
+| SCHOOL_SETTINGS | Public mock/capability wording không đúng nguồn, CA-089 |
+| BACKUP_RESET | Active keys bị bỏ, reset phạm vi sai/fault handling, CA-090 |
+| PHYSICAL_TRASH / FILE_MANAGEMENT_AND_TRASH | Recovery và localStorage fallback sai owner, CA-091; không STABLE toàn diện |
+| CALENDAR_EXPORT | Timezone và recurrence chưa đúng, CA-092 |
+| PUBLIC_ADMISSIONS_SEARCH | Error thành empty/budget/parser cần CA-093; không STABLE toàn diện |
+| DESKTOP_SECURITY | CSP/capabilities/legacy gated bridge/managed assets cần CA-094; không exploit confirmed |
+| THEME_AND_APPEARANCE | Silent save/two preset stores/shared asset cần CA-095 |
+| CORE_MAINTAINABILITY | Format/clippy fail và test helper/static gaps, CA-096 |
+| GOVERNANCE | Roadmap/duplicate ID/old evidence reconciliation, CA-097 |
+| RELEASE | Checklist static/samples-required/installer mới, CA-084 |
+
+Đây là tracking PLANNED, không phải các fix đã triển khai. CA-080/081 vẫn Proposed; UTH auth/sync/read vẫn quarantined. CA-064/085 vẫn Frozen.
+
 ---
 
 ## FEATURE: SCHOOL_SYNC_UTH

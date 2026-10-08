@@ -1,5 +1,20 @@
 # REGRESSION MATRIX - CAMPUS ASSISTANT LOCAL
 
+## Audit bổ sung - 2026-10-09
+
+[Audit source](SOURCE_AUDIT_2026-10-09.md) xác định các gate PLANNED chưa nằm trong green baseline hiện tại:
+
+- CA-086: StrictMode/deferred init, retry/degraded và stale closure drop.
+- CA-087: session switch race, CRUD failure, privacy/no-backfill, DB fault/atomic append và keyboard/IME.
+- CA-088/090: GPA draft/recovery, storage blocked/quota, backup active keys, confirm/reset/reload.
+- CA-089: public mock provenance và capability chưa có runtime không được gán ready.
+- CA-091: native/DB/filesystem failures, restart recovery, một owner trash, partial empty.
+- CA-092/093: timezone parser/calendar validity; all/partial fetch failure, deadline/redirect/Unicode.
+- CA-094/095: native CSP/capability/path/symlink; theme asset/preset ownership và save failure.
+- CA-096/084: format/Clippy/lint policy, behavior/visual regressions, installer smoke/upgrade.
+
+check:all PASS 62 Vitest/39 Rust không chứng minh các gate này đã pass. fmt check và strict Clippy hiện FAIL; native/API/manual visual mới chưa chạy. Không đổi expected của test để hợp thức hóa hành vi sai.
+
 ## CA-083 - Xác minh 2026-10-09
 
 - check:all PASS: 62 Vitest, 39 Rust, layout/TypeScript/Vite/cargo check pass, audit 0.

@@ -1,4 +1,14 @@
-=== SOURCE VERIFICATION - 2026-10-09 / CA-083 ===
+=== SOURCE AUDIT - 2026-10-09 / baseline f5c0055 ===
+
+Audit: docs/SOURCE_AUDIT_2026-10-09.md (static source + automated local, NOT full native/API/visual audit).
+Planning: CA-084 and CA-086..097 Proposed, no runtime fixes implemented. CA-080/081 Proposed; CA-064/085 Frozen.
+Latest check:all: PASS 62 Vitest / 39 Rust / layout / tsc+Vite / cargo check / npm audit 0.
+Additional gates: cargo fmt --check FAIL; cargo clippy --all-targets -- -D warnings FAIL (needless_borrow connector_engine.rs:145).
+Known P1: bootstrap lifecycle, session/DB history integrity, GPA recovery/draft, Settings public mock, backup/reset scope, trash recovery, ICS timezone, public-search error vs empty.
+No Active runtime task. Native school auth/sync remains CONTRACT_UNVERIFIED; installer/manual/API/security runtime NOT VERIFIED this audit.
+The historical CURRENT statements below are scoped evidence, not proof these new gaps are fixed.
+
+=== HISTORICAL SOURCE VERIFICATION - 2026-10-09 / CA-083 ===
 
 Project: Campus Assistant Local
 Version source: 1.0.1

@@ -1,6 +1,6 @@
 # Task Cần Thực Hiện
 
-Cập nhật: 2026-10-09. Theo dõi 22 file cần làm/đối chiếu, cộng các yêu cầu mới chưa triển khai. Không có nghĩa cả 22 cần viết lại code.
+Cập nhật: 2026-10-09. Theo dõi 35 file cần làm/đối chiếu (13 spec mới sau audit), không có nghĩa cả 35 cần viết lại code.
 
 ## Quy tắc
 
@@ -8,6 +8,28 @@ Cập nhật: 2026-10-09. Theo dõi 22 file cần làm/đối chiếu, cộng c�
 - Phân biệt việc cần triển khai, việc chờ evidence, đối chiếu trạng thái và phần mở rộng đóng băng. Không tự kích hoạt tất cả cùng lúc.
 - UNKNOWN ảnh hưởng bảo mật/contract: không đoán API; chỉ tiếp tục phần đã rõ. Không ghi mật khẩu/token/cookie/response chứa PII vào task.
 - Trước chuyển Done: đáp ứng Done gate trong TASK_INDEX, có source/test evidence và giới hạn visual; cập nhật [Task Đã Xong](../done/README.md).
+
+## Backlog từ audit source
+
+[Báo cáo audit](../../docs/SOURCE_AUDIT_2026-10-09.md) có source evidence, ưu tiên và giới hạn kiểm chứng. Tất cả spec dưới đây Proposed; chưa sửa runtime, chưa Active.
+
+| Task | Trạng thái | Chi tiết |
+| --- | --- | --- |
+| CA-084 - Nghiệm thu và phát hành từ source đã sửa (P1) | Proposed | [CA-084-release-audit-security-checklist.md](CA-084-release-audit-security-checklist.md) |
+| CA-086 - Sửa lifecycle khởi tạo và trạng thái degraded (P1) | Proposed | [CA-086-app-bootstrap-lifecycle.md](CA-086-app-bootstrap-lifecycle.md) |
+| CA-087 - Toàn vẹn phiên chat và lưu lịch sử (P1) | Proposed | [CA-087-chat-session-integrity.md](CA-087-chat-session-integrity.md) |
+| CA-088 - Sửa lưu, phục hồi và tính GPA (P1) | Proposed | [CA-088-gpa-persistence-calculation.md](CA-088-gpa-persistence-calculation.md) |
+| CA-089 - Nguồn dữ liệu và trạng thái trường trung thực (P1) | Proposed | [CA-089-school-ui-source-truth.md](CA-089-school-ui-source-truth.md) |
+| CA-090 - Sao lưu và reset đúng phạm vi, không mất dữ liệu (P1) | Proposed | [CA-090-backup-reset-data-safety.md](CA-090-backup-reset-data-safety.md) |
+| CA-091 - Thùng rác an toàn và một nguồn dữ liệu (P1) | Proposed | [CA-091-trash-recovery-native-owner.md](CA-091-trash-recovery-native-owner.md) |
+| CA-092 - Xuất lịch đúng múi giờ và phạm vi học kỳ (P1) | Proposed | [CA-092-calendar-timezone-validity.md](CA-092-calendar-timezone-validity.md) |
+| CA-093 - Tìm kiếm công khai: lỗi, thời gian và nguồn tin (P1) | Proposed | [CA-093-public-search-error-budget.md](CA-093-public-search-error-budget.md) |
+| CA-094 - Gia cố desktop IPC và filesystem boundary (P1) | Proposed | [CA-094-desktop-ipc-hardening.md](CA-094-desktop-ipc-hardening.md) |
+| CA-095 - Theme: persistence, draft và ownership ảnh nền (P2) | Proposed | [CA-095-appearance-persistence-assets.md](CA-095-appearance-persistence-assets.md) |
+| CA-096 - Clean code tăng dần và test hành vi (P2) | Proposed | [CA-096-incremental-clean-code-tests.md](CA-096-incremental-clean-code-tests.md) |
+| CA-097 - Đối chiếu roadmap, task và feature với source (P1) | Proposed | [CA-097-governance-source-reconciliation.md](CA-097-governance-source-reconciliation.md) |
+
+Mapping yêu cầu review trước: GPA -> CA-088; portal/cache/GPA behavior tests -> CA-096; auth/semester/snapshot -> CA-080/081; native/release -> CA-084. Không tạo task trùng hoặc thực hiện các checkbox cũ như một scope thứ hai.
 
 ## Ưu tiên dữ liệu trường thật
 

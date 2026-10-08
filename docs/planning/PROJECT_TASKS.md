@@ -417,3 +417,13 @@
 - Tổng cộng 55 spec: 31 done, 22 chua-xong, 2 hoan-lam. Chua-xong gồm cả chờ đối chiếu/thiếu Status/Superseded, không đồng nghĩa cần viết lại tất cả.
 - Chỉ sửa tài liệu/cấu trúc task; không đổi runtime/schema/collection hay trạng thái task cũ.
 - Kiểm chứng sau chuyển thư mục: 55 spec đúng nhóm và có liên kết README; git diff --check pass; npm run check:all pass 62 Vitest/39 Rust/layout/build/cargo check, audit 0. Không nghiệm thu lại native auth hoặc UI cũ.
+
+## Audit tổng thể và lập backlog - 2026-10-09
+
+- CONFIRMED: audit source/config/docs/test trên baseline f5c0055; báo cáo docs/SOURCE_AUDIT_2026-10-09.md phân biệt source, probe, giả thuyết race và native/API UNKNOWN.
+- PLANNED: thêm 13 spec Proposed trong tasks/chua-xong: CA-084 release audit (ID reserved), CA-086 lifecycle, CA-087 history integrity, CA-088 GPA, CA-089 school/source truth, CA-090 backup/reset, CA-091 trash recovery, CA-092 calendar, CA-093 public search, CA-094 desktop hardening, CA-095 theme/preset, CA-096 incremental clean/tests, CA-097 governance reconciliation.
+- CA-080/081 giữ Proposed; cập nhật note baseline quarantined/snapshot scope, không tạo contract giả hoặc mở gate. CA-064/085 giữ Frozen.
+- 68 spec hiện tại: 31 done, 35 chua-xong, 2 hoan-lam. Không Active runtime task và không đổi Status của spec lịch sử.
+- AUTOMATED: check:all PASS 62 Vitest/39 Rust/build/layout/audit0; fmt --check FAIL (db.rs/public_search.rs), strict Clippy FAIL needless_borrow connector_engine.rs:145.
+- Targeted probes: ICS08h fixture xuất08hZ, legacy missing parse[], backup bỏ active appearance/GPAv2, storage snapshot throw trước try. Đây là tái hiện helper, không native/user-data test.
+- Chỉ sửa tài liệu/task và cảnh báo override tại roadmap/catalog/invariants; không sửa React/Rust/schema/Postman. Native/manual/API/installer mới chưa xác minh. Không báo full project Done.

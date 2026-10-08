@@ -1,6 +1,8 @@
 # 📚 DANH MỤC & PHÂN LOẠI TÀI LIỆU DỰ ÁN (DOCS DIRECTORY)
 ## Campus Assistant Local
 
+- [Audit source 2026-10-09](SOURCE_AUDIT_2026-10-09.md): findings, evidence, giới hạn và backlog sửa/clean/release.
+
 Toàn bộ tài liệu kỹ thuật của dự án được phân loại theo 4 nhóm mục tiêu dưới đây để các thành viên dễ dàng tra cứu:
 
 ---

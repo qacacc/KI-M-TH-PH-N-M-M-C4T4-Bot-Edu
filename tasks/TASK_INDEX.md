@@ -3,11 +3,11 @@
 ## Ba thư mục task theo yêu cầu user (2026-10-09)
 
 - [Task đã xong](done/README.md): 31 file ghi Status: Done, không tính trùng và không tự xác nhận API/UI mới.
-- [Task chưa xong](chua-xong/README.md): 22 file cần làm/đối chiếu, cùng yêu cầu GPA/test và luồng đăng nhập đồng bộ thật; Superseded không triển khai lại.
+- [Task chưa xong](chua-xong/README.md): 35 file cần làm/đối chiếu, gồm 13 spec Proposed từ audit; Superseded không triển khai lại.
 - [Task hoãn làm](hoan-lam/README.md): game/phần thưởng CA-064 và mini pet CA-085, đều Frozen / Activation-only.
 - File chi tiết đã chuyển vào thư mục tương ứng; giữ nguyên trạng thái và evidence cũ. Khi task đổi nhóm, cập nhật liên kết, README, chỉ mục và PROJECT_TASKS.
 - Bảng Done phía dưới là lịch sử; CA-060 còn In Progress và CA-044..053 thiếu Status nên chưa được đưa vào thư mục done. Các mâu thuẫn ghi trong chua-xong/README.md, không dùng bảng lịch sử để vượt Done gate.
-- Tổng cộng 55 file task (31 done, 22 chua-xong, 2 hoan-lam). Phân nhóm tài liệu không phải nghiệm thu lại native API/auth/UI của mọi task cũ.
+- Tổng cộng 68 file task (31 done, 35 chua-xong, 2 hoan-lam). [Audit source](../docs/SOURCE_AUDIT_2026-10-09.md) là nguồn evidence cho backlog mới, không phải nghiệm thu mọi chức năng.
 
 ## Quy tac
 
@@ -93,8 +93,21 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 | CA-080 | P0 | Xác minh hợp đồng API trường bằng Postman | `tasks/chua-xong/CA-080-postman-school-api-contract-verification.md` | Proposed; cần response thật đã loại PII, không đoán endpoint. |
 | CA-081 | P0 | Sửa parser UTH và tính toàn vẹn đồng bộ | `tasks/chua-xong/CA-081-uth-parser-sync-data-integrity.md` | Proposed / Remediation; phụ thuộc contract verified của CA-080. |
+| CA-084 | P1 | Nghiệm thu và phát hành từ source đã sửa | `tasks/chua-xong/CA-084-release-audit-security-checklist.md` | Proposed; chưa sửa runtime. |
+| CA-086 | P1 | Sửa lifecycle khởi tạo và trạng thái degraded | `tasks/chua-xong/CA-086-app-bootstrap-lifecycle.md` | Proposed; chưa sửa runtime. |
+| CA-087 | P1 | Toàn vẹn phiên chat và lưu lịch sử | `tasks/chua-xong/CA-087-chat-session-integrity.md` | Proposed; chưa sửa runtime. |
+| CA-088 | P1 | Sửa lưu, phục hồi và tính GPA | `tasks/chua-xong/CA-088-gpa-persistence-calculation.md` | Proposed; chưa sửa runtime. |
+| CA-089 | P1 | Nguồn dữ liệu và trạng thái trường trung thực | `tasks/chua-xong/CA-089-school-ui-source-truth.md` | Proposed; chưa sửa runtime. |
+| CA-090 | P1 | Sao lưu và reset đúng phạm vi, không mất dữ liệu | `tasks/chua-xong/CA-090-backup-reset-data-safety.md` | Proposed; chưa sửa runtime. |
+| CA-091 | P1 | Thùng rác an toàn và một nguồn dữ liệu | `tasks/chua-xong/CA-091-trash-recovery-native-owner.md` | Proposed; chưa sửa runtime. |
+| CA-092 | P1 | Xuất lịch đúng múi giờ và phạm vi học kỳ | `tasks/chua-xong/CA-092-calendar-timezone-validity.md` | Proposed; chưa sửa runtime. |
+| CA-093 | P1 | Tìm kiếm công khai: lỗi, thời gian và nguồn tin | `tasks/chua-xong/CA-093-public-search-error-budget.md` | Proposed; chưa sửa runtime. |
+| CA-094 | P1 | Gia cố desktop IPC và filesystem boundary | `tasks/chua-xong/CA-094-desktop-ipc-hardening.md` | Proposed; chưa sửa runtime. |
+| CA-095 | P2 | Theme: persistence, draft và ownership ảnh nền | `tasks/chua-xong/CA-095-appearance-persistence-assets.md` | Proposed; chưa sửa runtime. |
+| CA-096 | P2 | Clean code tăng dần và test hành vi | `tasks/chua-xong/CA-096-incremental-clean-code-tests.md` | Proposed; chưa sửa runtime. |
+| CA-097 | P1 | Đối chiếu roadmap, task và feature với source | `tasks/chua-xong/CA-097-governance-source-reconciliation.md` | Proposed; chưa sửa runtime. |
 
-Thứ tự: CA-080 -> CA-081. Chưa kích hoạt runtime task; không coi các request Postman là API đã xác minh. CA-078/CA-079 chưa có file task trong snapshot này; giữ nguyên số đó để tránh xung đột công việc trước.
+Thứ tự contract: CA-080 -> CA-081. Thứ tự sửa/clean/release theo audit 2026-10-09; ưu tiên data safety, không tự Active toàn backlog. CA-084 dùng ID reserved cho release, không làm auto-updater ngoài scope. CA-078/079 chưa có spec, không cấp lại mã. Không coi request Postman là API verified.
 
 ## Frozen / Activation-only
 

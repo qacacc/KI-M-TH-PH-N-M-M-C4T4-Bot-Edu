@@ -2,6 +2,8 @@
 
 Tài liệu định hướng phát triển dự án theo mô hình phụ thuộc (Dependency-based Roadmap). Một cột mốc phía sau chỉ được bắt đầu khi cột mốc phụ thuộc phía trước đã vượt qua **MILESTONE EXIT GATE (Pass 100% Tests & Invariants)**.
 
+> ĐỐI CHIẾU 2026-10-09: các milestone/checkbox/mã CA bên dưới là roadmap lịch sử chưa reconciliation, không phải trạng thái CURRENT đã xác minh. M1-M3 COMPLETED và fixture/E2E claims không khớp UTH CONTRACT_UNVERIFIED. Ưu tiên [audit source](SOURCE_AUDIT_2026-10-09.md) và [Task Index](../tasks/TASK_INDEX.md); CA-097 sẽ đối chiếu toàn bộ ID/gate. Không dùng checkbox cũ để tự bật connector hoặc báo Done.
+
 ```
 M0 — SYSTEM TRUTH & GREEN BASELINE
 │
