@@ -1,5 +1,7 @@
 # DEPENDENCY MAP - CAMPUS ASSISTANT LOCAL
 
+CA-080 setup (2026-10-10): collection JSON + postman/scripts -> tools/sync-postman.cjs -> JSON events/YAML mirrors; tools/check-postman.cjs -> Node VM synthetic và drift check; npm check:all -> check:postman. Postman Local Vault chỉ dùng trong Desktop được user cấp quyền, không có dependency runtime React/Rust/SQLite mới. Contract verified vẫn là dependency bắt buộc của CA-081.
+
 CA-083 (2026-10-09): mọi entry UTH auth/sync/đọc lịch -> ensure_uth_contract_verified -> Err trước IO. academicDataErrorMessage -> chat/useAcademicCache trả thông báo an toàn. Prototype command giữ tên/payload để tương thích nhưng không ghi DB. Dependencies HTTP/parser UTH đã gỡ; portal browser và SQLite/cache management không đổi.
 
 Tài liệu bản đồ phụ thuộc giữa các module, component, API, capability và file cấu hình trong hệ thống. 

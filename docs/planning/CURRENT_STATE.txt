@@ -1,3 +1,10 @@
+=== CA-080 POSTMAN SETUP - 2026-10-10 ===
+Source: JSON canonical + 3 generated YAML mirrors + Local Vault/consent/host/date guards. Không HTTP trường hoặc token thật.
+Verification: check:postman PASS 29 synthetic offline checks; check:all PASS 65 Vitest / 39 Rust / layout / tsc+Vite / cargo check / npm audit 0.
+Status: CA-080 In Progress. Desktop import collection + environment thành công, chọn environment khóa, kiểm Scripts guard. API/business contract/Vault live vẫn UNKNOWN. CA-081 Proposed; UTH runtime vẫn quarantined.
+CA-086: source dở chưa commit từ lượt trước, dừng theo user; không đổi runtime trong setup Postman.
+Git destination: origin https://github.com/qacacc/bot-edu.git, main. CA-086 source không thuộc commit Postman. Test 65 Vitest là working tree gồm 3 test CA-086 chưa commit. Baseline/audit lịch sử bên dưới không đại diện trạng thái mới.
+
 === SOURCE AUDIT - 2026-10-09 / baseline f5c0055 ===
 
 Audit: docs/SOURCE_AUDIT_2026-10-09.md (static source + automated local, NOT full native/API/visual audit).

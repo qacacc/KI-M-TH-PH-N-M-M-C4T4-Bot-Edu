@@ -1,0 +1,10 @@
+workspace:
+  id: 3020e4c0-465a-47f4-8798-89cbd59de9b0
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/Campus Assistant Local - UTH Portal APIs: 56457008-89a8cbc5-6f15-444d-9148-772f6fc8aaae
+    ../postman/collections/Campus Assistant Local - UTH Portal APIs Copy: 3d4a34da-db52-4d10-b71a-f5f544e59757
+    ../postman/collections/Campus Assistant Local - UTH Portal APIs Copy 2: 6556e0a0-6eb8-4935-b00a-1ba9407455f7

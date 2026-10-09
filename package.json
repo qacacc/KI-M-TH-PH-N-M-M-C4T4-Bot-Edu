@@ -20,7 +20,9 @@
     "check:rust": "cargo check --manifest-path src-tauri/Cargo.toml",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "check": "npm run check:all",
-    "check:all": "npm run test && npm run test:layout && npm run build && npm run check:rust && npm run test:rust && npm audit",
+    "check:postman": "node tools/check-postman.cjs",
+    "sync:postman": "node tools/sync-postman.cjs --write",
+    "check:all": "npm run test && npm run test:layout && npm run check:postman && npm run build && npm run check:rust && npm run test:rust && npm audit",
     "build:dev-launcher": "rustc --edition=2021 tools/dev-launcher.rs -o CampusAssistantLocal-Dev.exe",
     "tauri": "tauri"
   },

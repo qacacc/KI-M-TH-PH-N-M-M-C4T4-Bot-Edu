@@ -38,6 +38,14 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
+# Postman: chỉ commit template, không commit secret/response tài khoản thật
+postman/private/
+postman/environments/
+postman/**/*.local.json
+postman/**/*.postman_globals.json
+*.postman_environment.json
+!postman/UTH.local-template.postman_environment.json
+
 # OS / Editor
 .DS_Store
 Thumbs.db

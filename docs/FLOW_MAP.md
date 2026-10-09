@@ -1,5 +1,9 @@
 # FLOW MAP - CAMPUS ASSISTANT LOCAL
 
+## CA-080 - Postman setup CURRENT 2026-10-10
+
+JSON chuẩn -> generator đồng bộ event scripts và 3 YAML mirrors -> Node VM kiểm tra synthetic offline. Desktop đã import collection/environment, chọn environment khóa và kiểm Scripts guard. Chỉ gửi probe sau consent/live/request-reviewed và Local Vault hợp lệ; mặc định bị chặn. Chưa gửi API trường hoặc live sandbox test. Response HTTP/JSON không nâng contract lên VERIFIED; auth/business schema vẫn UNKNOWN. Không tạo session app, không gỡ quarantine Rust. Hướng dẫn: [postman/README](../postman/README.md), [contract](testing/UTH_API_CONTRACT.md).
+
 ## CA-083 - Luồng UTH CURRENT 2026-10-09
 
 Mô tả thử nghiệm bên dưới là lịch sử trước CA-083. Hiện native từ chối open_uth_login_window/receive_uth_jwt/sync_uth_after_login/list_connector_schedules/list_connector_exams trước mọi xử lý bằng CONTRACT_UNVERIFIED. Không mở WebView thu token, không HTTP/mapping đoán, không ghi DB. Prototype command trả SAMPLE_SYNC_DISABLED. Portal browser độc lập vẫn mở; cache cũ giữ nguyên nhưng cách ly khỏi lịch UI. API/auth thật vẫn PLANNED, CA-080/081.

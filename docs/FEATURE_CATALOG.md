@@ -1,5 +1,7 @@
 # FEATURE CATALOG - CAMPUS ASSISTANT LOCAL
 
+CA-080 CURRENT (2026-10-10): bộ Postman local có 3 probe GET, Vault reference, consent/host/date guards, HTTP/JSON tests, JSON/YAML drift gate. Kiểm thử offline synthetic; không chứng nhận API/auth/business schema thật. CA-080 In Progress, CA-081 Proposed; UTH tiếp tục quarantined. Xem [contract](testing/UTH_API_CONTRACT.md).
+
 Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhận đúng sự thật hiện tại (`CURRENT`) và mục tiêu (`TARGET`), kèm bằng chứng kiểm thử (`Evidence`), khe hở kỹ thuật (`Known Gaps`) và mã task theo dõi (`Tracking Task`).
 
 ## Audit override - 2026-10-09

@@ -35,7 +35,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 ## Active task
 
-- Không có task active; CA-080/081 giữ Proposed, cần contract/fixture verified.
+- CA-080: setup Postman local; chờ contract/fixture và manual Postman. CA-086 dừng theo yêu cầu user, source chưa commit, vẫn In Progress; không triển khai tiếp. CA-081 Proposed.
 
 ## Done
 
@@ -91,10 +91,10 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 | ID | Uu tien | Ten | File | Loai |
 | --- | --- | --- | --- | --- |
 
-| CA-080 | P0 | Xác minh hợp đồng API trường bằng Postman | `tasks/chua-xong/CA-080-postman-school-api-contract-verification.md` | Proposed; cần response thật đã loại PII, không đoán endpoint. |
+| CA-080 | P0 | Xác minh hợp đồng API trường bằng Postman | `tasks/chua-xong/CA-080-postman-school-api-contract-verification.md` | In Progress; setup local + 29 offline checks; API/business contract UNKNOWN. |
 | CA-081 | P0 | Sửa parser UTH và tính toàn vẹn đồng bộ | `tasks/chua-xong/CA-081-uth-parser-sync-data-integrity.md` | Proposed / Remediation; phụ thuộc contract verified của CA-080. |
 | CA-084 | P1 | Nghiệm thu và phát hành từ source đã sửa | `tasks/chua-xong/CA-084-release-audit-security-checklist.md` | Proposed; chưa sửa runtime. |
-| CA-086 | P1 | Sửa lifecycle khởi tạo và trạng thái degraded | `tasks/chua-xong/CA-086-app-bootstrap-lifecycle.md` | Proposed; chưa sửa runtime. |
+| CA-086 | P1 | Sửa lifecycle khởi tạo và trạng thái degraded | `tasks/chua-xong/CA-086-app-bootstrap-lifecycle.md` | In Progress; source chưa commit, dừng theo yêu cầu user. |
 | CA-087 | P1 | Toàn vẹn phiên chat và lưu lịch sử | `tasks/chua-xong/CA-087-chat-session-integrity.md` | Proposed; chưa sửa runtime. |
 | CA-088 | P1 | Sửa lưu, phục hồi và tính GPA | `tasks/chua-xong/CA-088-gpa-persistence-calculation.md` | Proposed; chưa sửa runtime. |
 | CA-089 | P1 | Nguồn dữ liệu và trạng thái trường trung thực | `tasks/chua-xong/CA-089-school-ui-source-truth.md` | Proposed; chưa sửa runtime. |

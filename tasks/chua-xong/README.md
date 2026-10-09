@@ -11,12 +11,12 @@ Cập nhật: 2026-10-09. Theo dõi 35 file cần làm/đối chiếu (13 spec m
 
 ## Backlog từ audit source
 
-[Báo cáo audit](../../docs/SOURCE_AUDIT_2026-10-09.md) có source evidence, ưu tiên và giới hạn kiểm chứng. Tất cả spec dưới đây Proposed; chưa sửa runtime, chưa Active.
+[Báo cáo audit](../../docs/SOURCE_AUDIT_2026-10-09.md) có source evidence, ưu tiên và giới hạn kiểm chứng. Trạng thái hiện tại theo từng dòng; CA-086 có source dở chưa commit và đã dừng theo yêu cầu user.
 
 | Task | Trạng thái | Chi tiết |
 | --- | --- | --- |
 | CA-084 - Nghiệm thu và phát hành từ source đã sửa (P1) | Proposed | [CA-084-release-audit-security-checklist.md](CA-084-release-audit-security-checklist.md) |
-| CA-086 - Sửa lifecycle khởi tạo và trạng thái degraded (P1) | Proposed | [CA-086-app-bootstrap-lifecycle.md](CA-086-app-bootstrap-lifecycle.md) |
+| CA-086 - Sửa lifecycle khởi tạo và trạng thái degraded (P1) | In Progress | [CA-086-app-bootstrap-lifecycle.md](CA-086-app-bootstrap-lifecycle.md) |
 | CA-087 - Toàn vẹn phiên chat và lưu lịch sử (P1) | Proposed | [CA-087-chat-session-integrity.md](CA-087-chat-session-integrity.md) |
 | CA-088 - Sửa lưu, phục hồi và tính GPA (P1) | Proposed | [CA-088-gpa-persistence-calculation.md](CA-088-gpa-persistence-calculation.md) |
 | CA-089 - Nguồn dữ liệu và trạng thái trường trung thực (P1) | Proposed | [CA-089-school-ui-source-truth.md](CA-089-school-ui-source-truth.md) |
@@ -35,7 +35,7 @@ Mapping yêu cầu review trước: GPA -> CA-088; portal/cache/GPA behavior tes
 
 | Task | Trạng thái ghi trong file | Chi tiết |
 | --- | --- | --- |
-| CA-080 - Xác minh hợp đồng API trường bằng Postman | Proposed | [CA-080-postman-school-api-contract-verification.md](CA-080-postman-school-api-contract-verification.md) |
+| CA-080 - Xác minh hợp đồng API trường bằng Postman | In Progress | [CA-080-postman-school-api-contract-verification.md](CA-080-postman-school-api-contract-verification.md) |
 | CA-081 - Sửa parser UTH và tính toàn vẹn đồng bộ | Proposed | [CA-081-uth-parser-sync-data-integrity.md](CA-081-uth-parser-sync-data-integrity.md) |
 
 - CA-080: xác minh request/response thật Profile/Schedule/Exams, fixtures đã loại PII; các miền thông báo/tài liệu/bảng điểm còn UNKNOWN nếu chưa có contract.

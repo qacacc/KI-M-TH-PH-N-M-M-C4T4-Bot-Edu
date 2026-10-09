@@ -1,5 +1,7 @@
 # REGRESSION MATRIX - CAMPUS ASSISTANT LOCAL
 
+CA-080 setup CURRENT (2026-10-10): npm run check:postman chạy 29 Node VM offline checks (3 domains, consent/live/review/host/query/date/Vault/header guards, JSON/HTML/401/403/3xx/5xx). Gate đã thêm vào check:all. Desktop import và chọn environment khóa đã kiểm; chưa live sandbox/Vault/API test. Payload synthetic không PII, không API/network trường; business error/schema trường vẫn UNKNOWN. JSON và 3 YAML mirrors phải đồng bộ qua sync:postman.
+
 ## Audit bổ sung - 2026-10-09
 
 [Audit source](SOURCE_AUDIT_2026-10-09.md) xác định các gate PLANNED chưa nằm trong green baseline hiện tại:

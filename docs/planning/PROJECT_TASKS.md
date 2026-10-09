@@ -1,5 +1,13 @@
 # Project Tasks
 
+## CA-080 - Setup Postman local (2026-10-10)
+
+- Status: In Progress; setup source đã có, API/auth/business schema trường UNKNOWN.
+- JSON là nguồn chuẩn, 3 YAML mirrors tự sinh (giữ các bản Copy và cloud IDs); date tham số, Local Vault reference, live/consent/review defaults false, redirect/cookie jar tắt.
+- Desktop import collection/environment thành công, environment khóa được chọn, Scripts guard được kiểm tra. Không HTTP trường hoặc live/Vault test. npm run check:postman PASS 29 Node VM synthetic checks; check:all PASS 65 Vitest/39 Rust/layout/tsc/Vite/cargo check/npm audit0 (65 gồm 3 test CA-086 chưa commit).
+- Scope ngoài: chưa fixture thật, chưa parser Rust, không gỡ quarantine. CA-086 source cũ chưa commit được giữ nguyên, dừng theo yêu cầu user.
+- Hướng dẫn: [Postman README](../../postman/README.md); [contract UNKNOWN](../testing/UTH_API_CONTRACT.md).
+
 ## Baseline hien tai
 
 - App: Campus Assistant Local.
