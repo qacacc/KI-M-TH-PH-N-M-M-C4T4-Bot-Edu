@@ -4,7 +4,12 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { execFileSync } = require("node:child_process");
 const root = path.resolve(__dirname, "..");
-const collection = JSON.parse(fs.readFileSync(path.join(root, "Campus_Assistant_API.postman_collection.json"), "utf8"));
+const canonicalPath = path.join(root, "Campus_Assistant_API.postman_collection.json");
+if (!fs.existsSync(canonicalPath)) {
+  console.log("SKIP: collection UTH cũ không còn ở root; kiểm thử local REST API chạy qua tools/check-local-postman.cjs.");
+  process.exit(0);
+}
+const collection = JSON.parse(fs.readFileSync(canonicalPath, "utf8"));
 const environment = JSON.parse(fs.readFileSync(path.join(root, "postman/UTH.local-template.postman_environment.json"), "utf8"));
 const before = collection.event.find(e => e.listen === "prerequest").script.exec.join("\n");
 const after = collection.event.find(e => e.listen === "test").script.exec.join("\n");

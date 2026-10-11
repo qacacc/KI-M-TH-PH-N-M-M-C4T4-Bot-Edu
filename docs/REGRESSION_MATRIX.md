@@ -1,6 +1,13 @@
 # REGRESSION MATRIX - CAMPUS ASSISTANT LOCAL
 
-CA-080 setup CURRENT (2026-10-10): npm run check:postman chạy 29 Node VM offline checks (3 domains, consent/live/review/host/query/date/Vault/header guards, JSON/HTML/401/403/3xx/5xx). Gate đã thêm vào check:all. Desktop import và chọn environment khóa đã kiểm; chưa live sandbox/Vault/API test. Payload synthetic không PII, không API/network trường; business error/schema trường vẫn UNKNOWN. JSON và 3 YAML mirrors phải đồng bộ qua sync:postman.
+## CA-103 - Local REST API
+
+| File / Module được chỉnh sửa | Executive Contract | Test Status | Executable Command / Test | Manual / E2E Verification |
+| --- | --- | --- | --- | --- |
+| `src-tauri/src/api.rs`, `src-tauri/src/lib.rs` | Loopback REST server và error != empty | **AUTOMATED** | `cargo test --manifest-path src-tauri/Cargo.toml api::tests` | Chạy desktop app rồi gửi Postman collection local |
+| `postman/Campus_Assistant_Local_REST_API.postman_collection.json` | Environment/Collection/Workspace input | **STATIC** | `npm run check:postman` | Import vào Postman Desktop và gửi `Health` |
+
+CA-080 CURRENT (2026-10-11): `npm run check:postman` kiểm tra local collection 9 request và 6 static checks, gồm profile chưa kết nối, empty result, validation/error và UTH cache/sync gates. Gate đã thêm vào `check:all`. Chưa live sandbox/Vault/API trường; business error/schema trường vẫn UNKNOWN. Collection UTH chưa có nguồn chuẩn nên `sync:postman` chỉ SKIP an toàn.
 
 ## Audit bổ sung - 2026-10-09
 

@@ -1,0 +1,17 @@
+$kind: http-request
+description: "UNKNOWN: endpoint/method/auth/schema kế thừa collection cũ, phải đối chiếu portal thật. Chưa dùng làm contract connector."
+url: "{{BASE_URL}}/api/v1/lichhoc/thang?date={{SCHEDULE_DATE}}"
+method: GET
+headers:
+  Authorization: Bearer {{vault:uth-portal-token}}
+  Accept: application/json
+queryParams:
+  - key: date
+    value: "{{SCHEDULE_DATE}}"
+    description: Ngày cần lấy lịch học (định dạng YYYY-MM-DD)
+auth:
+  type: noauth
+settings:
+  followRedirects: false
+  disableCookies: true
+order: 2000

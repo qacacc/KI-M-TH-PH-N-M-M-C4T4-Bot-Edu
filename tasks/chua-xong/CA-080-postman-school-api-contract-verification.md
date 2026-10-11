@@ -1,6 +1,6 @@
 # CA-080 - Xác minh hợp đồng API trường bằng Postman
 
-- Status: In Progress
+- Status: In Progress (local REST complete; UTH contract blocked)
 - Priority: P0
 - Created: 2026-10-08
 - Type: API contract verification
@@ -14,13 +14,19 @@ Xác minh request và response thật trước khi sửa connector Rust. Postman
 
 Audit 2026-10-09: các tham chiếu parser uth.rs dưới đây là baseline trước CA-083, không còn parser runtime hiện tại. Source hiện gate CONTRACT_UNVERIFIED. Request/collection chưa được chạy hoặc xác minh trong audit; không coi collection là contract. Coverage Announcements/Documents/Grades/LMS vẫn UNKNOWN, không lấy mock thay dữ liệu thật.
 
-- CONFIRMED (setup 2026-10-10): JSON chuẩn có 3 probe GET, Schedule dùng SCHEDULE_DATE, guard/test scripts cấp collection. Ba YAML mirror tự sinh giữ nguyên workspace IDs; Copy 2 là bản import mới trong Desktop, không thay thế dữ liệu cũ.
+- CONFIRMED (setup 2026-10-11): collection local có 9 request và kiểm tra profile chưa kết nối, empty result, validation/error cùng cache/sync gates. Collection UTH upstream vẫn chưa có nguồn chuẩn; không suy contract từ collection local.
 - CONFIRMED: token chỉ là tham chiếu Local Vault; template không secret, live/consent/request-reviewed mặc định false. JSON tắt redirect/cookie jar; settings thực tế trên Postman chưa manual verified.
 - CONFIRMED: uth.rs hiện trả CONTRACT_UNVERIFIED; tham chiếu parser dòng190 là lịch sử trước CA-083, không còn mapping runtime.
 - UNKNOWN: tính hợp lệ của endpoint, method, cơ chế Bearer, tham số ngày, response envelope và kiểu dữ liệu tại trường. Có request trong source không chứng minh API hoạt động.
 - UNKNOWN: API thông báo, tài liệu, bảng điểm và cơ chế truy cập LMS. Chưa được tự tạo endpoint.
 
 ## Phạm vi
+
+### Phạm vi bổ sung đã được user yêu cầu (2026-10-11)
+
+- Bổ sung REST API loopback của chính project để đáp ứng phần `REST API của project` trong bài Postman.
+- Collection local được tách khỏi collection UTH upstream; không dùng endpoint UTH để giả làm API nội bộ.
+- REST API local đọc service hiện có, ghi provenance rõ và trả lỗi khi dữ liệu UTH chưa verified.
 
 - Xác định collection chuẩn và cách đồng bộ JSON/YAML; xử lý bản Copy chỉ sau khi xác minh không có nội dung riêng, giữ bằng chứng rollback.
 - Đổi ngày cố định thành `SCHEDULE_DATE`; đặt `BASE_URL` theo host trường đã xác minh.
@@ -38,18 +44,20 @@ Audit 2026-10-09: các tham chiếu parser uth.rs dưới đây là baseline tr�
 - `docs/testing/UTH_API_CONTRACT.md` (mới).
 - `src-tauri/tests/fixtures/uth/` (mới, JSON đã loại dữ liệu cá nhân).
 - `postman/scripts/`, `postman/README.md`, environment template không secret.
+- `src-tauri/src/api.rs`, `src-tauri/Cargo.toml`, `postman/Campus_Assistant_Local_REST_API.postman_collection.json`, `postman/Campus_Assistant_Local_REST_API.postman_environment.json`, `tools/check-local-postman.cjs`.
 - `tools/sync-postman.cjs`, `tools/check-postman.cjs`, `package.json` (offline gate), `.gitignore`.
 - Task này, `tasks/TASK_INDEX.md`, `docs/planning/PROJECT_TASKS.md`.
 
 ## Không thuộc phạm vi
 
-- Không sửa runtime React/Rust, tạo server HTTP nội bộ hay thay đổi SQLite.
+- Không tự bật connector UTH hoặc tạo contract UTH khi chưa có evidence. REST API loopback local là phạm vi bổ sung riêng theo yêu cầu user.
 - Không coi request thành công trong Postman là xác nhận WebView/login/SQLite/UI đã hoạt động end-to-end.
 - Không tự suy ra lịch thi từ lịch học nếu chưa có bằng chứng nghiệp vụ.
 
 ## Tiêu chí Done
 
-- [x] Có một nguồn collection chuẩn; giải thích rõ quan hệ JSON/YAML và bản Copy (README + check drift).
+- [x] Có một collection local chuẩn cho REST API của project; collection UTH upstream được giữ riêng và giới hạn rõ trong README.
+- [x] REST server local loopback có health, local data endpoint và error contract; không fake dữ liệu UTH khi connector chưa verified.
 - [x] Ngày request tham số hóa; setup chỉ chứa vault reference, template không secret; chưa export account thật.
 - [ ] Profile/Schedule có evidence request thật và fixture đã loại PII, hoặc task giữ chưa hoàn thành nếu không xác minh được.
 - [ ] Lịch thi được xác minh bằng endpoint riêng hoặc bằng cấu trúc lịch học có marker được chứng minh; nếu Unknown, ghi blocked, không báo Done toàn bộ.
@@ -70,7 +78,9 @@ Kết quả mong đợi: JSON hợp lệ, ngày là biến, test script tồn t�
 
 ## Trạng thái hiện tại
 
-CURRENT: setup local đã triển khai; 29 kiểm tra Node VM synthetic PASS qua npm run check:postman. Desktop đã import JSON collection và environment, chọn environment khóa và mở Scripts kiểm tra guard; bản Copy 2 giữ dữ liệu workspace cũ. Chưa gửi request trường, chưa tạo fixture thật, chưa kiểm Vault/live sandbox. Contract/business schema/auth vẫn UNKNOWN; CA-080 giữ In Progress, không mở connector Rust.
+CURRENT: setup local đã triển khai; bộ kiểm thử Node VM/Postman local đã mở rộng để kiểm tra profile chưa kết nối và empty result hợp lệ, không gửi HTTP trường. Desktop đã import JSON collection và environment, chọn environment khóa và mở Scripts kiểm tra guard; bản Copy 2 giữ dữ liệu workspace cũ. Chưa gửi request trường, chưa tạo fixture thật, chưa kiểm Vault/live sandbox. Contract/business schema/auth vẫn UNKNOWN; CA-080 giữ In Progress, không mở connector Rust.
+
+CA-103 extension CURRENT: Rust loopback REST API đã được thêm tại `src-tauri/src/api.rs`; local Postman collection/environment nằm trong `postman/`. API UTH vẫn bị quarantine; endpoint schedule/exams/sync trả lỗi rõ ràng khi contract/cache chưa sẵn sàng.
 
 Impact scope: đọc collection/scripts/docs; ghi JSON/YAML/template/tools/docs và script npm. Không React/Rust/schema/SQLite/credentials/network trường. Unknown auth/schema là blocking cho live/parser, không blocking việc tạo probe mặc định khóa. Không sửa hoặc commit CA-086 đang dở.
 
@@ -78,9 +88,9 @@ Impact scope: đọc collection/scripts/docs; ghi JSON/YAML/template/tools/docs 
 
 | Claim / evidence | Lệnh đã chạy | Kết quả |
 | --- | --- | --- |
-| JSON/date/Vault/settings, collection JSON:14/27/54 | rg -n "vault:|SCHEDULE_DATE|prerequest|followRedirects|disableCookies" Campus_Assistant_API.postman_collection.json | 3 requests + 2 scripts, không token value |
-| Guard/transport scripts, postman/scripts/uth-before-request.js:1 và uth-after-response.js:1 | npm run check:postman | PASS 29 Node VM checks, synthetic, không HTTP |
-| Một nguồn JSON, 3 mirrors, tools/sync-postman.cjs:1 | npm run sync:postman rồi npm run check:postman | Đồng bộ, không drift; format scripts/settings đối chiếu YAML Desktop |
+| Collection local/routes/tests | `node tools/check-local-postman.cjs` | PASS 6 static checks, 9 request, không HTTP |
+| Guard/transport scripts, postman/scripts/uth-before-request.js:1 và uth-after-response.js:1 | npm run check:postman | PASS local gate; UTH chưa có collection chuẩn nên không chạy live |
+| Collection UTH chưa có nguồn chuẩn | npm run sync:postman | SKIP an toàn; không tự tạo contract UTH. Collection local được kiểm tra riêng bằng `tools/check-local-postman.cjs` |
 | Không đưa response/environment cá nhân vào Git, .gitignore | git check-ignore postman/private/raw-response.json postman/personal.postman_environment.json postman/UTH.local-template.postman_environment.json | 2 private paths ignored; template không ignored |
 | Baseline ứng dụng + gate Postman | npm run check:all | PASS 65 Vitest/39 Rust/29 Postman/layout/build/cargo check/npm audit0 |
 | Whitespace | git diff --check | PASS sau sửa generator blank lines |

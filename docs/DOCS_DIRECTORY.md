@@ -18,8 +18,8 @@ Tài liệu định nghĩa thiết kế tổng thể, luồng dữ liệu và c�
 | [`docs/FLOW_MAP.md`](FLOW_MAP.md) | Bản đồ luồng xử lý của các tính năng người dùng |
 | [`docs/STATE_MACHINES.md`](STATE_MACHINES.md) | Máy trạng thái (State machine) cho các tác vụ đồng bộ và auth |
 | [`docs/DEPENDENCY_MAP.md`](DEPENDENCY_MAP.md) | Bản đồ phụ thuộc giữa các thư viện và module |
-| [`ARCHITECTURE.md`](../ARCHITECTURE.md) | Kiến trúc chi tiết các lớp ứng dụng |
-| [`CONNECTOR_DESIGN.md`](../CONNECTOR_DESIGN.md) | Thiết kế module kết nối cổng trường (School Connector) |
+| [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md) | Kiến trúc chi tiết các lớp ứng dụng |
+| [`CONNECTOR_DESIGN.md`](architecture/CONNECTOR_DESIGN.md) | Thiết kế module kết nối cổng trường (School Connector) |
 
 ---
 
@@ -29,11 +29,11 @@ Các quy tắc bất biến, hợp đồng dữ liệu và tiêu chuẩn bảo m
 | Tệp tài liệu | Mô tả nội dung |
 |---|---|
 | [`docs/INVARIANTS.md`](INVARIANTS.md) | **Các bất biến tuyệt đối:** Không lưu mật khẩu, bảo vệ WebView, cách ly token |
-| [`SECURITY_NOTES.md`](../SECURITY_NOTES.md) | Ghi chú và khuyến nghị bảo mật dữ liệu sinh viên |
-| [`CONNECTOR_THREAT_MODEL.md`](../CONNECTOR_THREAT_MODEL.md) | Mô hình đe dọa và giải pháp phòng thủ cho School Connector |
-| [`BACKEND_GUIDELINES.md`](../BACKEND_GUIDELINES.md) | Quy chuẩn viết mã nguồn Rust Backend |
-| [`DATA_CONTRACTS.md`](../DATA_CONTRACTS.md) | Hợp đồng cấu trúc dữ liệu trao đổi giữa Rust IPC và React UI |
-| [`UX_UI_GUIDELINES.md`](../UX_UI_GUIDELINES.md) | Quy chuẩn thiết kế giao diện, phối màu và trải nghiệm người dùng |
+| [`SECURITY_NOTES.md`](guidelines/SECURITY_NOTES.md) | Ghi chú và khuyến nghị bảo mật dữ liệu sinh viên |
+| [`CONNECTOR_THREAT_MODEL.md`](guidelines/CONNECTOR_THREAT_MODEL.md) | Mô hình đe dọa và giải pháp phòng thủ cho School Connector |
+| [`BACKEND_GUIDELINES.md`](guidelines/BACKEND_GUIDELINES.md) | Quy chuẩn viết mã nguồn Rust Backend |
+| [`DATA_CONTRACTS.md`](architecture/DATA_CONTRACTS.md) | Hợp đồng cấu trúc dữ liệu trao đổi giữa Rust IPC và React UI |
+| [`UX_UI_GUIDELINES.md`](guidelines/UX_UI_GUIDELINES.md) | Quy chuẩn thiết kế giao diện, phối màu và trải nghiệm người dùng |
 
 ---
 
@@ -44,12 +44,12 @@ Mục tiêu phát hành, lộ trình tính năng và tiêu chí nghiệm thu:
 |---|---|
 | [`docs/ROADMAP.md`](ROADMAP.md) | Lộ trình phát triển tổng thể của dự án |
 | [`ROADMAP.md`](../ROADMAP.md) | Kế hoạch các cột mốc phiên bản |
-| [`MVP_0.1.md`](../MVP_0.1.md) | Mục tiêu và phạm vi của phiên bản phát hành tối thiểu MVP |
-| [`DEVELOPMENT_DIRECTION.md`](../DEVELOPMENT_DIRECTION.md) | Định hướng phát triển dài hạn |
-| [`PROJECT_TASKS.md`](../PROJECT_TASKS.md) | Toàn bộ danh sách task và tiến độ |
+| [`MVP_0.1.md`](planning/MVP_0.1.md) | Mục tiêu và phạm vi của phiên bản phát hành tối thiểu MVP |
+| [`DEVELOPMENT_DIRECTION.md`](planning/DEVELOPMENT_DIRECTION.md) | Định hướng phát triển dài hạn |
+| [`PROJECT_TASKS.md`](planning/PROJECT_TASKS.md) | Toàn bộ danh sách task và tiến độ |
 | [`tasks/TASK_INDEX.md`](../tasks/TASK_INDEX.md) | Danh mục chi tiết các nhiệm vụ kỹ thuật và bugfix |
-| [`OPTIMIZATION_TARGETS.md`](../OPTIMIZATION_TARGETS.md) | Các chỉ số tối ưu hóa hiệu năng và dung lượng |
-| [`ACCEPTANCE_CRITERIA.md`](../ACCEPTANCE_CRITERIA.md) | Tiêu chí nghiệm thu chất lượng sản phẩm |
+| [`OPTIMIZATION_TARGETS.md`](planning/OPTIMIZATION_TARGETS.md) | Các chỉ số tối ưu hóa hiệu năng và dung lượng |
+| [`ACCEPTANCE_CRITERIA.md`](planning/ACCEPTANCE_CRITERIA.md) | Tiêu chí nghiệm thu chất lượng sản phẩm |
 
 ---
 
@@ -61,6 +61,6 @@ Dành cho lập trình viên và AI Agent khi làm việc trên kho mã nguồn:
 | [**`CONTRIBUTING.md`**](../CONTRIBUTING.md) | **Quy trình làm việc Git/GitHub hàng ngày của nhóm** (Nhánh, Commit, PR, Review) |
 | [**`AGENTS.md`**](../AGENTS.md) | **Quy tắc ứng xử và ràng buộc tuyệt đối cho AI Agent** |
 | [`docs/AI_CHANGE_PROTOCOL.md`](AI_CHANGE_PROTOCOL.md) | Quy trình 5 bước AI bắt buộc tuân theo khi sửa mã nguồn |
-| [`DEV_WORKFLOW.md`](../DEV_WORKFLOW.md) | Quy trình thao tác code & build hàng ngày |
-| [`DEV_COMMANDS.md`](../DEV_COMMANDS.md) | Bảng tổng hợp tất cả các lệnh chạy, test và build dự án |
-| [`CURRENT_STATE.txt`](../CURRENT_STATE.txt) | Tóm tắt hiện trạng phiên bản đang chạy |
+| [`DEV_WORKFLOW.md`](workflows/DEV_WORKFLOW.md) | Quy trình thao tác code & build hàng ngày |
+| [`DEV_COMMANDS.md`](workflows/DEV_COMMANDS.md) | Bảng tổng hợp tất cả các lệnh chạy, test và build dự án |
+| [`CURRENT_STATE.txt`](planning/CURRENT_STATE.txt) | Tóm tắt hiện trạng phiên bản đang chạy |

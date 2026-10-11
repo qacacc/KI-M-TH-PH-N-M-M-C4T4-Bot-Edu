@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "Campus Assistant Local REST API",
+    "description": "REST API loopback của Campus Assistant Local. Chạy desktop app trước khi gửi request. Không chứa token hoặc dữ liệu cá nhân.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://127.0.0.1:47821" },
+    { "key": "STUDENT_CODE", "value": "" },
+    { "key": "SUBJECT_ID", "value": "" },
+    { "key": "SEMESTER", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "header": [], "url": "{{BASE_URL}}/api/v1/health" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.test('success = true', function () { pm.expect(body.success).to.eql(true); });",
+          "pm.test('Có tên service', function () { pm.expect(body.data.service).to.include('Campus Assistant'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Profile - not connected",
+      "request": { "method": "GET", "header": [], "url": "{{BASE_URL}}/api/v1/profile" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('HTTP 404', function () { pm.response.to.have.status(404); });",
+          "const body = pm.response.json();",
+          "pm.test('Không giả hồ sơ đã xác minh', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql('PROFILE_NOT_CONNECTED'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Announcements - local source",
+      "request": { "method": "GET", "header": [], "url": "{{BASE_URL}}/api/v1/announcements" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.test('data là mảng', function () { pm.expect(body.data).to.be.an('array'); });",
+          "pm.test('Ghi rõ nguồn local', function () { pm.expect(body.source).to.eql('sample-local'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Documents - valid empty result",
+      "request": { "method": "GET", "header": [], "url": "{{BASE_URL}}/api/v1/documents?subjectId=unknown-subject&semester=1" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+          "const body = pm.response.json();",
+          "pm.test('Empty result không phải lỗi', function () { pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('array'); pm.expect(body.data).to.have.length(0); });",
+          "pm.test('Ghi rõ nguồn local', function () { pm.expect(body.source).to.eql('sample-local'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Documents - validation error",
+      "request": { "method": "GET", "header": [], "url": "{{BASE_URL}}/api/v1/documents" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+          "const body = pm.response.json();",
+          "pm.test('Có mã lỗi validation', function () { pm.expect(body.error.code).to.eql('VALIDATION_ERROR'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Schedule - requires verified cache",
+      "request": { "method": "GET", "header": [], "url": "{{BASE_URL}}/api/v1/schedule?studentCode={{STUDENT_CODE}}" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Không trả dữ liệu giả khi thiếu cache', function () { pm.expect([400, 503]).to.include(pm.response.code); });",
+          "const body = pm.response.json();",
+          "pm.test('Lỗi có mã rõ ràng', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.be.a('string'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Exams - requires verified cache",
+      "request": { "method": "GET", "header": [], "url": "{{BASE_URL}}/api/v1/exams?studentCode={{STUDENT_CODE}}" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('Không trả dữ liệu giả khi thiếu cache', function () { pm.expect([400, 503]).to.include(pm.response.code); });",
+          "const body = pm.response.json();",
+          "pm.test('Lỗi có mã rõ ràng', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.be.a('string'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Sync - blocked until UTH contract is verified",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{}" }, "url": "{{BASE_URL}}/api/v1/sync" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('HTTP 503', function () { pm.response.to.have.status(503); });",
+          "const body = pm.response.json();",
+          "pm.test('Không giả thành công', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql('SYNC_NOT_READY'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Sync status - requires account",
+      "request": { "method": "GET", "header": [], "url": "{{BASE_URL}}/api/v1/sync/status" },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+          "const body = pm.response.json();",
+          "pm.test('Có mã lỗi validation', function () { pm.expect(body.error.code).to.eql('VALIDATION_ERROR'); });"
+        ] }
+      }]
+    }
+  ]
+}

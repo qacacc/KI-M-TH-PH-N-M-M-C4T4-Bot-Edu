@@ -2,9 +2,9 @@
 
 ## CA-080 - Setup Postman local (2026-10-10)
 
-- Status: In Progress; setup source đã có, API/auth/business schema trường UNKNOWN.
-- JSON là nguồn chuẩn, 3 YAML mirrors tự sinh (giữ các bản Copy và cloud IDs); date tham số, Local Vault reference, live/consent/review defaults false, redirect/cookie jar tắt.
-- Desktop import collection/environment thành công, environment khóa được chọn, Scripts guard được kiểm tra. Không HTTP trường hoặc live/Vault test. npm run check:postman PASS 29 Node VM synthetic checks; check:all PASS 65 Vitest/39 Rust/layout/tsc/Vite/cargo check/npm audit0 (65 gồm 3 test CA-086 chưa commit).
+- Status: In Progress; local REST/Postman đã có, API/auth/business schema trường UNKNOWN.
+- Collection local là nguồn kiểm thử REST nội bộ; UTH probe không có collection chuẩn ở root, không tự tạo contract. Live/consent/review defaults vẫn bị khóa, redirect/cookie jar tắt khi có probe UTH.
+- Desktop import collection/environment thành công. Không HTTP trường hoặc live/Vault test. Local Postman PASS 6 static checks; check:all PASS 65 Vitest/42 Rust/layout/tsc/Vite/cargo check/npm audit0.
 - Scope ngoài: chưa fixture thật, chưa parser Rust, không gỡ quarantine. CA-086 source cũ chưa commit được giữ nguyên, dừng theo yêu cầu user.
 - Hướng dẫn: [Postman README](../../postman/README.md); [contract UNKNOWN](../testing/UTH_API_CONTRACT.md).
 
@@ -379,7 +379,7 @@
 - CONFIRMED: rà soát task hiện có chưa thấy task riêng xác minh contract Postman; các task CA-036/CA-054 là gate thiết kế và nghiệm thu, không thay thế evidence API thật.
 - PLANNED: CA-080 xác minh Profile/Schedule/Exams bằng request thật, fixture loại PII, tham số ngày và response tests; Announcements/Documents/Grades ghi Unknown tới khi có bằng chứng.
 - PLANNED: CA-081 sửa parser và sync theo contract verified, phân biệt Error/Empty, giữ cache khi lỗi và không điền giá trị nghiệp vụ giả.
-- Hai task giữ `Status: Proposed` trong Ready / Proposed; chưa có task active, chưa sửa runtime hoặc collection, chưa gửi request trường.
+- CA-080 vẫn `In Progress` cho local REST/Postman nhưng bị block ở contract UTH; CA-081 vẫn `Proposed`. Đã sửa collection local, chưa gửi request trường.
 - Phạm vi lần này chỉ là lập task và đồng bộ chỉ mục; không xác nhận build/API/E2E đã pass. Các mục release freeze cũ là lịch sử, kế hoạch mới được bổ sung theo yêu cầu user.
 
 ## Trạng thái baseline đã ghi trước đây
@@ -410,6 +410,22 @@
 - UI khóa đồng bộ có lý do; portal browser vẫn mở. Không đổi schema, không thu secret, không bật API chưa xác minh.
 - check:all PASS 62 Vitest/39 Rust/build/layout/audit 0; Playwright local 1280/1000 PASS và screenshot đã xem. Native auth/cache IO E2E chưa chạy.
 - CA-083 Done chỉ scope cách ly an toàn. CA-080/081 Proposed; không báo full project/connector Done, installer chưa build lại.
+
+# CA-080 extension - Local REST API + Postman project collection (2026-10-11)
+
+- CURRENT: Rust khởi động Axum loopback tại `127.0.0.1:47821` khi desktop app chạy; React/Tauri IPC không bị thay thế.
+- CURRENT: `postman/Campus_Assistant_Local_REST_API.postman_collection.json` và environment local kiểm thử health, local provenance, validation/error envelope và trạng thái connector chưa sẵn sàng.
+- CURRENT: schedule/exams/sync không trả dữ liệu giả khi UTH contract/cache chưa verified; API trả mã lỗi rõ ràng.
+- UNKNOWN: contract/auth/schema API UTH thật, profile/schedule/exams live và native WebView E2E vẫn chưa verified.
+- Evidence: `cargo check --manifest-path src-tauri/Cargo.toml`, `cargo test --manifest-path src-tauri/Cargo.toml api::tests`, `npm run check:postman`.
+
+## CA-080 follow-up - REST contract tests and UTH boundary (2026-10-11)
+
+- CURRENT: local collection có 9 request, bao phủ health, profile chưa kết nối, announcements, documents validation/empty, schedule/exams cache gate, sync blocked và sync status.
+- CURRENT: `Error != Empty` được kiểm tra bằng profile/error response và documents empty response; source/provenance `sample-local` được giữ rõ trong test.
+- CURRENT: `npm run sync:postman` bỏ qua an toàn khi collection UTH chuẩn không tồn tại; không lấy collection local để suy ra API UTH.
+- UNKNOWN/BLOCKED: contract, auth, schema, fixture PII-sanitized và native E2E của UTH vẫn chưa có evidence. Không mở CA-081 hoặc gỡ gate `CONTRACT_UNVERIFIED`.
+- Evidence: `npm run sync:postman`, `npm run check:all`; kết quả local Postman 6 static checks PASS, Vitest 65/65, Rust 42/42, build PASS, audit 0 vulnerabilities.
 # Tổng hợp task theo yêu cầu user - 2026-10-09
 
 - Tổng hợp ban đầu 31 file có Status: Done và 23 file chưa chốt rõ; cấu trúc cuối được cập nhật theo yêu cầu thư mục bên dưới.
@@ -430,7 +446,7 @@
 
 - CONFIRMED: audit source/config/docs/test trên baseline f5c0055; báo cáo docs/SOURCE_AUDIT_2026-10-09.md phân biệt source, probe, giả thuyết race và native/API UNKNOWN.
 - PLANNED: thêm 13 spec Proposed trong tasks/chua-xong: CA-084 release audit (ID reserved), CA-086 lifecycle, CA-087 history integrity, CA-088 GPA, CA-089 school/source truth, CA-090 backup/reset, CA-091 trash recovery, CA-092 calendar, CA-093 public search, CA-094 desktop hardening, CA-095 theme/preset, CA-096 incremental clean/tests, CA-097 governance reconciliation.
-- CA-080/081 giữ Proposed; cập nhật note baseline quarantined/snapshot scope, không tạo contract giả hoặc mở gate. CA-064/085 giữ Frozen.
+- CA-080 local REST/Postman đã triển khai nhưng UTH contract vẫn UNKNOWN; CA-081 giữ Proposed, không tạo contract giả hoặc mở gate. CA-064/085 giữ Frozen.
 - 68 spec hiện tại: 31 done, 35 chua-xong, 2 hoan-lam. Không Active runtime task và không đổi Status của spec lịch sử.
 - AUTOMATED: check:all PASS 62 Vitest/39 Rust/build/layout/audit0; fmt --check FAIL (db.rs/public_search.rs), strict Clippy FAIL needless_borrow connector_engine.rs:145.
 - Targeted probes: ICS08h fixture xuất08hZ, legacy missing parse[], backup bỏ active appearance/GPAv2, storage snapshot throw trước try. Đây là tái hiện helper, không native/user-data test.

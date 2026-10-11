@@ -1,6 +1,6 @@
 # CA-086 - Sửa lifecycle khởi tạo và trạng thái degraded
 
-- Status: Proposed
+- Status: In Progress
 - Priority: P1
 - Created: 2026-10-09
 - Owner: AI + User review
@@ -48,4 +48,3 @@ Các lệnh mới/test mới là PLANNED: agent triển khai phải ghi tên l�
 ## Rollback
 
 Commit nhỏ riêng cho task; không revert thay đổi user. Migration/data recovery phải có bản sao và thử trên DB fixture trước dữ liệu thật.
-

@@ -8,3 +8,8 @@ cloudResources:
     ../postman/collections/Campus Assistant Local - UTH Portal APIs: 56457008-89a8cbc5-6f15-444d-9148-772f6fc8aaae
     ../postman/collections/Campus Assistant Local - UTH Portal APIs Copy: 3d4a34da-db52-4d10-b71a-f5f544e59757
     ../postman/collections/Campus Assistant Local - UTH Portal APIs Copy 2: 6556e0a0-6eb8-4935-b00a-1ba9407455f7
+    ../postman/collections/Campus Assistant Local REST API: 47fadda5-f121-4be2-b85e-39d3c7a8c3c0
+
+localResources:
+  collections:
+    - ../Campus Assistant Local - UTH Portal APIs

@@ -1,6 +1,14 @@
 # FEATURE CATALOG - CAMPUS ASSISTANT LOCAL
 
-CA-080 CURRENT (2026-10-10): bộ Postman local có 3 probe GET, Vault reference, consent/host/date guards, HTTP/JSON tests, JSON/YAML drift gate. Kiểm thử offline synthetic; không chứng nhận API/auth/business schema thật. CA-080 In Progress, CA-081 Proposed; UTH tiếp tục quarantined. Xem [contract](testing/UTH_API_CONTRACT.md).
+## FEATURE: LOCAL_REST_API
+- **Status**: `CURRENT / LOOPBACK`
+- **Owner**: Rust API module (`src-tauri/src/api.rs`)
+- **Evidence**: `cargo test --manifest-path src-tauri/Cargo.toml api::tests`; `npm run check:postman`
+- **Address**: `127.0.0.1:47821`
+- **Scope**: Health, local sample provenance, validation/error envelope và Postman collection của project.
+- **Known limits**: Không public Internet; profile/schedule/exams/sync thật vẫn phụ thuộc UTH contract/auth/cache verification và không trả sample thay thế.
+
+CA-080 CURRENT (2026-10-11): bộ Postman local có 9 request, gồm profile chưa kết nối, empty-result, validation/error và UTH cache/sync gates; có Vault reference, consent/host/date guards, HTTP/JSON tests và JSON/YAML drift gate. Kiểm thử offline/local synthetic; không chứng nhận API/auth/business schema thật. CA-080 In Progress, CA-081 Proposed; UTH tiếp tục quarantined. Xem [contract](testing/UTH_API_CONTRACT.md).
 
 Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhận đúng sự thật hiện tại (`CURRENT`) và mục tiêu (`TARGET`), kèm bằng chứng kiểm thử (`Evidence`), khe hở kỹ thuật (`Known Gaps`) và mã task theo dõi (`Tracking Task`).
 
@@ -24,7 +32,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 | GOVERNANCE | Roadmap/duplicate ID/old evidence reconciliation, CA-097 |
 | RELEASE | Checklist static/samples-required/installer mới, CA-084 |
 
-Đây là tracking PLANNED, không phải các fix đã triển khai. CA-080/081 vẫn Proposed; UTH auth/sync/read vẫn quarantined. CA-064/085 vẫn Frozen.
+Đây là tracking PLANNED, không phải các fix đã triển khai. CA-080 đang In Progress ở phạm vi local REST/Postman; CA-081 vẫn Proposed; UTH auth/sync/read vẫn quarantined. CA-064/085 vẫn Frozen.
 
 ---
 

@@ -35,10 +35,10 @@ Mapping yêu cầu review trước: GPA -> CA-088; portal/cache/GPA behavior tes
 
 | Task | Trạng thái ghi trong file | Chi tiết |
 | --- | --- | --- |
-| CA-080 - Xác minh hợp đồng API trường bằng Postman | In Progress | [CA-080-postman-school-api-contract-verification.md](CA-080-postman-school-api-contract-verification.md) |
+| CA-080 - Xác minh hợp đồng API trường bằng Postman | In Progress (local REST complete; UTH contract blocked) | [CA-080-postman-school-api-contract-verification.md](CA-080-postman-school-api-contract-verification.md) |
 | CA-081 - Sửa parser UTH và tính toàn vẹn đồng bộ | Proposed | [CA-081-uth-parser-sync-data-integrity.md](CA-081-uth-parser-sync-data-integrity.md) |
 
-- CA-080: xác minh request/response thật Profile/Schedule/Exams, fixtures đã loại PII; các miền thông báo/tài liệu/bảng điểm còn UNKNOWN nếu chưa có contract.
+- CA-080: local REST/Postman đã có health, profile-not-connected, announcements, documents validation/empty, schedule/exams cache gate, sync blocked và sync status. Request/response thật Profile/Schedule/Exams cùng fixture loại PII vẫn UNKNOWN vì chưa có contract UTH được xác minh.
 - CA-081: triển khai connector/parser/sync theo contract verified, không default nghiệp vụ giả; Error khác Empty, giữ cache tốt, xử lý snapshot đúng phạm vi. Auth/session cần isolation và native E2E trước bật gate CA-083.
 - Yêu cầu user: đăng nhập một lần trong luồng được phép rồi app lấy dữ liệu tài khoản thật. Mở browser ngoài hiện không tạo session app; phải ghi rõ, không đánh dấu đã hỗ trợ.
 - Học kỳ: khi connector được bật phải có dữ liệu học kỳ verified để lọc. Nếu chưa có, báo không thể lọc; không dùng semester=0 như học kỳ thật.

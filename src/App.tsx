@@ -105,6 +105,7 @@ import type {
   UpdateCheckResult,
 } from "./types";
 import { formatBytes } from "./utils/format";
+import { createBootstrapRequest } from "./bootstrapRequest";
 
 type View =
   | "chat"
@@ -175,7 +176,9 @@ export default function App() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const backgroundInputRef = useRef<HTMLInputElement | null>(null);
-  const initStartedRef = useRef(false);
+  const bootstrapRequestRef = useRef(createBootstrapRequest(initApp));
+  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
+  const [bootstrapError, setBootstrapError] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() => {
     return localStorage.getItem("campus-assistant-sidebar-expanded") === "true";
   });
@@ -372,12 +375,10 @@ export default function App() {
       window.removeEventListener("drop", handleDrop);
       window.removeEventListener("keydown", handleGlobalKeyDown);
     };
-  }, [draftTheme, draftAccentColor, applyAppearanceImmediately, toggleSidebarExpanded]);
+  }, [bootstrap, draftTheme, draftAccentColor, applyAppearanceImmediately, toggleSidebarExpanded]);
 
   useEffect(() => {
-    if (initStartedRef.current) return;
-    initStartedRef.current = true;
-
+    setBootstrapError(false);
     let isCancelled = false;
     const deferredTimers: number[] = [];
     const defer = (task: () => void, delayMs: number) => {
@@ -387,7 +388,7 @@ export default function App() {
       deferredTimers.push(timer);
     };
 
-    initApp()
+    bootstrapRequestRef.current.get()
       .then((state) => {
         if (isCancelled) return;
         setBootstrap(state);
@@ -424,38 +425,9 @@ export default function App() {
             });
         }, 1200);
       })
-      .catch((err) => {
+      .catch(() => {
         if (!isCancelled) {
-          const fallbackBootstrap: BootstrapState = {
-            theme: "dark",
-            accentColor: "#3b82f6",
-            subjects: [],
-            documents: [],
-            announcements: [],
-            scheduleItems: [],
-            exams: [],
-            messages: [],
-            status: {
-              appLocal: "Local Mode",
-              database: "AppLocalData/database/campus-assistant.db",
-              documentSource: "sample-local",
-              sampleDocumentCount: 0,
-              announcementCount: 0,
-              scheduleItemCount: 0,
-              examCount: 0,
-              activeSession: "offline",
-            },
-            paths: {
-              appLocalData: "AppLocalData",
-              database: "AppLocalData/database/campus-assistant.db",
-              managedWorkspace: "CampusAssistant",
-              sampleDocuments: "CampusAssistant/sample-documents",
-              downloads: "CampusAssistant/downloads",
-            },
-          };
-          setBootstrap(fallbackBootstrap);
-          hydrateSavedAppearance("dark", "#3b82f6");
-          setMessages([welcomeMessage]);
+          setBootstrapError(true);
         }
       });
 
@@ -464,7 +436,7 @@ export default function App() {
       deferredTimers.forEach((timer) => window.clearTimeout(timer));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // initApp chỉ chạy đúng 1 lần khi mount — initStartedRef bảo vệ
+  }, [bootstrapAttempt]); // Setup mới đăng ký lại vào cùng yêu cầu, retry sau lỗi.
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
@@ -1498,6 +1470,16 @@ export default function App() {
       )}
 
       <section className="content">
+        {!bootstrap && (
+          <div className="bootstrap-status" role={bootstrapError ? "alert" : "status"}>
+            <span>{bootstrapError
+              ? ("__TAURI_INTERNALS__" in window
+                ? "Không khởi tạo được dữ liệu local. Dữ liệu đã lưu được giữ nguyên."
+                : "Bản xem trước trình duyệt chưa kết nối backend desktop.")
+              : "Đang khởi tạo dữ liệu local..."}</span>
+            {bootstrapError && <button type="button" onClick={() => setBootstrapAttempt((attempt) => attempt + 1)}>Thử lại</button>}
+          </div>
+        )}
         {updateInfo?.updateAvailable && (
           <section className={updateInfo.required ? "update-banner required" : "update-banner"}>
             <div>

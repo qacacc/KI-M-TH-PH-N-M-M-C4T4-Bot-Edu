@@ -1,8 +1,21 @@
 # Postman UTH - CA-080
 
+## REST API của project - local loopback
+
+`Campus_Assistant_Local_REST_API.postman_collection.json` là collection kiểm thử REST API do Rust của project phục vụ tại `http://127.0.0.1:47821`. Chạy desktop app trước:
+
+```powershell
+npm run dev:desktop
+```
+
+Import thêm `Campus_Assistant_Local_REST_API.postman_environment.json`, chọn environment tương ứng, rồi gửi request `Health` trước. Collection này kiểm thử API của project; collection UTH bên dưới chỉ dùng kiểm chứng upstream và không thay thế REST API local.
+
+Các endpoint lịch học, lịch thi và đồng bộ sẽ trả lỗi có mã rõ ràng khi UTH contract/cache chưa sẵn sàng. Đây là hành vi đúng, không phải dữ liệu rỗng giả.
+
 ## CURRENT và giới hạn
 
-- CONFIRMED: JSON chuẩn tại `Campus_Assistant_API.postman_collection.json`, 3 probe GET kế thừa file cũ, ngày tham số hóa, guard trước request, Local Vault, test HTTP/JSON.
+- CONFIRMED: Collection nộp cho REST API của project là `postman/Campus_Assistant_Local_REST_API.postman_collection.json`; environment loopback đi kèm không chứa secret.
+- Lịch sử: collection UTH cũ từng nằm ở root nhưng không còn là nguồn chuẩn hiện tại; các probe UTH chỉ được giữ như tài liệu tham chiếu khi có contract thật.
 - UNKNOWN: cả 3 endpoint/method/Bearer và schema nghiệp vụ. Không endpoint nào được gọi hoặc verified trong lần setup này.
 - Không tự đăng nhập, không thu cookie trình duyệt, không tự sync SQLite. Postman không phải runtime của Campus Assistant.
 - Transport test PASS không chứng minh JSON là hồ sơ/lịch hợp lệ. HTTP 200 có thể là business error. [] chỉ được coi empty hợp lệ sau khi biết envelope/contract.
@@ -23,8 +36,10 @@ Không chia sẻ file export vault, HAR hoặc Postman Console chứa phiên th�
 ## JSON / YAML và bản Copy
 
 - JSON là nguồn chuẩn duy nhất cho method/path/query. Sửa JSON khi có evidence contract; script chung ở `postman/scripts/`.
+- Collection local của project nằm tại `postman/Campus_Assistant_Local_REST_API.postman_collection.json`; không dùng nó để suy ra contract UTH.
 - Ba thư mục YAML là **mirror tự sinh**, không chỉnh riêng. Giữ bản Copy cũ để không phá workspace; bản Copy 2 được Postman Desktop tạo khi import an toàn, không thay thế/xóa collection cũ.
 - `npm run sync:postman` đồng bộ JSON event scripts/header/settings và YAML. `npm run check:postman` kiểm drift và chạy mock sandbox offline.
+- Nếu collection UTH chuẩn `Campus_Assistant_API.postman_collection.json` chưa tồn tại, `sync:postman` sẽ SKIP an toàn thay vì tự tạo endpoint hoặc báo lỗi `ENOENT`.
 - CONFIRMED 2026-10-10: Postman Desktop import thành công collection JSON và environment template; chọn environment mặc định khóa, mở Scripts kiểm tra guard trước request. Bản import là `Campus Assistant Local - UTH Portal APIs Copy 2`.
 - YAML dùng collection scripts `http:beforeRequest` / `http:afterResponse`, request `auth: noauth` và settings redirect/cookie false, đối chiếu file do Desktop sinh. Chưa chạy request thật hoặc xác minh sandbox/Vault bằng live test.
 - Không commit environment cá nhân, response thật, credentials. File template có cờ false và không chứa token.

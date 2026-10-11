@@ -1,0 +1,13 @@
+$kind: http-request
+description: "UNKNOWN: endpoint/method/auth/schema kế thừa collection cũ, phải đối chiếu portal thật. Chưa dùng làm contract connector."
+url: "{{BASE_URL}}/api/v1/lichthi/all"
+method: GET
+headers:
+  Authorization: Bearer {{vault:uth-portal-token}}
+  Accept: application/json
+auth:
+  type: noauth
+settings:
+  followRedirects: false
+  disableCookies: true
+order: 3000

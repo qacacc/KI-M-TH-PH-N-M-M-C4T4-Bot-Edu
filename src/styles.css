@@ -1,3 +1,15 @@
+.bootstrap-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  color: var(--text);
+  background: var(--panel-soft);
+  border-bottom: 1px solid var(--border);
+}
+
 :root {
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "SFMono-Regular", "Cascadia Code", "Consolas", monospace;

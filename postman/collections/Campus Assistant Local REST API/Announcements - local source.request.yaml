@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{BASE_URL}}/api/v1/announcements"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('HTTP 200', function () { pm.response.to.have.status(200); });
+      const body = pm.response.json();
+      pm.test('data là mảng', function () { pm.expect(body.data).to.be.an('array'); });
+      pm.test('Ghi rõ nguồn local', function () { pm.expect(body.source).to.eql('sample-local'); });
+    language: text/javascript
+order: 2000

@@ -1,4 +1,5 @@
 mod connectors;
+mod api;
 mod data;
 mod db;
 mod diagnostics;
@@ -153,6 +154,7 @@ fn save_setting_cmd(key: String, value: String) -> Result<(), String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    api::start();
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             init_app,

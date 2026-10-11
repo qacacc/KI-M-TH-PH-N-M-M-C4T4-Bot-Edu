@@ -2,6 +2,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const canonical = path.join(root, "Campus_Assistant_API.postman_collection.json");
+if (!fs.existsSync(canonical)) {
+  console.log("SKIP: chưa có collection UTH chuẩn ở root; không đồng bộ hoặc tự tạo contract UTH.");
+  process.exit(0);
+}
 const collection = JSON.parse(fs.readFileSync(canonical, "utf8"));
 const before = fs.readFileSync(path.join(root, "postman/scripts/uth-before-request.js"), "utf8").trimEnd();
 const after = fs.readFileSync(path.join(root, "postman/scripts/uth-after-response.js"), "utf8").trimEnd();

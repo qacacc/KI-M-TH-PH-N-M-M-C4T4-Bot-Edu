@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{BASE_URL}}/api/v1/exams?studentCode={{STUDENT_CODE}}"
+method: GET
+queryParams:
+  studentCode: "{{STUDENT_CODE}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Không trả dữ liệu giả khi thiếu cache', function () { pm.expect([400, 503]).to.include(pm.response.code); });
+      const body = pm.response.json();
+      pm.test('Lỗi có mã rõ ràng', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.be.a('string'); });
+    language: text/javascript
+order: 5000
