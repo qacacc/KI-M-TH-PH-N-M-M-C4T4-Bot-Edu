@@ -45,6 +45,7 @@ postman/**/*.local.json
 postman/**/*.postman_globals.json
 *.postman_environment.json
 !postman/UTH.local-template.postman_environment.json
+!postman/Campus_Assistant_Local_REST_API.postman_environment.json
 
 # OS / Editor
 .DS_Store
