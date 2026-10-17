@@ -5,18 +5,18 @@
 ### Runtime Status: `CURRENT / LOCAL LOOPBACK`
 
 ```text
-1. Desktop app starts Rust.
-2. Rust starts Axum at 127.0.0.1:47821.
-3. Postman calls /api/v1/* through the local environment.
-4. Health, local announcements/documents and error contracts are returned by Rust.
-5. Schedule/exams/sync do not fabricate data; they return an explicit error while UTH contract/cache is unavailable.
+1. Desktop app starts Rust; `api::start()` reads `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`.
+2. If the token is missing/invalid, the desktop app continues and REST does not bind a port; otherwise Axum binds only `127.0.0.1:47821`.
+3. Postman sends HTTP to `/api/v1/*` with `Authorization: Bearer {{API_TOKEN}}`; missing/invalid tokens return `401` before route processing.
+4. Rust returns the shared JSON envelope and reads existing local/connector services as applicable.
+5. Schedule/exams/sync do not fabricate data; an unverified UTH contract remains `503 CONNECTOR_UNAVAILABLE`.
 ```
 
 Postman collection của project là `postman/Campus_Assistant_Local_REST_API.postman_collection.json`. Collection UTH là upstream probe riêng, không phải runtime REST API của project.
 
 ## CA-080 - Postman setup CURRENT 2026-10-10
 
-Collection local JSON -> `tools/check-local-postman.cjs` kiểm tra 9 request/error contract; collection UTH nếu chưa có nguồn chuẩn thì `sync:postman` SKIP an toàn. Desktop đã import collection/environment local và chạy local contract; chưa gửi API trường hoặc live sandbox test. Response HTTP/JSON local không nâng contract UTH lên VERIFIED; auth/business schema vẫn UNKNOWN. Không tạo session app, không gỡ quarantine Rust. Hướng dẫn: [postman/README](../postman/README.md), [contract](testing/UTH_API_CONTRACT.md).
+Collection local JSON -> `tools/check-local-postman.cjs` kiểm tra route/auth/error contract; collection UTH nếu chưa có nguồn chuẩn thì `sync:postman` SKIP an toàn. Không gửi API trường hoặc live sandbox test. Response HTTP/JSON local không nâng contract UTH lên VERIFIED; business schema UTH vẫn UNKNOWN. Không tạo session app, không gỡ quarantine Rust. Hướng dẫn: [REST API contract](testing/REST_API_DESIGN.md), [postman/README](../postman/README.md), [UTH contract](testing/UTH_API_CONTRACT.md).
 
 ## CA-083 - Luồng UTH CURRENT 2026-10-09
 
