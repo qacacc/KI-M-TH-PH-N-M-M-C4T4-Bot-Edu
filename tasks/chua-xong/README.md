@@ -1,6 +1,6 @@
 # Task Cần Thực Hiện
 
-Cập nhật: 2026-10-09. Theo dõi 35 file cần làm/đối chiếu (13 spec mới sau audit), không có nghĩa cả 35 cần viết lại code.
+Cập nhật: 2026-10-17. Theo dõi 36 file cần làm/đối chiếu (13 spec mới sau audit), không có nghĩa cả 36 cần viết lại code.
 
 ## Quy tắc
 
@@ -15,6 +15,7 @@ Cập nhật: 2026-10-09. Theo dõi 35 file cần làm/đối chiếu (13 spec m
 
 | Task | Trạng thái | Chi tiết |
 | --- | --- | --- |
+| CA-098.01 - Thiết kế và bảo vệ REST API local (P1) | In Progress | [CA-098.01-rest-api-postman-contract.md](CA-098.01-rest-api-postman-contract.md) |
 | CA-084 - Nghiệm thu và phát hành từ source đã sửa (P1) | Proposed | [CA-084-release-audit-security-checklist.md](CA-084-release-audit-security-checklist.md) |
 | CA-086 - Sửa lifecycle khởi tạo và trạng thái degraded (P1) | In Progress | [CA-086-app-bootstrap-lifecycle.md](CA-086-app-bootstrap-lifecycle.md) |
 | CA-087 - Toàn vẹn phiên chat và lưu lịch sử (P1) | Proposed | [CA-087-chat-session-integrity.md](CA-087-chat-session-integrity.md) |

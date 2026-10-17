@@ -1,5 +1,13 @@
 # Project Tasks
 
+## CA-098.01 - REST API project + Postman (2026-10-17)
+
+- Status: In Progress; branch `feat/khiem/ca-098-01-rest-design`.
+- TARGET: loopback API requires `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`; all Postman calls use HTTP Bearer auth. Missing/invalid token returns 401; configuration is not committed.
+- CURRENT: UTH contract gate still returns 503 for schedule/exams; profile remains not connected (404). Local response is not UTH fixture evidence.
+- Design/how-to: [REST API contract](../testing/REST_API_DESIGN.md); [Postman README](../../postman/README.md).
+- Verification pending: Cargo API tests, `npm run check:postman`, `npm run check:all`, and manual Postman local HTTP call.
+
 ## CA-080 - Setup Postman local (2026-10-10)
 
 - Status: In Progress; local REST/Postman đã có, API/auth/business schema trường UNKNOWN.
