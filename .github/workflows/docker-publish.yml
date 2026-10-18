@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: campus-assistant-local
+  IMAGE_NAME: ki-m-th-ph-nmm-c4t4-bot-edu
 
 jobs:
   docker:
