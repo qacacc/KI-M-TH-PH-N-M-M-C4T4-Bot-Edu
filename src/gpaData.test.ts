@@ -48,12 +48,42 @@ describe('parseGpaSubjects - Validation & Security', () => {
   });
 
   it('ném lỗi khi dữ liệu JSON bị sai cấu trúc (thiếu trường bắt buộc)', () => {
-    const invalidRaw = JSON.stringify([{ id: '1' }]); // Thiếu name, credits...
+    const invalidRaw = JSON.stringify([{ id: '1' }]);
     expect(() => parseGpaSubjects(invalidRaw)).toThrow("Dữ liệu điểm đã lưu không hợp lệ.");
   });
 
-  it('ném lỗi khi dữ liệu JSON chứa giá trị ngoài giới hạn (VD: tín chỉ âm)', () => {
-    const invalidRaw = JSON.stringify([{ id: '1', name: 'Hack', credits: -5, letterGrade: 'A', score10: 9 }]);
-    expect(() => parseGpaSubjects(invalidRaw)).toThrow();
+  it('từ chối điểm hệ 10 ngoài biên (-0.1 và 10.1)', () => {
+    const invalidLow = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'F', score10: -0.1 }]);
+    expect(() => parseGpaSubjects(invalidLow)).toThrow();
+
+    const invalidHigh = JSON.stringify([{ id: '2', name: 'Test', credits: 3, letterGrade: 'A+', score10: 10.1 }]);
+    expect(() => parseGpaSubjects(invalidHigh)).toThrow();
+  });
+
+  it('chấp nhận giá trị biên của điểm hợp lệ (0 và 10)', () => {
+    const validZero = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'F', score10: 0 }]);
+    expect(() => parseGpaSubjects(validZero)).not.toThrow();
+
+    const validTen = JSON.stringify([{ id: '2', name: 'Test', credits: 3, letterGrade: 'A+', score10: 10 }]);
+    expect(() => parseGpaSubjects(validTen)).not.toThrow();
+  });
+
+  it('từ chối tín chỉ không hợp lệ (0, âm, lớn hơn 10)', () => {
+    const creditZero = JSON.stringify([{ id: '1', name: 'Test', credits: 0, letterGrade: 'A', score10: 8 }]);
+    expect(() => parseGpaSubjects(creditZero)).toThrow();
+
+    const creditNeg = JSON.stringify([{ id: '2', name: 'Test', credits: -1, letterGrade: 'A', score10: 8 }]);
+    expect(() => parseGpaSubjects(creditNeg)).toThrow();
+
+    const creditBig = JSON.stringify([{ id: '3', name: 'Test', credits: 11, letterGrade: 'A', score10: 8 }]);
+    expect(() => parseGpaSubjects(creditBig)).toThrow();
+  });
+
+  it('chấp nhận giá trị biên của tín chỉ hợp lệ (1 và 10)', () => {
+    const creditOne = JSON.stringify([{ id: '1', name: 'Test', credits: 1, letterGrade: 'A', score10: 8 }]);
+    expect(() => parseGpaSubjects(creditOne)).not.toThrow();
+
+    const creditTen = JSON.stringify([{ id: '2', name: 'Test', credits: 10, letterGrade: 'A', score10: 8 }]);
+    expect(() => parseGpaSubjects(creditTen)).not.toThrow();
   });
 });
