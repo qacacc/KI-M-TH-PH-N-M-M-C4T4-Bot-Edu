@@ -35,7 +35,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 ## Active task
 
-- CA-080: local REST/Postman đã có và đã mở rộng test profile-not-connected + empty-result; vẫn chờ contract/fixture UTH thật và manual live verification. CA-086 dừng theo yêu cầu user, source chưa commit, vẫn In Progress; không triển khai tiếp. CA-081 Proposed.
+- CA-090.01: migration SQLite/reset an toàn đã triển khai; còn manual native/UI verification, PR/review và đồng bộ Jira. CA-080 local REST/Postman vẫn chờ contract/fixture UTH thật; CA-086 dừng theo yêu cầu user; CA-081 Proposed.
 
 ## Done
 
@@ -98,7 +98,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 | CA-087 | P1 | Toàn vẹn phiên chat và lưu lịch sử | `tasks/chua-xong/CA-087-chat-session-integrity.md` | Proposed; chưa sửa runtime. |
 | CA-088 | P1 | Sửa lưu, phục hồi và tính GPA | `tasks/chua-xong/CA-088-gpa-persistence-calculation.md` | Proposed; chưa sửa runtime. |
 | CA-089 | P1 | Nguồn dữ liệu và trạng thái trường trung thực | `tasks/chua-xong/CA-089-school-ui-source-truth.md` | Proposed; chưa sửa runtime. |
-| CA-090 | P1 | Sao lưu và reset đúng phạm vi, không mất dữ liệu | `tasks/chua-xong/CA-090-backup-reset-data-safety.md` | Proposed; chưa sửa runtime. |
+| CA-090 | P1 | Sao lưu và reset đúng phạm vi, không mất dữ liệu | `tasks/chua-xong/CA-090-backup-reset-data-safety.md` | In Progress; CA-090.01 đã sửa migration/reset, backup round-trip vẫn chưa nghiệm thu. |
 | CA-091 | P1 | Thùng rác an toàn và một nguồn dữ liệu | `tasks/chua-xong/CA-091-trash-recovery-native-owner.md` | Proposed; chưa sửa runtime. |
 | CA-092 | P1 | Xuất lịch đúng múi giờ và phạm vi học kỳ | `tasks/chua-xong/CA-092-calendar-timezone-validity.md` | Proposed; chưa sửa runtime. |
 | CA-093 | P1 | Tìm kiếm công khai: lỗi, thời gian và nguồn tin | `tasks/chua-xong/CA-093-public-search-error-budget.md` | Proposed; chưa sửa runtime. |

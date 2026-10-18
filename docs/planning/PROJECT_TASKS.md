@@ -1,5 +1,12 @@
 # Project Tasks
 
+## CA-090.01 - SQLite migration và reset an toàn (2026-10-19)
+
+- Status: In Progress; triển khai native migration/reset đã có evidence, chưa review/merge Jira.
+- CURRENT: `init_app` không còn xóa lịch sử chat; SQLite bật foreign key và test migration giữ message cũ; ErrorBoundary chỉ reload; Settings reset có allowlist và confirm.
+- Evidence: `npm run check:all` PASS (67 Vitest, 43 Rust, build/layout/Postman/npm audit); manual native/UI chưa chạy.
+- Giới hạn: CA-090.02 backup round-trip và xóa DB/assets không thuộc phần CA-090.01 này.
+
 ## CA-080 - Setup Postman local (2026-10-10)
 
 - Status: In Progress; local REST/Postman đã có, API/auth/business schema trường UNKNOWN.
