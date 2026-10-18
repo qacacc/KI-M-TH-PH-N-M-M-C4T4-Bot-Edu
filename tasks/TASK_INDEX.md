@@ -36,6 +36,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 ## Active task
 
 - CA-080: local REST/Postman đã có và đã mở rộng test profile-not-connected + empty-result; vẫn chờ contract/fixture UTH thật và manual live verification. CA-086 dừng theo yêu cầu user, source chưa commit, vẫn In Progress; không triển khai tiếp. CA-081 Proposed.
+- CA-092 (user duyệt mở song song 2026-10-18): In Progress. ICS dùng TZID Asia/Ho_Chi_Minh, khoảng học kỳ do người dùng nhập, chặn xuất khi dữ liệu lỗi; `npm run check:all` pass trọn chuỗi; còn chờ manual import Google Calendar/Outlook.
 
 ## Done
 

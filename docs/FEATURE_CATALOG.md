@@ -24,7 +24,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 | SCHOOL_SETTINGS | Public mock/capability wording không đúng nguồn, CA-089 |
 | BACKUP_RESET | Active keys bị bỏ, reset phạm vi sai/fault handling, CA-090 |
 | PHYSICAL_TRASH / FILE_MANAGEMENT_AND_TRASH | Recovery và localStorage fallback sai owner, CA-091; không STABLE toàn diện |
-| CALENDAR_EXPORT | Timezone và recurrence chưa đúng, CA-092 |
+| CALENDAR_EXPORT | CA-092 In Progress: TZID Asia/Ho_Chi_Minh + khoảng học kỳ người dùng nhập; chưa manual import calendar |
 | PUBLIC_ADMISSIONS_SEARCH | Error thành empty/budget/parser cần CA-093; không STABLE toàn diện |
 | DESKTOP_SECURITY | CSP/capabilities/legacy gated bridge/managed assets cần CA-094; không exploit confirmed |
 | THEME_AND_APPEARANCE | Silent save/two preset stores/shared asset cần CA-095 |
@@ -208,10 +208,11 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 - **Owner**: Export Utility Modules
 - **Evidence**:
   - Source: `src/utils/calendarExporter.ts`
-  - Last Verified: 2026-07-27
-  - Verification Scope: AUTOMATED (`npm run test -- calendarExporter.test.ts`)
+  - Last Verified: 2026-10-18
+  - Verification Scope: AUTOMATED (`npx vitest run src/utils/calendarExporter.test.ts`, parser độc lập). Chưa MANUAL import Google Calendar/Outlook.
+- **CURRENT**: DTSTART/DTEND theo `TZID=Asia/Ho_Chi_Minh` kèm VTIMEZONE +0700; lịch học lặp hằng tuần đến ngày kết thúc học kỳ do người dùng nhập (RRULE UNTIL); dữ liệu thiếu/sai thì không tạo file và hiện "Chưa thể xuất file .ics." kèm lỗi.
 - **Known Gaps & Tracking**:
-  - None | Status: **`STABLE`**
+  - Ngày học kỳ chính thức từ trường là UNKNOWN (CA-080/081); CA-092 In Progress đến khi có manual import calendar (check:all đã pass 2026-10-18).
 
 ---
 

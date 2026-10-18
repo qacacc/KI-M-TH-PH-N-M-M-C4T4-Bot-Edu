@@ -69,7 +69,7 @@ Ma trận kiểm thử hồi quy quy định duy nhất danh sách các bộ tes
 | `src/pages/SettingsPage.tsx` | Vault / DPAPI Disclosure | **`CONFIRMED`** | `npm run check:all` | UI must say DPAPI is planned/session-only, not active |
 | `src/pages/SettingsPage.tsx` | Backup Import / Data Clear | **`KNOWN_GAP`** | Tracking Task: `CA-063B` | Backup import from clipboard, key mismatch fix |
 | `src/utils/backupRestore.ts` | Backup Utility Algorithm | **`CONFIRMED`** | `npm run test -- backupRestore.test.ts` | Export JSON, Import valid/invalid JSON |
-| `src/utils/calendarExporter.ts` | Calendar `.ics` Generator | **`CONFIRMED`** | `npm run test -- calendarExporter.test.ts` | Export `.ics` from Schedule & Exam pages |
+| `src/utils/calendarExporter.ts` | Calendar `.ics` Generator (TZID Asia/Ho_Chi_Minh, khoảng học kỳ người dùng nhập, chặn dữ liệu lỗi) | **`CONFIRMED`** | `npx vitest run src/utils/calendarExporter.test.ts` | Export `.ics` from Schedule & Exam pages; manual import calendar |
 | `src/components/GpaCalculator.tsx` | Local GPA/CPA Calculator | **`CONFIRMED`** | `npm run check:all` | Change grade inputs, verify GPA result |
 | `src/App.tsx` | App Navigation Routing Integration | **`CONFIRMED`** | `npm run check:all` | Global layout, Sidebar navigation E2E |
 | `package.json` | Project Dependencies | **`CONFIRMED`** | `npm run check:all` | Vite build, Vitest run, TypeCheck |
