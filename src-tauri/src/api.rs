@@ -67,6 +67,14 @@ fn fail(status: StatusCode, code: &'static str, message: impl Into<String>) -> R
         .into_response()
 }
 
+fn local_data_read_failed(_details: String) -> Response {
+    fail(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "LOCAL_DATA_READ_FAILED",
+        "Không thể đọc dữ liệu cục bộ.",
+    )
+}
+
 fn unauthorized() -> Response {
     let mut response = fail(
         StatusCode::UNAUTHORIZED,
@@ -163,11 +171,7 @@ async fn profile() -> Response {
 async fn announcements() -> Response {
     match documents::list_announcements() {
         Ok(items) => ok(json!(items), "sample-local"),
-        Err(error) => fail(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "LOCAL_DATA_READ_FAILED",
-            error,
-        ),
+        Err(error) => local_data_read_failed(error),
     }
 }
 
@@ -190,13 +194,7 @@ async fn documents(query: Query<AcademicQuery>) -> Response {
                     .is_none_or(|semester| item.semester == semester)
             })
             .collect::<Vec<_>>(),
-        Err(error) => {
-            return fail(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "LOCAL_DATA_READ_FAILED",
-                error,
-            )
-        }
+        Err(error) => return local_data_read_failed(error),
     };
     match serde_json::to_value(items) {
         Ok(items) => return ok(items, "sample-local"),
@@ -278,11 +276,7 @@ async fn sync_status(query: Query<AcademicQuery>) -> Response {
             "NO_SYNC_STATUS",
             "Chưa có trạng thái đồng bộ.",
         ),
-        Err(error) => fail(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "LOCAL_DATA_READ_FAILED",
-            error,
-        ),
+        Err(error) => local_data_read_failed(error),
     }
 }
 
@@ -419,6 +413,22 @@ mod tests {
         assert_eq!(json["success"], false);
         assert_eq!(json["error"]["code"], "UNAUTHORIZED");
         assert_eq!(json["data"], Value::Null);
+    }
+
+    #[tokio::test]
+    async fn local_data_read_error_response_khong_lo_chi_tiet_noi_bo() {
+        let response = local_data_read_failed("secret database path".to_string());
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let body_text = String::from_utf8(body.to_vec()).unwrap();
+        let json: Value = serde_json::from_str(&body_text).unwrap();
+
+        assert_eq!(json["error"]["code"], "LOCAL_DATA_READ_FAILED");
+        assert_eq!(json["error"]["message"], "Không thể đọc dữ liệu cục bộ.");
+        assert!(!body_text.contains("secret database path"));
     }
 
     #[test]
