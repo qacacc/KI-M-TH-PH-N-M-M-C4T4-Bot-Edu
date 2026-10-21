@@ -2,6 +2,19 @@
 
 [English](#english) · [Tiếng Việt](#tiếng-việt)
 
+<p align="center">
+  <img src="src/assets/logo.png" alt="Campus Assistant Local logo" width="128" />
+</p>
+
+<p align="center">
+  <a href="https://v2.tauri.app/"><img alt="Tauri 2" src="https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white" /></a>
+  <a href="https://react.dev/"><img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" /></a>
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" /></a>
+  <a href="https://vite.dev/"><img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" /></a>
+  <a href="https://www.rust-lang.org/"><img alt="Rust" src="https://img.shields.io/badge/Rust-2021-000000?logo=rust&logoColor=white" /></a>
+  <a href="https://www.sqlite.org/"><img alt="SQLite" src="https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white" /></a>
+</p>
+
 ## English
 
 Campus Assistant Local is a local-first desktop application for students. It provides a rule-based chat interface, local academic views, document access, opt-in chat history, storage diagnostics, and a manual GPA calculator without sending credentials, tokens, cookies, chat content, or documents to a developer server.
@@ -25,6 +38,17 @@ Campus Assistant Local is a local-first desktop application for students. It pro
 - Appearance customization, light/dark themes, accent colors, managed background assets, and split-view layout.
 - Managed file actions limited to the application workspace.
 - Local Postman collection for REST error, empty-result, validation, cache, and sync-gate scenarios.
+
+### Technology and development tools
+
+| Category | Technologies / tools |
+| --- | --- |
+| Desktop shell | Tauri 2 |
+| Frontend | React, TypeScript, Vite |
+| Native layer | Rust, Cargo |
+| Local storage | SQLite |
+| Testing | Vitest, Rust tests, Node.js local Postman checks |
+| Quality gates | TypeScript build, Vite build, Cargo checks, `npm run check:all` |
 
 ### Explicit boundaries
 
@@ -127,6 +151,17 @@ Campus Assistant Local là ứng dụng desktop local-first dành cho sinh viên
 - Tùy chỉnh giao diện, light/dark, màu accent, ảnh nền được quản lý và bố cục split-view.
 - Thao tác file chỉ nằm trong workspace do ứng dụng quản lý.
 - Bộ Postman local cho các tình huống lỗi, kết quả rỗng, validation, cache và sync gate.
+
+### Công nghệ và công cụ phát triển
+
+| Nhóm | Công nghệ / công cụ |
+| --- | --- |
+| Desktop shell | Tauri 2 |
+| Frontend | React, TypeScript, Vite |
+| Native layer | Rust, Cargo |
+| Lưu trữ cục bộ | SQLite |
+| Kiểm thử | Vitest, Rust tests, kiểm tra Postman local bằng Node.js |
+| Quality gate | TypeScript build, Vite build, Cargo checks, `npm run check:all` |
 
 ### Ranh giới không được hiểu nhầm
 
