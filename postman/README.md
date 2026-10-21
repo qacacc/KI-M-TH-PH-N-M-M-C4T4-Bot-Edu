@@ -2,21 +2,32 @@
 
 ## REST API của project - local loopback
 
-`Campus_Assistant_Local_REST_API.postman_collection.json` là collection kiểm thử REST API do Rust của project phục vụ tại `http://127.0.0.1:47821`. Chạy desktop app trước:
+`Campus_Assistant_Local_REST_API.postman_collection.json` là collection kiểm thử REST API HTTP do Rust của project phục vụ tại `http://127.0.0.1:47821`. Mọi request yêu cầu Bearer token từ `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`; API không dùng Tauri IPC làm transport. Khi token chưa được cấu hình, app desktop vẫn mở nhưng REST server không mở port.
+
+Tạo token phiên bằng PowerShell rồi chạy desktop app trong cùng tiến trình shell:
 
 ```powershell
-npm run dev:desktop
+$bytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$rng.GetBytes($bytes)
+$token = [Convert]::ToBase64String($bytes)
+$env:CAMPUS_ASSISTANT_LOCAL_API_TOKEN = $token
+Write-Host "Nhập giá trị này vào local secret API_TOKEN trong Postman: $token"
+$token = $null
+$bytes = $null
+$rng.Dispose()
+npm.cmd run dev:desktop
 ```
 
-Import thêm `Campus_Assistant_Local_REST_API.postman_environment.json`, chọn environment tương ứng, rồi gửi request `Health` trước. Collection này kiểm thử API của project; collection UTH bên dưới chỉ dùng kiểm chứng upstream và không thay thế REST API local.
+Import `Campus_Assistant_Local_REST_API.postman_collection.json` và `Campus_Assistant_Local_REST_API.postman_environment.json` vào workspace project. Chọn environment tương ứng, nhập token vào **local secret value** `API_TOKEN`, rồi gửi request `Health` trước. Dùng local/secret value cho cả `STUDENT_CODE`; không nhập secret vào shared value, export, Git hoặc chat. Collection này kiểm thử API của project; collection UTH bên dưới chỉ dùng kiểm chứng upstream và không thay thế REST API local. Hướng dẫn hợp đồng đầy đủ ở [REST_API_DESIGN.md](../docs/testing/REST_API_DESIGN.md).
 
 Các endpoint lịch học, lịch thi và đồng bộ sẽ trả lỗi có mã rõ ràng khi UTH contract/cache chưa sẵn sàng. Đây là hành vi đúng, không phải dữ liệu rỗng giả.
 
 ## CURRENT và giới hạn
 
-- CONFIRMED: Collection nộp cho REST API của project là `postman/Campus_Assistant_Local_REST_API.postman_collection.json`; environment loopback đi kèm không chứa secret.
+- CONFIRMED: Collection nộp cho REST API của project là `postman/Campus_Assistant_Local_REST_API.postman_collection.json`; environment template chỉ có biến secret để trống.
 - Lịch sử: collection UTH cũ từng nằm ở root nhưng không còn là nguồn chuẩn hiện tại; các probe UTH chỉ được giữ như tài liệu tham chiếu khi có contract thật.
-- UNKNOWN: cả 3 endpoint/method/Bearer và schema nghiệp vụ. Không endpoint nào được gọi hoặc verified trong lần setup này.
+- UNKNOWN: API portal UTH vẫn chưa có contract verified. Bearer token của REST loopback là secret local do user cấu hình, không phải token UTH.
 - Không tự đăng nhập, không thu cookie trình duyệt, không tự sync SQLite. Postman không phải runtime của Campus Assistant.
 - Transport test PASS không chứng minh JSON là hồ sơ/lịch hợp lệ. HTTP 200 có thể là business error. [] chỉ được coi empty hợp lệ sau khi biết envelope/contract.
 

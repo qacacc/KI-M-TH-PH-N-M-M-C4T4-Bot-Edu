@@ -1,6 +1,6 @@
 # DEPENDENCY MAP - CAMPUS ASSISTANT LOCAL
 
-CA-103: Tauri startup -> `api::start()` -> Axum loopback `127.0.0.1:47821`; REST routes -> existing Rust data/connector services -> SQLite hoặc explicit error. Postman local collection/environment -> `tools/check-local-postman.cjs`; collection UTH remains upstream contract probe.
+CA-098.01: Tauri startup -> `api::start()` reads `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`; missing/invalid token leaves the desktop app running but does not open the REST port. With a valid token, Axum binds loopback `127.0.0.1:47821` and Bearer middleware protects all routes -> existing Rust data/connector services -> SQLite or explicit error. Postman local Collection -> HTTP loopback using Environment `BASE_URL`/local secret `API_TOKEN` -> `tools/check-local-postman.cjs`; Collection UTH remains a separate upstream contract probe.
 
 CA-080 setup (2026-10-10): collection JSON + postman/scripts -> tools/sync-postman.cjs -> JSON events/YAML mirrors; tools/check-postman.cjs -> Node VM synthetic và drift check; npm check:all -> check:postman. Postman Local Vault chỉ dùng trong Desktop được user cấp quyền, không có dependency runtime React/Rust/SQLite mới. Contract verified vẫn là dependency bắt buộc của CA-081.
 

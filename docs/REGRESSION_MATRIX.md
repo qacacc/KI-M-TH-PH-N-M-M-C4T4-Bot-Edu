@@ -7,7 +7,9 @@
 | `src-tauri/src/api.rs`, `src-tauri/src/lib.rs` | Loopback REST server và error != empty | **AUTOMATED** | `cargo test --manifest-path src-tauri/Cargo.toml api::tests` | Chạy desktop app rồi gửi Postman collection local |
 | `postman/Campus_Assistant_Local_REST_API.postman_collection.json` | Environment/Collection/Workspace input | **STATIC** | `npm run check:postman` | Import vào Postman Desktop và gửi `Health` |
 
-CA-080 CURRENT (2026-10-11): `npm run check:postman` kiểm tra local collection 9 request và 6 static checks, gồm profile chưa kết nối, empty result, validation/error và UTH cache/sync gates. Gate đã thêm vào `check:all`. Chưa live sandbox/Vault/API trường; business error/schema trường vẫn UNKNOWN. Collection UTH chưa có nguồn chuẩn nên `sync:postman` chỉ SKIP an toàn.
+CA-098.01: API routes require a process environment Bearer token; the desktop app remains running when the REST token is missing/invalid but the REST listener stays closed. Auth middleware returns 401 with `WWW-Authenticate: Bearer`; connector contract gate remains 503; non-contract local read failures map to generic 500. Required verification: `cargo test --manifest-path src-tauri/Cargo.toml api::tests`, `npm run check:postman`, `npm run check:all`, then manual Postman requests for Health, missing-token 401, Profile, Schedule, and Exams. Do not use this local test as evidence for UTH API schema/auth.
+
+CA-080 CURRENT (2026-10-11): `npm run check:postman` kiểm tra local collection và static checks, gồm profile chưa kết nối, empty result, validation/error và UTH cache/sync gates. Gate đã thêm vào `check:all`. Chưa live sandbox/Vault/API trường; business error/schema trường vẫn UNKNOWN. Collection UTH chưa có nguồn chuẩn nên `sync:postman` chỉ SKIP an toàn.
 
 ## Audit bổ sung - 2026-10-09
 

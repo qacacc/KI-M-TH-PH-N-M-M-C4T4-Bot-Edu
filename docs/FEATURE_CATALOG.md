@@ -5,10 +5,11 @@
 - **Owner**: Rust API module (`src-tauri/src/api.rs`)
 - **Evidence**: `cargo test --manifest-path src-tauri/Cargo.toml api::tests`; `npm run check:postman`
 - **Address**: `127.0.0.1:47821`
-- **Scope**: Health, local sample provenance, validation/error envelope và Postman collection của project.
-- **Known limits**: Không public Internet; profile/schedule/exams/sync thật vẫn phụ thuộc UTH contract/auth/cache verification và không trả sample thay thế.
+- **Scope**: Health, local sample provenance, validation/error envelope, Bearer authentication và Postman collection của project.
+- **Address/Security**: `127.0.0.1:47821`; listener chỉ bật khi `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` hợp lệ; tất cả route yêu cầu Bearer.
+- **Known limits**: Không public Internet; profile/schedule/exams/sync thật vẫn phụ thuộc UTH contract/cache verification và không trả sample thay thế.
 
-CA-080 CURRENT (2026-10-11): bộ Postman local có 9 request, gồm profile chưa kết nối, empty-result, validation/error và UTH cache/sync gates; có Vault reference, consent/host/date guards, HTTP/JSON tests và JSON/YAML drift gate. Kiểm thử offline/local synthetic; không chứng nhận API/auth/business schema thật. CA-080 In Progress, CA-081 Proposed; UTH tiếp tục quarantined. Xem [contract](testing/UTH_API_CONTRACT.md).
+CA-098.01 CURRENT (2026-10-17): REST loopback bảo vệ bằng Bearer token process-local; Postman collection dùng biến `API_TOKEN`, template để trống và có probe 401. CA-080 UTH collection vẫn là probe upstream riêng, không dùng làm schema REST local. Profile chưa kết nối là 404; Schedule/Exams giữ 503 khi contract chưa xác minh.
 
 Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhận đúng sự thật hiện tại (`CURRENT`) và mục tiêu (`TARGET`), kèm bằng chứng kiểm thử (`Evidence`), khe hở kỹ thuật (`Known Gaps`) và mã task theo dõi (`Tracking Task`).
 
