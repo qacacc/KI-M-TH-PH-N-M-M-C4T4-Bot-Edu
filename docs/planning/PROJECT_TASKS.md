@@ -449,6 +449,13 @@
 - Chỉ sửa tài liệu/cấu trúc task; không đổi runtime/schema/collection hay trạng thái task cũ.
 - Kiểm chứng sau chuyển thư mục: 55 spec đúng nhóm và có liên kết README; git diff --check pass; npm run check:all pass 62 Vitest/39 Rust/layout/build/cargo check, audit 0. Không nghiệm thu lại native auth hoặc UI cũ.
 
+## CA-084 release checklist reconciliation - 2026-10-21
+
+- CONFIRMED: `ReleasePage` trước đây đánh `Dữ liệu mẫu` là FAIL khi bootstrap local-only không seed academic data và đánh một số capability PASS từ nhãn tĩnh.
+- CURRENT: checklist được tách thành `src/releaseChecklist.ts`; local-only/connector chưa verified là WARN, còn FAIL chỉ đến từ version sai hoặc health report có lỗi runtime.
+- AUTOMATED: `npm run test -- --run src/releaseChecklist.test.ts` PASS 2/2.
+- PENDING: xử lý advisory `npm audit` ngoài scope dependency, native smoke, restart/upgrade DB, privacy/path checks, installer và review; chưa chuyển CA-084 sang Done.
+
 ## Audit tổng thể và lập backlog - 2026-10-09
 
 - CONFIRMED: audit source/config/docs/test trên baseline f5c0055; báo cáo docs/SOURCE_AUDIT_2026-10-09.md phân biệt source, probe, giả thuyết race và native/API UNKNOWN.
