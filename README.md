@@ -92,6 +92,18 @@ The repository currently has no published GitHub Release or package. Those GitHu
 
 Never commit credentials, tokens, cookies, `.env` secrets, raw chat, or personal academic data.
 
+### Team / contributors
+
+| Name | GitHub |
+| --- | --- |
+| Huỳnh Tấn Đạt | [@qacacc](https://github.com/qacacc) |
+| Nguyễn Hữu Gia Khang | [@Bryan13032004](https://github.com/Bryan13032004) |
+| Nguyễn Văn Hà | [@hakury9662](https://github.com/hakury9662) |
+| Nguyễn Thị Ngọc Trâm | [@NgocTram05](https://github.com/NgocTram05) |
+| Lê Đức Toàn | [@toan-ei](https://github.com/toan-ei) |
+| Nguyễn Đình Khiêm | [@Khiem1074](https://github.com/Khiem1074) |
+| Võ Anh Sơn | [@anhson05](https://github.com/anhson05) |
+
 ## Tiếng Việt
 
 Campus Assistant Local là ứng dụng desktop local-first dành cho sinh viên. Ứng dụng cung cấp giao diện chat theo luật, các màn hình dữ liệu học tập cục bộ, truy cập tài liệu, lịch sử chat bật theo lựa chọn, chẩn đoán bộ nhớ và tính GPA thủ công. Ứng dụng không gửi mật khẩu, token, cookie, nội dung chat hoặc tài liệu đến máy chủ của nhóm phát triển.
@@ -160,6 +172,18 @@ Repository hiện chưa có GitHub Release hoặc package được publish. Hai 
 5. Chỉ merge sau khi review và check đạt.
 
 Không commit credential, token, cookie, secret `.env`, raw chat hoặc dữ liệu học tập cá nhân.
+
+### Thành viên / contributors
+
+| Họ và tên | GitHub |
+| --- | --- |
+| Huỳnh Tấn Đạt | [@qacacc](https://github.com/qacacc) |
+| Nguyễn Hữu Gia Khang | [@Bryan13032004](https://github.com/Bryan13032004) |
+| Nguyễn Văn Hà | [@hakury9662](https://github.com/hakury9662) |
+| Nguyễn Thị Ngọc Trâm | [@NgocTram05](https://github.com/NgocTram05) |
+| Lê Đức Toàn | [@toan-ei](https://github.com/toan-ei) |
+| Nguyễn Đình Khiêm | [@Khiem1074](https://github.com/Khiem1074) |
+| Võ Anh Sơn | [@anhson05](https://github.com/anhson05) |
 
 ### Tài liệu chính
 
