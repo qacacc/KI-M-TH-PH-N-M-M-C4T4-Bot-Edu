@@ -61,6 +61,9 @@ fn migrate_to_v2(conn: &mut Connection) -> Result<(), String> {
 }
 
 fn ensure_db_schema(conn: &mut Connection) -> Result<(), String> {
+    conn.pragma_update(None, "foreign_keys", true)
+        .map_err(|e| format!("Không bật được SQLite foreign key: {}", e))?;
+
     let user_version: i32 = conn
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .unwrap_or(0);
@@ -203,16 +206,6 @@ pub(crate) fn get_setting(conn: &Connection, key: &str, fallback: &str) -> Strin
         |row| row.get(0),
     )
     .unwrap_or_else(|_| fallback.to_string())
-}
-
-pub(crate) fn clear_chat_history(conn: &Connection) -> Result<(), String> {
-    if get_setting(conn, "chatHistoryClearedV2", "false") == "true" {
-        return Ok(());
-    }
-    conn.execute("DELETE FROM chat_messages", [])
-        .map_err(|_| "Không xóa được lịch sử trò chuyện cũ.".to_string())?;
-    set_setting(conn, "chatHistoryClearedV2", "true")?;
-    Ok(())
 }
 
 pub(crate) fn seed_sample_documents(
@@ -555,5 +548,49 @@ mod tests {
         clear_all_chat_sessions(&mut conn).unwrap();
         let sess_clear = list_chat_sessions(&conn).unwrap();
         assert!(sess_clear.iter().any(|s| s.id == "default"));
+    }
+
+    #[test]
+    fn test_migration_preserves_existing_chat_data_and_enables_foreign_keys() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            r#"
+            CREATE TABLE chat_sessions (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            CREATE TABLE chat_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(session_id) REFERENCES chat_sessions(id)
+            );
+            INSERT INTO chat_sessions VALUES ('legacy', 'Dữ liệu cũ', '2026-01-01', '2026-01-01');
+            INSERT INTO chat_messages (session_id, role, content, created_at)
+            VALUES ('legacy', 'user', 'Không được xóa khi khởi động', '2026-01-01');
+            PRAGMA user_version = 1;
+            "#,
+        )
+        .unwrap();
+
+        ensure_db_schema(&mut conn).unwrap();
+
+        let version: i32 = conn
+            .query_row("PRAGMA user_version", [], |row| row.get(0))
+            .unwrap();
+        let foreign_keys: i32 = conn
+            .query_row("PRAGMA foreign_keys", [], |row| row.get(0))
+            .unwrap();
+        let message_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM chat_messages", [], |row| row.get(0))
+            .unwrap();
+
+        assert_eq!(version, 2);
+        assert_eq!(foreign_keys, 1);
+        assert_eq!(message_count, 1);
     }
 }

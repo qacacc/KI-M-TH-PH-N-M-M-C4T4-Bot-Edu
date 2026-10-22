@@ -9,6 +9,11 @@
 
 CA-080 CURRENT (2026-10-11): `npm run check:postman` kiểm tra local collection 9 request và 6 static checks, gồm profile chưa kết nối, empty result, validation/error và UTH cache/sync gates. Gate đã thêm vào `check:all`. Chưa live sandbox/Vault/API trường; business error/schema trường vẫn UNKNOWN. Collection UTH chưa có nguồn chuẩn nên `sync:postman` chỉ SKIP an toàn.
 
+## CA-084 - Release checklist
+
+- `src/releaseChecklist.ts`: `npm run test -- --run src/releaseChecklist.test.ts` kiểm tra local-only data không bị báo `FAIL`, và lỗi version/health runtime vẫn được báo đúng.
+- Native smoke, restart, installer và manual UI verification vẫn chưa được chứng minh bởi targeted test này.
+
 ## Audit bổ sung - 2026-10-09
 
 [Audit source](SOURCE_AUDIT_2026-10-09.md) xác định các gate PLANNED chưa nằm trong green baseline hiện tại:

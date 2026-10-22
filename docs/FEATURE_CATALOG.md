@@ -30,7 +30,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 | THEME_AND_APPEARANCE | Silent save/two preset stores/shared asset cần CA-095 |
 | CORE_MAINTAINABILITY | Format/clippy fail và test helper/static gaps, CA-096 |
 | GOVERNANCE | Roadmap/duplicate ID/old evidence reconciliation, CA-097 |
-| RELEASE | Checklist static/samples-required/installer mới, CA-084 |
+| RELEASE | Checklist local-only semantics, native smoke/installer evidence và reconciliation, CA-084 |
 
 Đây là tracking PLANNED, không phải các fix đã triển khai. CA-080 đang In Progress ở phạm vi local REST/Postman; CA-081 vẫn Proposed; UTH auth/sync/read vẫn quarantined. CA-064/085 vẫn Frozen.
 
