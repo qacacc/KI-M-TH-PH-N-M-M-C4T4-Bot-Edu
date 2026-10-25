@@ -1,5 +1,12 @@
 # Project Tasks
 
+## CA-093.02 - Search parser và xếp hạng (2026-10-26)
+
+- Status: In Progress; parser/xếp hạng/allowlist và fixture đã có, chưa đối chiếu site trường thật/PR review.
+- CURRENT: `public_search.rs` bóc tách HTML theo thẻ, bỏ script/style/nav/quảng cáo/phần tử ẩn, khử trùng; điểm tiêu đề chứa trọn từ khóa +100; mỗi nguồn có allowlist `*.edu.vn`, fetcher chặn URL/redirect ngoài allowlist. Data contract không đổi.
+- Evidence: `cargo test public_search` PASS 21/21 với 5 fixture `tests/fixtures/search/`; `npm run check:all` FAIL chỉ ở bước cuối `npm audit` (3 advisory vite/@vitest/mocker có sẵn, dependency không đổi); 84 Vitest, layout, Postman, build, cargo check, 59 Rust PASS.
+- Giới hạn: chưa chạy với HTML thật của từng trường; content-type/cancel/cache vẫn PLANNED.
+
 ## CA-093.01 - Tìm kiếm công khai phân biệt lỗi và không thấy (2026-10-25)
 
 - Status: In Progress; runtime và test tự động đã có, chưa manual native/PR review.

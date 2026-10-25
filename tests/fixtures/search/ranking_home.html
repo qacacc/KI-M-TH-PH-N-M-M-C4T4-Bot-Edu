@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<!-- Fixture CA-093.02: trang chủ được crawl trước, nội dung có nhắc từ khóa nhưng tiêu đề không khớp -->
+<html>
+<head><title>Trang chủ - Tin tức chung</title></head>
+<body>
+  <nav>
+    <a href="/tin-tuc/thong-bao-chung">Thông báo chung</a>
+    <a href="/tuyen-sinh/huong-dan-nhap-hoc">Hướng dẫn nhập học</a>
+    <a href="https://evil.example.com/tuyen-sinh">Liên kết ngoài allowlist</a>
+    <a href="https://example.edu.attacker.com/tuyen-sinh">Domain giả mạo</a>
+    <a href="http://example.edu/tuyen-sinh-http">HTTP không an toàn</a>
+  </nav>
+  <main>
+    <p>Nhà trường thông báo lịch sinh hoạt đầu khóa, có phần giới thiệu thủ tục nhập học cho tân sinh viên.</p>
+  </main>
+</body>
+</html>

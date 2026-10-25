@@ -23,7 +23,7 @@ CA-080 CURRENT (2026-10-11): `npm run check:postman` kiểm tra local collection
 - CA-088/090: GPA draft/recovery, storage blocked/quota, backup active keys, confirm/reset/reload.
 - CA-089: public mock provenance và capability chưa có runtime không được gán ready.
 - CA-091: native/DB/filesystem failures, restart recovery, một owner trash, partial empty.
-- CA-092/093: timezone parser/calendar validity; all/partial fetch failure, deadline/redirect/Unicode.
+- CA-092/093: timezone parser/calendar validity; all/partial fetch failure, deadline/redirect/Unicode. CA-093.02: `cargo test public_search` với fixture `tests/fixtures/search/` (parser nhiễu, xếp hạng, allowlist).
 - CA-094/095: native CSP/capability/path/symlink; theme asset/preset ownership và save failure.
 - CA-096/084: format/Clippy/lint policy, behavior/visual regressions, installer smoke/upgrade.
 

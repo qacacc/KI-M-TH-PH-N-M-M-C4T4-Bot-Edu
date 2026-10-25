@@ -38,6 +38,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 - CA-084: release checklist local-only đang được sửa và đối chiếu; còn `npm run check:all`, native smoke, installer/review và đồng bộ Jira.
 - CA-090.01: migration SQLite/reset an toàn đã triển khai; giữ In Progress, không sửa trong scope CA-084; còn manual native/UI verification, PR/review và đồng bộ Jira.
 - CA-093.01: tìm kiếm công khai phân biệt lỗi/không thấy, hạn chót 20s, retry tối đa 2 lần, nút Thử lại đã triển khai; giữ In Progress, còn manual native ngắt mạng và PR/review.
+- CA-093.02: parser HTML bỏ script/style/nav/quảng cáo/phần tử ẩn, khử trùng, xếp hạng tiêu đề, allowlist tên miền + kiểm redirect đã triển khai với fixture; giữ In Progress, còn đối chiếu site thật và PR/review.
 - CA-080 local REST/Postman vẫn chờ contract/fixture UTH thật; CA-086 dừng theo yêu cầu user; CA-081 Proposed.
 
 ## Done
@@ -104,7 +105,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 | CA-090 | P1 | Sao lưu và reset đúng phạm vi, không mất dữ liệu | `tasks/chua-xong/CA-090-backup-reset-data-safety.md` | In Progress; CA-090.01 đã sửa migration/reset, backup round-trip vẫn chưa nghiệm thu. |
 | CA-091 | P1 | Thùng rác an toàn và một nguồn dữ liệu | `tasks/chua-xong/CA-091-trash-recovery-native-owner.md` | Proposed; chưa sửa runtime. |
 | CA-092 | P1 | Xuất lịch đúng múi giờ và phạm vi học kỳ | `tasks/chua-xong/CA-092-calendar-timezone-validity.md` | Proposed; chưa sửa runtime. |
-| CA-093 | P1 | Tìm kiếm công khai: lỗi, thời gian và nguồn tin | `tasks/chua-xong/CA-093-public-search-error-budget.md` | In Progress; CA-093.01 đã sửa error/partial/no_match, deadline, retry; redirect/content-type/cancel chưa làm. |
+| CA-093 | P1 | Tìm kiếm công khai: lỗi, thời gian và nguồn tin | `tasks/chua-xong/CA-093-public-search-error-budget.md` | In Progress; CA-093.01 đã sửa error/partial/no_match, deadline, retry; CA-093.02 parser/xếp hạng/allowlist/redirect; content-type/cancel/cache chưa làm. |
 | CA-094 | P1 | Gia cố desktop IPC và filesystem boundary | `tasks/chua-xong/CA-094-desktop-ipc-hardening.md` | Proposed; chưa sửa runtime. |
 | CA-095 | P2 | Theme: persistence, draft và ownership ảnh nền | `tasks/chua-xong/CA-095-appearance-persistence-assets.md` | Proposed; chưa sửa runtime. |
 | CA-096 | P2 | Clean code tăng dần và test hành vi | `tasks/chua-xong/CA-096-incremental-clean-code-tests.md` | Proposed; chưa sửa runtime. |

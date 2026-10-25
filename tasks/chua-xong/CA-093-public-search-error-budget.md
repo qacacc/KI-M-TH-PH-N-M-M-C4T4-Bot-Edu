@@ -1,6 +1,6 @@
 # CA-093 - Tìm kiếm công khai: lỗi, thời gian và nguồn tin
 
-- Status: In Progress (CA-093.01 implementation)
+- Status: In Progress (CA-093.01, CA-093.02 implementation)
 - Priority: P1
 - Created: 2026-10-09
 - Owner: AI + User review
@@ -62,6 +62,20 @@ Phạm vi CA-093.01: phân biệt lỗi/không thấy, hạn chót tổng, retry
 - AUTOMATED: `npm run check:all` FAIL chỉ ở bước cuối `npm audit` (3 advisory vite/@vitest/mocker có sẵn, package.json/lock không đổi, đã PENDING trong CA-084); các bước trước PASS: 84 Vitest, layout, Postman, build, cargo check, 49 Rust.
 - MANUAL VISUAL CHECK: CHƯA CHẠY. Cần ngắt mạng trong app desktop, hỏi tuyển sinh, xác nhận thông báo lỗi + nút Thử lại và spinner kết thúc trong khoảng 20s.
 - Giới hạn: nút Thử lại không được khôi phục khi mở lại phiên cũ từ lịch sử (lịch sử chỉ lưu nội dung text).
+
+## Evidence cập nhật CA-093.02 (2026-10-26)
+
+Phạm vi CA-093.02: parser HTML, normalize/khử trùng, xếp hạng theo tiêu đề, allowlist tên miền. Không đổi data contract `PublicSearchResponse`. Content-type/size theo header, cancel và cache vẫn PLANNED.
+
+- CURRENT `src-tauri/src/public_search.rs:195-447`: parser theo thẻ thay cho cắt `<...>` thủ công. Bỏ nội dung raw `script/style/noscript/template/textarea/title`; bỏ khối `nav/aside/footer/form/button/svg/iframe/...`, `header` ngoài `article/main`; bỏ phần tử ẩn (`hidden`, `aria-hidden="true"`, `display:none`, `visibility:hidden`, `d-none`) và quảng cáo theo class/id (`ad(s)`, `banner`, `sponsor`, `quang-cao`...). Bỏ comment, giải mã entity tên + số một lượt.
+- CURRENT `src-tauri/src/public_search.rs:447`: mỗi khối là một dòng, gom khoảng trắng, bỏ dòng trùng (so không dấu); snippet trùng tiêu đề và trùng giữa các trang bị loại.
+- CURRENT `src-tauri/src/public_search.rs:527-549`: điểm tiêu đề chứa trọn cụm từ khóa +100, đủ từ +40, mỗi từ +6; tách câu không cắt `15.08.2026`. `:884` xếp hạng toàn bộ ứng viên (tối đa 12) trước khi lấy 6 kết quả.
+- CURRENT `src-tauri/src/public_search.rs:43`, `:637`, `:783`: mỗi nguồn có `domains` chính thống `*.edu.vn`; link crawl phải đúng host seed và thuộc domain; fetcher thật chặn URL ngoài allowlist trước khi gọi và chặn URL cuối sau redirect (tối đa 5). Host có `@`, port, ký tự lạ bị loại.
+- CURRENT `src-tauri/src/public_search.rs:715`: `to_ascii_lowercase` thay `to_lowercase` để index không lệch với ký tự Unicode (`İ`).
+- Fixture: `tests/fixtures/search/complex_article.html`, `ranking_home.html`, `ranking_general.html`, `ranking_title_match.html`, `malformed_unicode.html`.
+- AUTOMATED: `cargo test --manifest-path src-tauri/Cargo.toml public_search` PASS 21/21 (10 test mới: parser nhiễu, whitespace/khử trùng, snippet sạch, xếp hạng tiêu đề, điểm tiêu đề, link ngoài allowlist, host giả mạo, domain cấu hình, fetcher chặn trước mạng, HTML lỗi/Unicode).
+- AUTOMATED: `npm run check:all` FAIL chỉ ở bước cuối `npm audit` (3 advisory vite/@vitest/mocker có sẵn, dependency không đổi); 84 Vitest, layout, Postman, build, cargo check, 59 Rust PASS.
+- MANUAL: CHƯA CHẠY tìm kiếm thật trên site trường; parser chưa đối chiếu với HTML thực tế của từng trường (ASSUMED: cấu trúc tương tự fixture).
 
 ## Rollback
 

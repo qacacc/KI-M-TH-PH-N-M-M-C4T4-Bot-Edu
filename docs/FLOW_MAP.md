@@ -108,6 +108,8 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
      --> NẾU INTENT == "PUBLIC_ADMISSIONS_INFO" -> Tra cứu tuyển sinh công khai.
          (CA-093.01) Rust crawl tối đa 12 URL trong hạn chót 20s, mỗi URL thử tối đa 3 lần;
          trả status success/partial/no_match/error + failedUrls; UI hiện nút Thử lại khi error/partial/lỗi IPC.
+         (CA-093.02) Chỉ crawl host seed thuộc allowlist tên miền; bóc tách bỏ script/style/nav/quảng cáo/ẩn,
+         khử trùng, xếp hạng toàn bộ ứng viên (tiêu đề chứa trọn từ khóa lên đầu) rồi lấy tối đa 6 kết quả.
    - Bước 4.3: Nếu structured intent UNKNOWN, mới gọi handleSchoolChatQuery(value) làm school fallback.
    - Bước 4.4: Nếu vẫn không match, trả fallback hỗ trợ dữ liệu local hiện có.
 ```
