@@ -60,6 +60,8 @@ export type ChatMessage = {
   announcements?: AnnouncementRecord[];
   scheduleItems?: ScheduleRecord[];
   examItems?: ExamRecord[];
+  // CA-093.01: câu tra cứu công khai cần nút "Thử lại" khi lỗi kết nối
+  retryQuery?: string;
 };
 
 export type ConversationState = {
@@ -177,4 +179,10 @@ export type PublicSearchResponse = {
   searchedUrls: string[];
   results: PublicSearchResult[];
   message: string;
+  // CA-093.01: error != no_match (DATA-001)
+  status: PublicSearchStatus;
+  failedUrls: string[];
+  timedOut: boolean;
 };
+
+export type PublicSearchStatus = "success" | "partial" | "no_match" | "error";

@@ -144,6 +144,20 @@ Tách biệt hoàn toàn giữa Trạng thái Phiên Đăng nhập (Auth State) 
 
 ---
 
+## 3b. Public Search Result State (CURRENT, CA-093.01, 2026-10-25)
+
+```
+IDLE --(PUBLIC_ADMISSIONS_INFO)--> SEARCHING (isBusy = true, hạn chót 20s phía Rust)
+SEARCHING --> SUCCESS   : mọi nguồn đọc được, có kết quả
+SEARCHING --> PARTIAL   : có kết quả/không, nhưng >= 1 nguồn lỗi hoặc bị cắt bởi hạn chót  [Thử lại]
+SEARCHING --> NO_MATCH  : mọi nguồn đọc được, không có kết quả khớp
+SEARCHING --> ERROR     : không đọc được nguồn nào (mạng/timeout) hoặc lỗi IPC              [Thử lại]
+SUCCESS | PARTIAL | NO_MATCH | ERROR --> IDLE (finally: isBusy = false)
+```
+
+- Mỗi URL thử tối đa 3 lần (1 + 2 retry); không retry khi đã hết hạn chót.
+- ERROR không bao giờ hiển thị như NO_MATCH (DATA-001).
+
 ## 4. Theme & Appearance Draft State Machine
 
 ```

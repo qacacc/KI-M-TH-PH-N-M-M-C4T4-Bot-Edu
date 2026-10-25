@@ -1,5 +1,12 @@
 # Project Tasks
 
+## CA-093.01 - Tìm kiếm công khai phân biệt lỗi và không thấy (2026-10-25)
+
+- Status: In Progress; runtime và test tự động đã có, chưa manual native/PR review.
+- CURRENT: `search_public_school_info` trả `status` success/partial/no_match/error, `failedUrls`, `timedOut`; hạn chót tổng 20s, tối đa 2 lần retry mỗi URL, crawl chạy qua `spawn_blocking`. UI báo "Mất kết nối tới nguồn tài liệu" và nút Thử lại khi lỗi.
+- Evidence: `cargo test public_search` PASS 11/11; `tests/search.test.ts` PASS 5/5; `npm run check:all` FAIL chỉ ở bước cuối `npm audit` (3 advisory vite/@vitest/mocker có sẵn, package.json/lock không đổi, đã PENDING trong CA-084); các bước trước PASS: 84 Vitest, layout, Postman, build, cargo check, 49 Rust.
+- Giới hạn: manual ngắt mạng trong app desktop chưa chạy; redirect/content-type/cancel/cache vẫn PLANNED trong CA-093.
+
 ## CA-090.01 - SQLite migration và reset an toàn (2026-10-19)
 
 - Status: In Progress; triển khai native migration/reset đã có evidence, chưa review/merge Jira.

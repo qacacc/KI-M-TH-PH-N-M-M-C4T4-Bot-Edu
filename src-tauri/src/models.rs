@@ -208,6 +208,11 @@ pub(crate) struct PublicSearchResponse {
     pub(crate) searched_urls: Vec<String>,
     pub(crate) results: Vec<PublicSearchResult>,
     pub(crate) message: String,
+    // CA-093.01: "success" | "partial" | "no_match" | "error" — Error != Empty (DATA-001)
+    pub(crate) status: String,
+    // URL gốc của các nguồn tải lỗi sau khi đã thử lại, giữ nguyên để truy vết
+    pub(crate) failed_urls: Vec<String>,
+    pub(crate) timed_out: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

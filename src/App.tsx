@@ -34,6 +34,7 @@ import {
   Minus,
   Square,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -100,12 +101,12 @@ import type {
   DiagnosticExportResult,
   DocumentRecord,
   HealthReport,
-  PublicSearchResponse,
   StorageSummary,
   UpdateCheckResult,
 } from "./types";
 import { formatBytes } from "./utils/format";
 import { createBootstrapRequest } from "./bootstrapRequest";
+import { PUBLIC_SEARCH_OFFLINE_MESSAGE, formatPublicSearchResponse, shouldOfferPublicSearchRetry } from "./publicSearchMessage";
 
 type View =
   | "chat"
@@ -883,32 +884,6 @@ export default function App() {
     }
   }
 
-  function formatPublicSearchResponse(response: PublicSearchResponse) {
-    if (response.results.length === 0) {
-      return [
-        response.message,
-        "",
-        "Nguồn đã kiểm tra:",
-        ...response.searchedUrls.map((url) => `- ${url}`),
-        "",
-        "Bot không tự suy luận ngày nhập học nếu trang công khai không có dữ liệu khớp.",
-      ].join("\n");
-    }
-
-    const lines = [
-      response.message,
-      "",
-      ...response.results.slice(0, 4).flatMap((result, index) => [
-        `${index + 1}. ${result.title}`,
-        result.snippet,
-        `Nguồn: ${result.sourceUrl}`,
-        "",
-      ]),
-      "Kết quả này lấy từ trang công khai, không dùng dữ liệu đăng nhập cá nhân.",
-    ];
-    return lines.join("\n").trim();
-  }
-
   async function runPublicSchoolSearch(query: string) {
     const school = getSchoolOption(schoolProfile);
     if (!school.portalUrl && schoolProfile.schoolId !== "uth") {
@@ -919,14 +894,19 @@ export default function App() {
     setIsBusy(true);
     try {
       const response = await searchPublicSchoolInfo(schoolProfile.schoolId, query);
-      appendAssistant(formatPublicSearchResponse(response));
+      appendAssistant(
+        formatPublicSearchResponse(response),
+        shouldOfferPublicSearchRetry(response) ? { retryQuery: query } : {},
+      );
     } catch (err) {
+      // CA-093.01: lỗi IPC/native cũng là lỗi, không hiển thị như danh sách rỗng; cho phép Thử lại
       appendAssistant(
         [
-          `Không tra cứu được nguồn công khai của ${school.shortName}.`,
+          `${PUBLIC_SEARCH_OFFLINE_MESSAGE} của ${school.shortName}.`,
           String(err),
           "App không yêu cầu đăng nhập và không thu mật khẩu/token/cookie cho luồng này.",
         ].join("\n"),
+        { retryQuery: query },
       );
     } finally {
       setIsBusy(false);
@@ -1512,6 +1492,13 @@ export default function App() {
                     {message.announcements && <AnnouncementTable announcements={message.announcements} compact />}
                     {message.scheduleItems && <ScheduleTable scheduleItems={message.scheduleItems} compact />}
                     {message.examItems && <ExamTable examItems={message.examItems} compact />}
+                    {message.retryQuery && (
+                      <div className="button-row">
+                        <button type="button" onClick={() => void runPublicSchoolSearch(message.retryQuery ?? "")} disabled={isBusy}>
+                          <RefreshCw size={15} />Thử lại
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </article>
               ))}

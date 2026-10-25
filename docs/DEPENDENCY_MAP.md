@@ -55,6 +55,7 @@ Chatbox Engine (App.tsx + engine.ts)
    │
    ├──> engine.ts (detectIntent, normalizeVietnamese, stripPiiFromPublicQuery)
    ├──> chatSchoolIntegration.ts (handleSchoolChatQuery)
+   ├──> publicSearchMessage.ts (formatPublicSearchResponse, shouldOfferPublicSearchRetry - CA-093.01)
    └──> public_search.rs (searchPublicSchoolInfo)
 ```
 
@@ -71,7 +72,7 @@ Khi chỉnh sửa một module trong cột bên trái, các module thuộc cùng
 | `src-tauri/src/trash.rs` | Files Tab, Trash Tab, Physical Managed Filesystem |
 | `src-tauri/src/connectors/sync_service.rs` | `SchedulePage`, `ExamsPage`, `SchoolPage`, SQLite Cache Integrity |
 | `src-tauri/src/connectors/uth.rs` | UTH Connector Modal, `SchedulePage`, `ExamsPage` |
-| `src-tauri/src/public_search.rs` | Chat Admissions Queries, Outbound Web Scraper |
+| `src-tauri/src/public_search.rs` | Chat Admissions Queries, Outbound Web Scraper, `src/publicSearchMessage.ts` (contract `status`/`failedUrls`/`timedOut`) |
 | `src-tauri/capabilities/default.json` | Tauri Window IPC Permissions, Main vs Remote WebView Isolation |
 | `src-tauri/src/lib.rs` | Tauri Command Registry, Health Diagnostics, App Lifecycle |
 | `src/tauriApi.ts` | Toàn bộ Frontend UI (Mọi lệnh IPC giữa React và Rust) |

@@ -25,7 +25,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 | BACKUP_RESET | Active keys bị bỏ, reset phạm vi sai/fault handling, CA-090 |
 | PHYSICAL_TRASH / FILE_MANAGEMENT_AND_TRASH | Recovery và localStorage fallback sai owner, CA-091; không STABLE toàn diện |
 | CALENDAR_EXPORT | Timezone và recurrence chưa đúng, CA-092 |
-| PUBLIC_ADMISSIONS_SEARCH | Error thành empty/budget/parser cần CA-093; không STABLE toàn diện |
+| PUBLIC_ADMISSIONS_SEARCH | CA-093.01 đã tách error/partial/no_match, hạn chót 20s, retry <= 2; redirect/content-type/parser còn CA-093; không STABLE toàn diện |
 | DESKTOP_SECURITY | CSP/capabilities/legacy gated bridge/managed assets cần CA-094; không exploit confirmed |
 | THEME_AND_APPEARANCE | Silent save/two preset stores/shared asset cần CA-095 |
 | CORE_MAINTAINABILITY | Format/clippy fail và test helper/static gaps, CA-096 |
@@ -134,11 +134,12 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 - **Status**: Implemented
 - **Owner**: Public Search Scraper (`public_search.rs`)
 - **Evidence**:
-  - Source: `src-tauri/src/public_search.rs`, `src/App.tsx`
-  - Last Verified: 2026-07-28
-  - Verification Scope: AUTOMATED (`cargo test public_search` PASS)
+  - Source: `src-tauri/src/public_search.rs`, `src/publicSearchMessage.ts`, `src/App.tsx`
+  - Last Verified: 2026-10-25
+  - Verification Scope: AUTOMATED (`cargo test public_search` PASS 11/11, `tests/search.test.ts` PASS); MANUAL native ngắt mạng chưa chạy
 - **Known Gaps & Tracking**:
-  - None | Status: **`STABLE`** (Outbound native PII enforcement: Rust filters numeric student IDs and emails before public HTTP request)
+  - CA-093.01 CURRENT: response có `status` (`success`/`partial`/`no_match`/`error`), `failedUrls`, `timedOut`; lỗi fetch hiển thị "Mất kết nối tới nguồn tài liệu" kèm nút Thử lại.
+  - PLANNED (CA-093): kiểm tra redirect/content-type, cancel, cache. Outbound native PII enforcement giữ nguyên (SEC-004).
 
 ---
 

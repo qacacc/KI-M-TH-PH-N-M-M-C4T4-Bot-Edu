@@ -106,6 +106,8 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
      --> NẾU INTENT == "FIND_SCHEDULE" -> Hiển thị Lịch học.
      --> NẾU INTENT == "FIND_EXAMS" -> Hiển thị Lịch thi.
      --> NẾU INTENT == "PUBLIC_ADMISSIONS_INFO" -> Tra cứu tuyển sinh công khai.
+         (CA-093.01) Rust crawl tối đa 12 URL trong hạn chót 20s, mỗi URL thử tối đa 3 lần;
+         trả status success/partial/no_match/error + failedUrls; UI hiện nút Thử lại khi error/partial/lỗi IPC.
    - Bước 4.3: Nếu structured intent UNKNOWN, mới gọi handleSchoolChatQuery(value) làm school fallback.
    - Bước 4.4: Nếu vẫn không match, trả fallback hỗ trợ dữ liệu local hiện có.
 ```
