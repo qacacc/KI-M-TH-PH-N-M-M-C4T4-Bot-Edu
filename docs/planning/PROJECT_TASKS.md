@@ -1,5 +1,12 @@
 # Project Tasks
 
+## CA-094.01 - CSP và IPC tối thiểu (2026-10-25)
+
+- Status: In Progress; cấu hình và test tĩnh đã có, chưa manual native CSP/PR review.
+- CURRENT: `tauri.conf.json` có CSP production chỉ cho tài nguyên nội bộ, cấm eval/inline script; capability main bỏ `core:default` và quyền tạo window/webview; React không còn wrapper/command gửi JWT qua IPC.
+- Evidence: `tests/securityConfig.test.ts` PASS 12/12 (6 FAIL trên code cũ); build dist không inline script/eval; `npm run check:all` FAIL chỉ ở `npm audit` có sẵn, 91 Vitest/43 Rust/cargo check PASS.
+- Giới hạn: chưa mở app desktop xem CSP violation; path canonicalize/symlink vẫn PLANNED trong CA-094.
+
 ## CA-090.01 - SQLite migration và reset an toàn (2026-10-19)
 
 - Status: In Progress; triển khai native migration/reset đã có evidence, chưa review/merge Jira.

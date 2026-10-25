@@ -178,7 +178,6 @@ pub fn run() {
             connectors::connector_engine::sync_embedded_school_data,
             connectors::connector_engine::open_uth_login_window,
             connectors::connector_engine::receive_uth_jwt,
-            connectors::connector_engine::sync_uth_after_login,
             connectors::connector_engine::list_connector_schedules,
             connectors::connector_engine::list_connector_exams,
             connectors::connector_engine::get_connector_sync_status,

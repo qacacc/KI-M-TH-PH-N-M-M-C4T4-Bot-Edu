@@ -317,7 +317,8 @@ pub fn receive_uth_jwt(app: AppHandle, jwt_token: String) -> Result<(), String> 
 
 /// Đồng bộ dữ liệu sau khi người dùng đã đăng nhập UTH
 /// Không lưu JWT vào localStorage React, không log JWT vào action_log
-#[tauri::command]
+/// CA-094.01: không còn đăng ký làm IPC command — main window/React không được gửi JWT qua IPC.
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn sync_uth_after_login(
     student_code: String,
     student_name: String,

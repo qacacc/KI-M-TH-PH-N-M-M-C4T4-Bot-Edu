@@ -49,7 +49,7 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
 6. User đăng nhập trên portal UTH
 7. Connector thử nghiệm có poller/bridge cố lấy JWT; sự hoạt động trên portal thật chưa E2E verified.
 8. Nếu nhận được session, backend thử lấy profile/lịch và ghi cache; parser còn known gaps CA-081.
-9. Legacy syncUthAfterLogin còn tồn tại; token rỗng trả AUTH_REQUIRED, không coi là đồng bộ thành công.
+9. CA-094.01: wrapper React syncUthAfterLogin đã xóa và sync_uth_after_login không còn đăng ký IPC; React không gửi JWT qua invoke.
 10. CA-082: Nút chính mở browser ngoài có phản hồi lỗi; UI nói rõ không tự nối session và MSSV là tự khai.
 ```
 

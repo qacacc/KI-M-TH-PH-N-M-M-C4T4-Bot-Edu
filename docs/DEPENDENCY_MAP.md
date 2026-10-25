@@ -21,7 +21,7 @@ SchoolPage.tsx (School Selector & Connector UI)
    └──> tauriApi.ts
            │
            ├──> openUthLoginWindow ────> Rust: connector_engine.rs (WebView Window)
-           ├──> syncUthAfterLogin ─────> Rust: uth.rs (fetch_uth_schedule / fetch_uth_exams)
+           ├──> (CA-094.01: syncUthAfterLogin đã gỡ; sync_uth_after_login không còn là IPC) Rust: uth.rs
            │                                 │
            │                                 ▼
            │                           SyncService (sync_schedules_transaction)

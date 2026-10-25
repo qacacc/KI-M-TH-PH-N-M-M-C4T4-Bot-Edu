@@ -65,7 +65,7 @@ Tài liệu này chứa các **Bất biến Hệ thống (System Invariants)**. 
 - DATA-005: PARTIAL: trash schema CREATE ngoài user_version; CA-091.
 - UI-002: PARTIAL: ErrorBoundary clear localStorage không confirm, init legacy history cleanup theo marker chưa consent; CA-090/087.
 - FILE-001..003: file action canonical guards có evidence test; theme/trash-metadata root hardening còn cần native/symlink tests CA-094/091. Không claim đã có exploit.
-- SEC-003/005: CA-083 gate chặn auth runtime; legacy token bridge vẫn source, production auth boundary cần CA-080/094. Không bật gate từ bảng này.
+- SEC-003/005: CA-083 gate chặn auth runtime. CA-094.01 gỡ `syncUthAfterLogin`/đăng ký `sync_uth_after_login` (React không còn gửi JWT qua IPC) và thu hẹp capability main; `receive_uth_jwt` còn đăng ký nhưng bị gate. Production auth boundary cần CA-080/081. Không bật gate từ bảng này.
 
 Các fix đều PLANNED, không thay runtime trong audit. CA-097 sẽ đồng bộ bảng canonical với source/evidence.
 

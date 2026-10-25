@@ -26,7 +26,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 | PHYSICAL_TRASH / FILE_MANAGEMENT_AND_TRASH | Recovery và localStorage fallback sai owner, CA-091; không STABLE toàn diện |
 | CALENDAR_EXPORT | Timezone và recurrence chưa đúng, CA-092 |
 | PUBLIC_ADMISSIONS_SEARCH | Error thành empty/budget/parser cần CA-093; không STABLE toàn diện |
-| DESKTOP_SECURITY | CSP/capabilities/legacy gated bridge/managed assets cần CA-094; không exploit confirmed |
+| DESKTOP_SECURITY | CA-094.01 đã có CSP production, capability tối thiểu, gỡ IPC JWT từ React; managed assets/path canonicalize còn CA-094; không exploit confirmed |
 | THEME_AND_APPEARANCE | Silent save/two preset stores/shared asset cần CA-095 |
 | CORE_MAINTAINABILITY | Format/clippy fail và test helper/static gaps, CA-096 |
 | GOVERNANCE | Roadmap/duplicate ID/old evidence reconciliation, CA-097 |

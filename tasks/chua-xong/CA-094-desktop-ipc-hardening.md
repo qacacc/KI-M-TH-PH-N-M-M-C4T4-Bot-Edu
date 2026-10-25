@@ -1,6 +1,6 @@
 # CA-094 - Gia cố desktop IPC và filesystem boundary
 
-- Status: Proposed
+- Status: In Progress (CA-094.01 implementation)
 - Priority: P1
 - Created: 2026-10-09
 - Owner: AI + User review
@@ -48,6 +48,20 @@ PLANNED: Threat-model quyền thật đang dùng; least privilege/CSP tương th
 npm run check:all; native capability/CSP/path tests; source scan legacy JWT; security checklist.
 
 Các lệnh mới/test mới là PLANNED: agent triển khai phải ghi tên lệnh thực tế, expected failure trước sửa và pass sau sửa. Không dùng rg thay cho test hành vi.
+
+## Evidence cập nhật CA-094.01 (2026-10-25)
+
+Phạm vi CA-094.01: CSP, capability tối thiểu, gỡ đường JWT qua React/IPC, rà console/localStorage. Canonicalize theme/trash root và symlink tests vẫn PLANNED trong CA-094.
+
+- CURRENT `src-tauri/tauri.conf.json:25`: CSP production `default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'`..., không `unsafe-eval`/`unsafe-inline`; chỉ mở `ipc:`/`http://ipc.localhost` và ảnh `data:`/`asset:`. `:26` devCsp riêng cho Vite HMR (inline chỉ ở dev, vẫn cấm eval).
+- CURRENT `src-tauri/capabilities/default.json`: bỏ `core:default`, `core:window:allow-create`, `core:webview:allow-create-webview-window`; chỉ giữ app/event/window/webview default + 4 quyền titlebar. Không có plugin shell/fs/process trong Cargo.toml/package.json. Capability chỉ áp cho `main`, không có `remote` nên `uth-login` không có IPC (SEC-003).
+- CURRENT `src/tauriApi.ts`: xóa wrapper `syncUthAfterLogin` (React gửi `jwtToken` qua IPC, không có caller). `src-tauri/src/lib.rs:179-180`: bỏ đăng ký `sync_uth_after_login`; `connector_engine.rs:322` giữ hàm nội bộ cho test gate CA-083.
+- CONFIRMED (static): console.* trong `src/` chỉ in thông báo lỗi chung, không in token/mật khẩu/MSSV; localStorage chỉ lưu cấu hình/metadata, `ca_student_session_vault_v1` không có trường token (`src/schoolConnector/types.ts:55-62`).
+- AUTOMATED: `npx vitest run tests/securityConfig.test.ts` PASS 12/12; chạy cùng test trên code trước sửa: 6 FAIL (CSP null, capability rộng, IPC mang jwtToken).
+- AUTOMATED: `npm run build` → `dist/index.html` chỉ có `<script src>` + `<link>`; bundle không có `eval(`/`new Function(`.
+- AUTOMATED: `npm run check:all` FAIL chỉ ở `npm audit` (3 advisory vite/@vitest/mocker có sẵn, dependency không đổi); 91 Vitest, layout, Postman, build, cargo check (xác thực capability/CSP), 43 Rust PASS.
+- MANUAL: CHƯA CHẠY app desktop để xác nhận DevTools không có CSP violation khi khởi động/đổi ảnh nền/titlebar.
+- Residual (ASSUMED/UNKNOWN): `receive_uth_jwt` vẫn đăng ký (đường thiết kế cho bridge CA-081, đang bị gate CA-083 từ chối trước IO); ảnh nền dùng `convertFileSrc` nhưng asset protocol chưa bật trong config — hành vi hiển thị ảnh nền native là UNKNOWN, không do CA-094.01 gây ra.
 
 ## Rollback
 

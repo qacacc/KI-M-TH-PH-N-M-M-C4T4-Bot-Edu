@@ -152,22 +152,6 @@ export function openUthLoginWindow(): Promise<void> {
   return tauriInvoke("open_uth_login_window");
 }
 
-/** Đồng bộ sau khi người dùng đã đăng nhập — nhận JWT từ JS bridge */
-export function syncUthAfterLogin(
-  studentCode: string,
-  studentName: string,
-  jwtToken: string,
-): Promise<SyncResult> {
-  return tauriInvoke("sync_uth_after_login", {
-    student_code: studentCode,
-    student_name: studentName,
-    jwt_token: jwtToken,
-    studentCode,
-    studentName,
-    jwtToken,
-  });
-}
-
 export interface UthSyncEventPayload {
   success: boolean;
   message: string;

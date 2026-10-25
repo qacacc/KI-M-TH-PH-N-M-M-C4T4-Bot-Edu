@@ -24,7 +24,7 @@ Cập nhật: 2026-10-09. Theo dõi 35 file cần làm/đối chiếu (13 spec m
 | CA-091 - Thùng rác an toàn và một nguồn dữ liệu (P1) | Proposed | [CA-091-trash-recovery-native-owner.md](CA-091-trash-recovery-native-owner.md) |
 | CA-092 - Xuất lịch đúng múi giờ và phạm vi học kỳ (P1) | Proposed | [CA-092-calendar-timezone-validity.md](CA-092-calendar-timezone-validity.md) |
 | CA-093 - Tìm kiếm công khai: lỗi, thời gian và nguồn tin (P1) | Proposed | [CA-093-public-search-error-budget.md](CA-093-public-search-error-budget.md) |
-| CA-094 - Gia cố desktop IPC và filesystem boundary (P1) | Proposed | [CA-094-desktop-ipc-hardening.md](CA-094-desktop-ipc-hardening.md) |
+| CA-094 - Gia cố desktop IPC và filesystem boundary (P1) | In Progress (CA-094.01) | [CA-094-desktop-ipc-hardening.md](CA-094-desktop-ipc-hardening.md) |
 | CA-095 - Theme: persistence, draft và ownership ảnh nền (P2) | Proposed | [CA-095-appearance-persistence-assets.md](CA-095-appearance-persistence-assets.md) |
 | CA-096 - Clean code tăng dần và test hành vi (P2) | Proposed | [CA-096-incremental-clean-code-tests.md](CA-096-incremental-clean-code-tests.md) |
 | CA-097 - Đối chiếu roadmap, task và feature với source (P1) | Proposed | [CA-097-governance-source-reconciliation.md](CA-097-governance-source-reconciliation.md) |

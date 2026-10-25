@@ -37,6 +37,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 - CA-084: release checklist local-only đang được sửa và đối chiếu; còn `npm run check:all`, native smoke, installer/review và đồng bộ Jira.
 - CA-090.01: migration SQLite/reset an toàn đã triển khai; giữ In Progress, không sửa trong scope CA-084; còn manual native/UI verification, PR/review và đồng bộ Jira.
+- CA-094.01: CSP production nghiêm ngặt, capability tối thiểu, gỡ IPC JWT từ React đã triển khai; giữ In Progress, còn manual native CSP violation check và PR/review.
 - CA-080 local REST/Postman vẫn chờ contract/fixture UTH thật; CA-086 dừng theo yêu cầu user; CA-081 Proposed.
 
 ## Done
@@ -104,7 +105,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 | CA-091 | P1 | Thùng rác an toàn và một nguồn dữ liệu | `tasks/chua-xong/CA-091-trash-recovery-native-owner.md` | Proposed; chưa sửa runtime. |
 | CA-092 | P1 | Xuất lịch đúng múi giờ và phạm vi học kỳ | `tasks/chua-xong/CA-092-calendar-timezone-validity.md` | Proposed; chưa sửa runtime. |
 | CA-093 | P1 | Tìm kiếm công khai: lỗi, thời gian và nguồn tin | `tasks/chua-xong/CA-093-public-search-error-budget.md` | Proposed; chưa sửa runtime. |
-| CA-094 | P1 | Gia cố desktop IPC và filesystem boundary | `tasks/chua-xong/CA-094-desktop-ipc-hardening.md` | Proposed; chưa sửa runtime. |
+| CA-094 | P1 | Gia cố desktop IPC và filesystem boundary | `tasks/chua-xong/CA-094-desktop-ipc-hardening.md` | In Progress; CA-094.01 đã sửa CSP/capability/IPC JWT; path canonicalize/symlink chưa làm. |
 | CA-095 | P2 | Theme: persistence, draft và ownership ảnh nền | `tasks/chua-xong/CA-095-appearance-persistence-assets.md` | Proposed; chưa sửa runtime. |
 | CA-096 | P2 | Clean code tăng dần và test hành vi | `tasks/chua-xong/CA-096-incremental-clean-code-tests.md` | Proposed; chưa sửa runtime. |
 | CA-097 | P1 | Đối chiếu roadmap, task và feature với source | `tasks/chua-xong/CA-097-governance-source-reconciliation.md` | Proposed; chưa sửa runtime. |

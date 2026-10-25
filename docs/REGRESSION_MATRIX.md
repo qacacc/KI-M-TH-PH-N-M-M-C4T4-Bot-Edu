@@ -24,7 +24,7 @@ CA-080 CURRENT (2026-10-11): `npm run check:postman` kiểm tra local collection
 - CA-089: public mock provenance và capability chưa có runtime không được gán ready.
 - CA-091: native/DB/filesystem failures, restart recovery, một owner trash, partial empty.
 - CA-092/093: timezone parser/calendar validity; all/partial fetch failure, deadline/redirect/Unicode.
-- CA-094/095: native CSP/capability/path/symlink; theme asset/preset ownership và save failure.
+- CA-094/095: native CSP/capability/path/symlink; theme asset/preset ownership và save failure. CA-094.01 tĩnh: `npx vitest run tests/securityConfig.test.ts`.
 - CA-096/084: format/Clippy/lint policy, behavior/visual regressions, installer smoke/upgrade.
 
 check:all PASS 62 Vitest/39 Rust không chứng minh các gate này đã pass. fmt check và strict Clippy hiện FAIL; native/API/manual visual mới chưa chạy. Không đổi expected của test để hợp thức hóa hành vi sai.
