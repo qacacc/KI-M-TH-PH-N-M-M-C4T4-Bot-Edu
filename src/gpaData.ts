@@ -22,6 +22,7 @@ export function parseGpaSubjects(raw: string | null): GpaSubject[] {
     typeof item.name === "string" &&
     (item.credits === "" || (Number.isFinite(item.credits) && item.credits > 0 && item.credits <= 10)) &&
     typeof item.letterGrade === "string" &&
+    (item.letterGrade === "" || item.letterGrade in GRADE_CONVERSION) &&
     (item.score10 === "" || (Number.isFinite(item.score10) && item.score10 >= 0 && item.score10 <= 10)))) {
     throw new Error("Dữ liệu điểm đã lưu không hợp lệ.");
   }

@@ -86,4 +86,9 @@ describe('parseGpaSubjects - Validation & Security', () => {
     const creditTen = JSON.stringify([{ id: '2', name: 'Test', credits: 10, letterGrade: 'A', score10: 8 }]);
     expect(() => parseGpaSubjects(creditTen)).not.toThrow();
   });
+
+  it('từ chối letterGrade không hợp lệ (VD: ABC)', () => {
+    const invalidGrade = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'ABC', score10: 8 }]);
+    expect(() => parseGpaSubjects(invalidGrade)).toThrow();
+  });
 });
