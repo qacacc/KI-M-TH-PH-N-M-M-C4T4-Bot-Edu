@@ -9,7 +9,7 @@
 - **Address/Security**: `127.0.0.1:47821`; listener chỉ bật khi `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` hợp lệ; tất cả route yêu cầu Bearer.
 - **Known limits**: Không public Internet; profile/schedule/exams/sync thật vẫn phụ thuộc UTH contract/cache verification và không trả sample thay thế.
 
-CA-098.01 CURRENT (2026-10-17): REST loopback bảo vệ bằng Bearer token process-local; Postman collection dùng biến `API_TOKEN`, template để trống và có probe 401. CA-080 UTH collection vẫn là probe upstream riêng, không dùng làm schema REST local. Profile chưa kết nối là 404; Schedule/Exams giữ 503 khi contract chưa xác minh.
+CA-098.01 CURRENT (2026-10-25): REST loopback bảo vệ bằng Bearer token process-local và `subtle::ConstantTimeEq`; token thiếu/sai hoặc REST thread/runtime/port không khả dụng chỉ tắt listener, không chặn desktop. Port conflict giữa hai app được xử lý để app thứ hai tiếp tục chạy desktop-only. Query parse lỗi trả envelope `400 VALIDATION_ERROR`; lỗi nội bộ trả message tổng quát. Postman collection dùng biến `API_TOKEN`, template để trống và có probe 401. CA-080 UTH collection vẫn là probe upstream riêng. Profile chưa kết nối là 404; Schedule/Exams giữ 503 khi contract chưa xác minh.
 
 Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhận đúng sự thật hiện tại (`CURRENT`) và mục tiêu (`TARGET`), kèm bằng chứng kiểm thử (`Evidence`), khe hở kỹ thuật (`Known Gaps`) và mã task theo dõi (`Tracking Task`).
 

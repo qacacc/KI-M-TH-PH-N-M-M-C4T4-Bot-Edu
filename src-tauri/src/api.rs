@@ -2,7 +2,7 @@
 
 use axum::{
     body::Body,
-    extract::{Query, State},
+    extract::{rejection::QueryRejection, Query, State},
     http::{header, HeaderMap, HeaderValue, Request, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -11,7 +11,8 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{env, net::SocketAddr, sync::Arc, thread};
+use std::{env, io, net::SocketAddr, sync::Arc, thread};
+use subtle::ConstantTimeEq;
 
 use crate::{connectors::connector_engine, data, documents};
 
@@ -75,16 +76,31 @@ fn local_data_read_failed(_details: String) -> Response {
     )
 }
 
+fn validation_error() -> Response {
+    fail(
+        StatusCode::BAD_REQUEST,
+        "VALIDATION_ERROR",
+        "Tham số query không hợp lệ.",
+    )
+}
+
+fn parse_academic_query(
+    query: Result<Query<AcademicQuery>, QueryRejection>,
+) -> Result<AcademicQuery, Response> {
+    query
+        .map(|Query(query)| query)
+        .map_err(|_| validation_error())
+}
+
 fn unauthorized() -> Response {
     let mut response = fail(
         StatusCode::UNAUTHORIZED,
         "UNAUTHORIZED",
         "Thiếu hoặc Bearer token không hợp lệ.",
     );
-    response.headers_mut().insert(
-        header::WWW_AUTHENTICATE,
-        HeaderValue::from_static("Bearer"),
-    );
+    response
+        .headers_mut()
+        .insert(header::WWW_AUTHENTICATE, HeaderValue::from_static("Bearer"));
     response
 }
 
@@ -101,7 +117,9 @@ fn token_matches(headers: &HeaderMap, expected_token: &str) -> bool {
     if !scheme.eq_ignore_ascii_case("Bearer")
         || supplied_token.is_empty()
         || supplied_token.len() > MAX_API_TOKEN_LENGTH
-        || supplied_token.bytes().any(|byte| byte.is_ascii_whitespace())
+        || supplied_token
+            .bytes()
+            .any(|byte| byte.is_ascii_whitespace())
     {
         return false;
     }
@@ -110,12 +128,18 @@ fn token_matches(headers: &HeaderMap, expected_token: &str) -> bool {
 }
 
 fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
-    let mut difference = left.len() ^ right.len();
-    for index in 0..MAX_API_TOKEN_LENGTH {
-        difference |= (left.get(index).copied().unwrap_or_default()
-            ^ right.get(index).copied().unwrap_or_default()) as usize;
+    if left.len() > MAX_API_TOKEN_LENGTH || right.len() > MAX_API_TOKEN_LENGTH {
+        return false;
     }
-    difference == 0
+
+    let mut left_padded = [0_u8; MAX_API_TOKEN_LENGTH];
+    let mut right_padded = [0_u8; MAX_API_TOKEN_LENGTH];
+    for index in 0..MAX_API_TOKEN_LENGTH {
+        left_padded[index] = left.get(index).copied().unwrap_or_default();
+        right_padded[index] = right.get(index).copied().unwrap_or_default();
+    }
+    let same_length = (left.len() as u16).ct_eq(&(right.len() as u16));
+    bool::from(left_padded.ct_eq(&right_padded) & same_length)
 }
 
 async fn require_bearer_token(
@@ -139,7 +163,9 @@ fn validate_api_token(token: String) -> Result<Arc<str>, String> {
     if token.len() < MIN_API_TOKEN_LENGTH
         || token.len() > MAX_API_TOKEN_LENGTH
         || !token.is_ascii()
-        || token.bytes().any(|byte| byte.is_ascii_whitespace() || byte.is_ascii_control())
+        || token
+            .bytes()
+            .any(|byte| byte.is_ascii_whitespace() || byte.is_ascii_control())
     {
         return Err(format!(
             "REST API local chưa được bật: {API_TOKEN_ENV} phải dài {MIN_API_TOKEN_LENGTH}–{MAX_API_TOKEN_LENGTH} ký tự ASCII, không chứa khoảng trắng."
@@ -175,7 +201,11 @@ async fn announcements() -> Response {
     }
 }
 
-async fn documents(query: Query<AcademicQuery>) -> Response {
+async fn documents(query: Result<Query<AcademicQuery>, QueryRejection>) -> Response {
+    let query = match parse_academic_query(query) {
+        Ok(query) => query,
+        Err(response) => return response,
+    };
     let subject_id = query.subject_id.as_deref().unwrap_or("");
     if subject_id.is_empty() {
         return fail(
@@ -198,15 +228,19 @@ async fn documents(query: Query<AcademicQuery>) -> Response {
     };
     match serde_json::to_value(items) {
         Ok(items) => return ok(items, "sample-local"),
-        Err(error) => fail(
+        Err(_error) => fail(
             StatusCode::INTERNAL_SERVER_ERROR,
-            "RESPONSE_SERIALIZE_FAILED",
-            error.to_string(),
+            "INTERNAL_ERROR",
+            "Đã xảy ra lỗi nội bộ.",
         ),
     }
 }
 
-async fn schedule(query: Query<AcademicQuery>) -> Response {
+async fn schedule(query: Result<Query<AcademicQuery>, QueryRejection>) -> Response {
+    let query = match parse_academic_query(query) {
+        Ok(query) => query,
+        Err(response) => return response,
+    };
     let student_code = query.student_code.as_deref().unwrap_or("");
     if student_code.is_empty() {
         return fail(
@@ -221,7 +255,11 @@ async fn schedule(query: Query<AcademicQuery>) -> Response {
     }
 }
 
-async fn exams(query: Query<AcademicQuery>) -> Response {
+async fn exams(query: Result<Query<AcademicQuery>, QueryRejection>) -> Response {
+    let query = match parse_academic_query(query) {
+        Ok(query) => query,
+        Err(response) => return response,
+    };
     let student_code = query.student_code.as_deref().unwrap_or("");
     if student_code.is_empty() {
         return fail(
@@ -260,7 +298,11 @@ async fn sync() -> Response {
     )
 }
 
-async fn sync_status(query: Query<AcademicQuery>) -> Response {
+async fn sync_status(query: Result<Query<AcademicQuery>, QueryRejection>) -> Response {
+    let query = match parse_academic_query(query) {
+        Ok(query) => query,
+        Err(response) => return response,
+    };
     let student_code = query.student_code.as_deref().unwrap_or("");
     if student_code.is_empty() {
         return fail(
@@ -305,16 +347,19 @@ fn router(api_token: Arc<str>) -> Router {
         ))
 }
 
-/// Khởi động API local một lần khi desktop app chạy.
-pub(crate) fn start() {
-    let api_token = match configured_api_token() {
+#[derive(Debug, PartialEq, Eq)]
+enum ApiStartResult {
+    Disabled,
+    Started,
+    ThreadUnavailable,
+}
+
+fn start_with_token(api_token: Result<Arc<str>, String>) -> ApiStartResult {
+    let api_token = match api_token {
         Ok(token) => token,
-        Err(message) => {
-            eprintln!("{message}");
-            return;
-        }
+        Err(_) => return ApiStartResult::Disabled,
     };
-    thread::Builder::new()
+    let spawn_result = thread::Builder::new()
         .name("campus-local-rest-api".to_string())
         .spawn(move || {
             let runtime = match tokio::runtime::Builder::new_multi_thread()
@@ -322,37 +367,65 @@ pub(crate) fn start() {
                 .build()
             {
                 Ok(runtime) => runtime,
-                Err(error) => {
-                    eprintln!("Không tạo được runtime REST API: {error}");
+                Err(_) => {
+                    eprintln!("REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục.");
                     return;
                 }
             };
             runtime.block_on(async {
                 let address: SocketAddr = match API_ADDR.parse() {
                     Ok(address) => address,
-                    Err(error) => {
-                        eprintln!("Địa chỉ REST API không hợp lệ: {error}");
+                    Err(_) => {
+                        eprintln!(
+                            "REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục."
+                        );
                         return;
                     }
                 };
                 let listener = match tokio::net::TcpListener::bind(address).await {
                     Ok(listener) => listener,
                     Err(error) => {
-                        eprintln!("Không mở được REST API tại {API_ADDR}: {error}");
+                        eprintln!("{}", listener_bind_failure_message(&error));
                         return;
                     }
                 };
-                if let Err(error) = axum::serve(listener, router(api_token)).await {
-                    eprintln!("REST API dừng do lỗi: {error}");
+                if axum::serve(listener, router(api_token)).await.is_err() {
+                    eprintln!("REST API local đã dừng; ứng dụng desktop vẫn tiếp tục.");
                 }
             });
-        })
-        .expect("Không tạo được thread REST API local");
+        });
+    if spawn_result.is_err() {
+        ApiStartResult::ThreadUnavailable
+    } else {
+        ApiStartResult::Started
+    }
+}
+
+fn listener_bind_failure_message(error: &io::Error) -> &'static str {
+    if error.kind() == io::ErrorKind::AddrInUse {
+        "REST API local đang được instance khác sử dụng; ứng dụng desktop vẫn tiếp tục."
+    } else {
+        "REST API local không thể mở cổng; ứng dụng desktop vẫn tiếp tục."
+    }
+}
+
+/// Khởi động API local best-effort để lỗi cấu hình/API không chặn desktop.
+pub(crate) fn start() {
+    match start_with_token(configured_api_token()) {
+        ApiStartResult::Disabled => {
+            eprintln!("REST API local đang tắt; ứng dụng desktop vẫn tiếp tục.");
+        }
+        ApiStartResult::ThreadUnavailable => {
+            eprintln!("REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục.");
+        }
+        ApiStartResult::Started => {}
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::http::Uri;
 
     #[tokio::test]
     async fn health_endpoint_tra_thong_tin_loopback() {
@@ -363,25 +436,78 @@ mod tests {
     #[test]
     fn bearer_token_yeu_cau_header_dung_va_so_sanh_constant_time() {
         let mut headers = HeaderMap::new();
-        assert!(!token_matches(&headers, "test-token-that-is-long-enough-for-tests"));
+        assert!(!token_matches(
+            &headers,
+            "test-token-that-is-long-enough-for-tests"
+        ));
 
         headers.insert(
             header::AUTHORIZATION,
             HeaderValue::from_static("Basic test-token-that-is-long-enough-for-tests"),
         );
-        assert!(!token_matches(&headers, "test-token-that-is-long-enough-for-tests"));
+        assert!(!token_matches(
+            &headers,
+            "test-token-that-is-long-enough-for-tests"
+        ));
 
         headers.insert(
             header::AUTHORIZATION,
             HeaderValue::from_static("Bearer wrong-token-value-long-enough-000000"),
         );
-        assert!(!token_matches(&headers, "test-token-that-is-long-enough-for-tests"));
+        assert!(!token_matches(
+            &headers,
+            "test-token-that-is-long-enough-for-tests"
+        ));
 
         headers.insert(
             header::AUTHORIZATION,
             HeaderValue::from_static("Bearer test-token-that-is-long-enough-for-tests"),
         );
-        assert!(token_matches(&headers, "test-token-that-is-long-enough-for-tests"));
+        assert!(token_matches(
+            &headers,
+            "test-token-that-is-long-enough-for-tests"
+        ));
+    }
+
+    #[test]
+    fn constant_time_comparison_checks_equal_different_and_length_mismatch() {
+        assert!(constant_time_eq(b"secret-token", b"secret-token"));
+        assert!(!constant_time_eq(b"secret-token", b"secret-tokeN"));
+        assert!(!constant_time_eq(b"secret-token", b"secret-token-longer"));
+    }
+
+    #[test]
+    fn thieu_token_khong_chan_desktop_startup() {
+        assert_eq!(
+            start_with_token(Err("token is missing".to_string())),
+            ApiStartResult::Disabled
+        );
+    }
+
+    #[tokio::test]
+    async fn query_sai_kieu_tra_validation_error_theo_json_envelope() {
+        let uri: Uri = "/api/v1/documents?semester=fall".parse().unwrap();
+        let query = Query::<AcademicQuery>::try_from_uri(&uri);
+        let response = parse_academic_query(query).unwrap_err();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["success"], false);
+        assert_eq!(json["error"]["code"], "VALIDATION_ERROR");
+        assert_eq!(json["data"], Value::Null);
+    }
+
+    #[tokio::test]
+    async fn instance_thu_hai_nhan_biet_port_da_duoc_dung() {
+        let first = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = first.local_addr().unwrap();
+        let error = tokio::net::TcpListener::bind(address).await.unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::AddrInUse);
+        assert!(listener_bind_failure_message(&error).contains("instance khác"));
+        assert!(!listener_bind_failure_message(&error).contains(&error.to_string()));
     }
 
     #[test]
@@ -445,26 +571,26 @@ mod tests {
 
     #[tokio::test]
     async fn schedule_endpoint_tu_choi_thieu_student_code() {
-        let response = schedule(Query(AcademicQuery::default())).await;
+        let response = schedule(Ok(Query(AcademicQuery::default()))).await;
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     }
 
     #[tokio::test]
     async fn schedule_endpoint_giu_503_khi_contract_uth_chua_xac_minh() {
-        let response = schedule(Query(AcademicQuery {
+        let response = schedule(Ok(Query(AcademicQuery {
             student_code: Some("test-student".to_string()),
             ..AcademicQuery::default()
-        }))
+        })))
         .await;
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 
     #[tokio::test]
     async fn exams_endpoint_giu_503_khi_contract_uth_chua_xac_minh() {
-        let response = exams(Query(AcademicQuery {
+        let response = exams(Ok(Query(AcademicQuery {
             student_code: Some("test-student".to_string()),
             ..AcademicQuery::default()
-        }))
+        })))
         .await;
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }

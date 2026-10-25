@@ -5,11 +5,11 @@
 ### Runtime Status: `CURRENT / LOCAL LOOPBACK`
 
 ```text
-1. Desktop app starts Rust; `api::start()` reads `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`.
-2. If the token is missing/invalid, the desktop app continues and REST does not bind a port; otherwise Axum binds only `127.0.0.1:47821`.
+1. Desktop app starts Rust; `api::start()` reads `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` as a best-effort service.
+2. Missing/invalid token, thread/runtime failure, or port bind failure disables REST only; Tauri desktop startup continues. With two app instances, the first listener owns `127.0.0.1:47821`; the second logs only a generic conflict and continues without a listener.
 3. Postman sends HTTP to `/api/v1/*` with `Authorization: Bearer {{API_TOKEN}}`; missing/invalid tokens return `401` before route processing.
-4. Rust returns the shared JSON envelope and reads existing local/connector services as applicable.
-5. Schedule/exams/sync do not fabricate data; an unverified UTH contract remains `503 CONNECTOR_UNAVAILABLE`.
+4. Query deserialization failures become `400 VALIDATION_ERROR`; internal read/serialization failures use a generic error envelope without raw details.
+5. Bearer token bytes are checked with `subtle::ConstantTimeEq`; Schedule/exams/sync do not fabricate data and an unverified UTH contract remains `503 CONNECTOR_UNAVAILABLE`.
 ```
 
 Postman collection của project là `postman/Campus_Assistant_Local_REST_API.postman_collection.json`. Collection UTH là upstream probe riêng, không phải runtime REST API của project.
