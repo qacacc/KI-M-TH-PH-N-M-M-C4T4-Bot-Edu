@@ -1,11 +1,6 @@
 $kind: http-request
 url: "{{BASE_URL}}/api/v1/sync"
 method: POST
-headers:
-  Content-Type: application/json
-body:
-  type: text
-  content: "{}"
 scripts:
   - type: afterResponse
     code: |-
@@ -13,4 +8,4 @@ scripts:
       const body = pm.response.json();
       pm.test('Không giả thành công', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql('SYNC_NOT_READY'); });
     language: text/javascript
-order: 6000
+order: 8000

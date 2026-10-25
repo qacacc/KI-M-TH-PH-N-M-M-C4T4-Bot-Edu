@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{BASE_URL}}/api/v1/documents?subjectId=unknown-subject&semester=1"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('HTTP 200', function () { pm.response.to.have.status(200); });
+      const body = pm.response.json();
+      pm.test('Empty result không phải lỗi', function () { pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('array'); pm.expect(body.data).to.have.length(0); });
+      pm.test('Ghi rõ nguồn local', function () { pm.expect(body.source).to.eql('sample-local'); });
+    language: text/javascript
+order: 4000
