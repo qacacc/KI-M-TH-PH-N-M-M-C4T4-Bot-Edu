@@ -9,4 +9,4 @@ scripts:
       pm.test('data là mảng', function () { pm.expect(body.data).to.be.an('array'); });
       pm.test('Ghi rõ nguồn local', function () { pm.expect(body.source).to.eql('sample-local'); });
     language: text/javascript
-order: 3000
+order: 4000

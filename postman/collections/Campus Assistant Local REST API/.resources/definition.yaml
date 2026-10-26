@@ -1,5 +1,5 @@
 $kind: collection
-description: REST API loopback của Campus Assistant Local. Chạy desktop app trước khi gửi request. Không chứa token hoặc dữ liệu cá nhân.
+description: REST API HTTP loopback của Campus Assistant Local. Chạy desktop app với CAMPUS_ASSISTANT_LOCAL_API_TOKEN đã cấu hình, nhập API_TOKEN vào local secret value trong Environment rồi gọi HTTP. Không chứa token hoặc dữ liệu cá nhân.
 variables:
   BASE_URL: "http://127.0.0.1:47821"
   STUDENT_CODE: ""

@@ -8,4 +8,4 @@ scripts:
       const body = pm.response.json();
       pm.test('Không giả hồ sơ đã xác minh', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql('PROFILE_NOT_CONNECTED'); });
     language: text/javascript
-order: 2000
+order: 3000

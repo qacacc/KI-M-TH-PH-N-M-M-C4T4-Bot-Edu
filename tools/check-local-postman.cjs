@@ -18,13 +18,18 @@ const check = (name, fn) => {
 
 check("Collection local REST tồn tại", () => {
   assert.equal(collection.info.name, "Campus Assistant Local REST API");
-  assert.equal(items.length, 9);
+  assert.equal(items.length, 10);
 });
 
 check("Environment dùng loopback", () => {
   const base = environment.values.find(value => value.key === "BASE_URL");
   assert.equal(base.value, "http://127.0.0.1:47821");
-  assert.equal(environment.values.some(value => /token|cookie|password|secret/i.test(value.key)), false);
+  const token = environment.values.find(value => value.key === "API_TOKEN");
+  const studentCode = environment.values.find(value => value.key === "STUDENT_CODE");
+  assert.equal(token.value, "");
+  assert.equal(token.type, "secret");
+  assert.equal(studentCode.value, "");
+  assert.equal(studentCode.type, "secret");
 });
 
 const expectedRoutes = [
@@ -50,7 +55,16 @@ check("Request có test script", () => {
 
 check("Không có token/PII trong collection", () => {
   const text = JSON.stringify(collection);
-  assert.equal(/Bearer\s+[^<{]|jwt|cookie|password|mssv\s*[:=]\s*\d{6,}/i.test(text), false);
+  assert.equal(/Bearer\s+[A-Za-z0-9+/_=-]{32,}|jwt|cookie|password|mssv\s*[:=]\s*\d{6,}/i.test(text), false);
+});
+
+check("Collection yêu cầu Bearer; probe 401 không gửi token", () => {
+  assert.equal(collection.auth?.type, "bearer");
+  assert.equal(collection.auth?.bearer?.[0]?.value, "{{API_TOKEN}}");
+  const probe = items.find(item => item.name === "Auth - missing token");
+  assert.ok(probe);
+  assert.equal(probe.request.auth?.type, "noauth");
+  assert.ok(JSON.stringify(probe.event).includes("HTTP 401"));
 });
 
 check("Có kiểm thử empty result và profile chưa kết nối", () => {

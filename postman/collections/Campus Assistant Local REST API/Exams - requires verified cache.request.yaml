@@ -8,4 +8,4 @@ scripts:
       const body = pm.response.json();
       pm.test('Lỗi có mã rõ ràng', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.be.a('string'); });
     language: text/javascript
-order: 7000
+order: 8000

@@ -11,4 +11,4 @@ scripts:
       const body = pm.response.json();
       pm.test('Không giả thành công', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql('SYNC_NOT_READY'); });
     language: text/javascript
-order: 8000
+order: 9000

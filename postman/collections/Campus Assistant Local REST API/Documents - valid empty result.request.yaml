@@ -9,4 +9,4 @@ scripts:
       pm.test('Empty result không phải lỗi', function () { pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('array'); pm.expect(body.data).to.have.length(0); });
       pm.test('Ghi rõ nguồn local', function () { pm.expect(body.source).to.eql('sample-local'); });
     language: text/javascript
-order: 4000
+order: 5000
