@@ -8,4 +8,4 @@ scripts:
       const body = pm.response.json();
       pm.test('Có mã lỗi validation', function () { pm.expect(body.error.code).to.eql('VALIDATION_ERROR'); });
     language: text/javascript
-order: 3000
+order: 5000
