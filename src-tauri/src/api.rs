@@ -11,7 +11,13 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{env, io, net::SocketAddr, sync::Arc, thread};
+use std::{
+    env,
+    io::{self, Write},
+    net::SocketAddr,
+    sync::Arc,
+    thread,
+};
 use subtle::ConstantTimeEq;
 
 use crate::{connectors::connector_engine, data, documents};
@@ -354,6 +360,15 @@ enum ApiStartResult {
     ThreadUnavailable,
 }
 
+fn log_startup_message(message: &str) {
+    // Ghi log là best-effort; lỗi ghi stderr không được làm sập ứng dụng desktop.
+    let _ = write_startup_message(io::stderr().lock(), message);
+}
+
+fn write_startup_message(mut writer: impl Write, message: &str) -> io::Result<()> {
+    writeln!(writer, "{message}")
+}
+
 fn start_with_token(api_token: Result<Arc<str>, String>) -> ApiStartResult {
     let api_token = match api_token {
         Ok(token) => token,
@@ -368,7 +383,9 @@ fn start_with_token(api_token: Result<Arc<str>, String>) -> ApiStartResult {
             {
                 Ok(runtime) => runtime,
                 Err(_) => {
-                    eprintln!("REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục.");
+                    log_startup_message(
+                        "REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục.",
+                    );
                     return;
                 }
             };
@@ -376,8 +393,8 @@ fn start_with_token(api_token: Result<Arc<str>, String>) -> ApiStartResult {
                 let address: SocketAddr = match API_ADDR.parse() {
                     Ok(address) => address,
                     Err(_) => {
-                        eprintln!(
-                            "REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục."
+                        log_startup_message(
+                            "REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục.",
                         );
                         return;
                     }
@@ -385,12 +402,12 @@ fn start_with_token(api_token: Result<Arc<str>, String>) -> ApiStartResult {
                 let listener = match tokio::net::TcpListener::bind(address).await {
                     Ok(listener) => listener,
                     Err(error) => {
-                        eprintln!("{}", listener_bind_failure_message(&error));
+                        log_startup_message(listener_bind_failure_message(&error));
                         return;
                     }
                 };
                 if axum::serve(listener, router(api_token)).await.is_err() {
-                    eprintln!("REST API local đã dừng; ứng dụng desktop vẫn tiếp tục.");
+                    log_startup_message("REST API local đã dừng; ứng dụng desktop vẫn tiếp tục.");
                 }
             });
         });
@@ -413,10 +430,12 @@ fn listener_bind_failure_message(error: &io::Error) -> &'static str {
 pub(crate) fn start() {
     match start_with_token(configured_api_token()) {
         ApiStartResult::Disabled => {
-            eprintln!("REST API local đang tắt; ứng dụng desktop vẫn tiếp tục.");
+            log_startup_message("REST API local đang tắt; ứng dụng desktop vẫn tiếp tục.");
         }
         ApiStartResult::ThreadUnavailable => {
-            eprintln!("REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục.");
+            log_startup_message(
+                "REST API local không thể khởi chạy; ứng dụng desktop vẫn tiếp tục.",
+            );
         }
         ApiStartResult::Started => {}
     }
@@ -426,6 +445,26 @@ pub(crate) fn start() {
 mod tests {
     use super::*;
     use axum::http::Uri;
+
+    struct FailingWriter;
+
+    impl Write for FailingWriter {
+        fn write(&mut self, _buffer: &[u8]) -> io::Result<usize> {
+            Err(io::Error::new(io::ErrorKind::BrokenPipe, "closed"))
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Err(io::Error::new(io::ErrorKind::BrokenPipe, "closed"))
+        }
+    }
+
+    #[test]
+    fn stderr_that_is_closed_does_not_panic_during_startup_logging() {
+        let result = std::panic::catch_unwind(|| {
+            write_startup_message(FailingWriter, "REST API local không thể khởi chạy.")
+        });
+        assert!(matches!(result, Ok(Err(error)) if error.kind() == io::ErrorKind::BrokenPipe));
+    }
 
     #[tokio::test]
     async fn health_endpoint_tra_thong_tin_loopback() {

@@ -6,7 +6,7 @@ Tài liệu này mô tả REST API HTTP của **Campus Assistant Local** để k
 
 - **CONFIRMED trước task:** Axum loopback đã có các route `GET /api/v1/profile`, `GET /api/v1/schedule`, `GET /api/v1/exams` và envelope JSON chung. Xem `src-tauri/src/api.rs`.
 - **CONFIRMED trước task:** Connector UTH đang bị khóa bởi `CONTRACT_UNVERIFIED`; lịch học/lịch thi không trả dữ liệu giả. Xem `src-tauri/src/connectors/connector_engine.rs`.
-- **CONFIRMED (source hiện tại):** Mọi route HTTP dùng Bearer middleware; token lấy từ `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`. Token thiếu/sai chỉ tắt REST API, không chặn Tauri desktop startup. Query sai kiểu được chuẩn hóa thành envelope `400 VALIDATION_ERROR`; lỗi nội bộ dùng message tổng quát.
+- **CONFIRMED (source hiện tại):** Mọi route HTTP dùng Bearer middleware; token lấy từ `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`. Token thiếu/sai chỉ tắt REST API, không chặn Tauri desktop startup. Query sai kiểu được chuẩn hóa thành envelope `400 VALIDATION_ERROR`; lỗi nội bộ dùng message tổng quát. Ghi log startup là best-effort; stderr đóng/lỗi không được làm panic.
 - **UNKNOWN:** Schema và cơ chế xác thực của API portal UTH. Spec local không xác nhận hay thay thế contract đó.
 
 ## 2. Workspace, Collection, Environment

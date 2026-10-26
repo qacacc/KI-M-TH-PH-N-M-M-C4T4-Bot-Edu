@@ -12,6 +12,8 @@
 5. Bearer token bytes are checked with `subtle::ConstantTimeEq`; Schedule/exams/sync do not fabricate data and an unverified UTH contract remains `503 CONNECTOR_UNAVAILABLE`.
 ```
 
+Startup log output is best-effort: a closed/broken stderr must not panic or prevent the desktop app from continuing. `UNKNOWN`: manual Windows launch under a closed stderr handle remains a manual smoke-test item; the writer failure path is covered by a Rust unit test.
+
 Postman collection của project là `postman/Campus_Assistant_Local_REST_API.postman_collection.json`. Collection UTH là upstream probe riêng, không phải runtime REST API của project.
 
 ## CA-080 - Postman setup CURRENT 2026-10-10
