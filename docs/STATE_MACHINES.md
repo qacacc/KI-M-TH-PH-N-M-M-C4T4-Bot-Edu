@@ -1,5 +1,7 @@
 # STATE MACHINES - CAMPUS ASSISTANT LOCAL
 
+**CONFIRMED (source/tests), CA-098.01:** Local REST API has startup states `API_DISABLED` when `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` is absent/invalid (desktop continues; no port bind), and `API_READY` when a valid 32–256 ASCII token is configured (loopback accepts matching Bearer requests). Startup logging is best-effort; write error does not panic. Request is `UNAUTHORIZED` (401) before route processing or proceeds to route-specific validation/data status. This is separate from UTH login/sync/cache; UTH connector remains `CONTRACT_UNVERIFIED`. **UNKNOWN:** manual desktop/Postman HTTP smoke.
+
 CA-080 setup (2026-10-10): mặc định probe bị khóa; consent/live/request-reviewed + Vault cho phép gửi thủ công trên Postman Desktop. Chỉ là trạng thái công cụ kiểm thử, không transition auth/sync/cache của Campus Assistant. Transport PASS vẫn giữ contract UNKNOWN cho đến khi có evidence/schema/fixture thật. Chưa có request live trong đợt setup.
 
 CA-083 CURRENT (2026-10-09): contract_unverified là error riêng cho UTH; không transition sang authenticated/sync_success/cache_ready. Dữ liệu cache cũ không bị xóa nhưng không được hiển thị như lịch chính thức. Không đồng nhất error với empty, không tự retry thu token. Mở portal browser không đổi state auth của app.

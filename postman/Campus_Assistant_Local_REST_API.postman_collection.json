@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Campus Assistant Local REST API",
-    "description": "REST API loopback của Campus Assistant Local. Chạy desktop app trước khi gửi request. Không chứa token hoặc dữ liệu cá nhân.",
+    "description": "REST API HTTP loopback của Campus Assistant Local. Chạy desktop app với CAMPUS_ASSISTANT_LOCAL_API_TOKEN đã cấu hình, nhập API_TOKEN vào local secret value trong Environment rồi gọi HTTP. Không chứa token hoặc dữ liệu cá nhân.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -10,6 +10,10 @@
     { "key": "SUBJECT_ID", "value": "" },
     { "key": "SEMESTER", "value": "" }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{API_TOKEN}}", "type": "string" }]
+  },
   "item": [
     {
       "name": "Health",
@@ -21,6 +25,24 @@
           "const body = pm.response.json();",
           "pm.test('success = true', function () { pm.expect(body.success).to.eql(true); });",
           "pm.test('Có tên service', function () { pm.expect(body.data.service).to.include('Campus Assistant'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "Auth - missing token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": { "type": "noauth" },
+        "url": "{{BASE_URL}}/api/v1/health"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "pm.test('HTTP 401', function () { pm.response.to.have.status(401); });",
+          "const body = pm.response.json();",
+          "pm.test('Có header WWW-Authenticate', function () { pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer'); });",
+          "pm.test('Envelope lỗi chuẩn', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql('UNAUTHORIZED'); pm.expect(body.data).to.eql(null); });"
         ] }
       }]
     },

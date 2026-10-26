@@ -3,11 +3,11 @@
 ## Ba thư mục task theo yêu cầu user (2026-10-09)
 
 - [Task đã xong](done/README.md): 31 file ghi Status: Done, không tính trùng và không tự xác nhận API/UI mới.
-- [Task chưa xong](chua-xong/README.md): 35 file cần làm/đối chiếu, gồm 13 spec Proposed từ audit; Superseded không triển khai lại.
+- [Task chưa xong](chua-xong/README.md): 36 file cần làm/đối chiếu, gồm 13 spec Proposed từ audit; Superseded không triển khai lại.
 - [Task hoãn làm](hoan-lam/README.md): game/phần thưởng CA-064 và mini pet CA-085, đều Frozen / Activation-only.
 - File chi tiết đã chuyển vào thư mục tương ứng; giữ nguyên trạng thái và evidence cũ. Khi task đổi nhóm, cập nhật liên kết, README, chỉ mục và PROJECT_TASKS.
 - Bảng Done phía dưới là lịch sử; CA-060 còn In Progress và CA-044..053 thiếu Status nên chưa được đưa vào thư mục done. Các mâu thuẫn ghi trong chua-xong/README.md, không dùng bảng lịch sử để vượt Done gate.
-- Tổng cộng 68 file task (31 done, 35 chua-xong, 2 hoan-lam). [Audit source](../docs/SOURCE_AUDIT_2026-10-09.md) là nguồn evidence cho backlog mới, không phải nghiệm thu mọi chức năng.
+- Tổng cộng 69 file task (31 done, 36 chua-xong, 2 hoan-lam). [Audit source](../docs/SOURCE_AUDIT_2026-10-09.md) là nguồn evidence cho backlog mới, không phải nghiệm thu mọi chức năng.
 
 ## Quy tac
 
@@ -37,7 +37,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 - CA-084: release checklist local-only đang được sửa và đối chiếu; còn `npm run check:all`, native smoke, installer/review và đồng bộ Jira.
 - CA-090.01: migration SQLite/reset an toàn đã triển khai; giữ In Progress, không sửa trong scope CA-084; còn manual native/UI verification, PR/review và đồng bộ Jira.
-- CA-080 local REST/Postman vẫn chờ contract/fixture UTH thật; CA-086 dừng theo yêu cầu user; CA-081 Proposed.
+- CA-080 local REST/Postman, bao gồm phần CA-098.01 về REST loopback/Bearer auth: latest automated `npm run check:all` PASS (84 Vitest, 10 Postman checks, 55 Rust, audit 0); vẫn chờ manual HTTP/two-instance smoke và contract/fixture UTH thật. CA-086 dừng theo yêu cầu user; CA-081 Proposed.
 
 ## Done
 

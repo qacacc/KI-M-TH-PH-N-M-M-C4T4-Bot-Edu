@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { assertLoopbackCollection, assertNoSensitiveData } = require("./postman-guards.cjs");
 
 const root = path.resolve(__dirname, "..");
 const collectionPath = path.join(root, "postman/Campus_Assistant_Local_REST_API.postman_collection.json");
@@ -17,13 +18,18 @@ const check = (name, fn) => {
 
 check("Collection local REST tồn tại", () => {
   assert.equal(collection.info.name, "Campus Assistant Local REST API");
-  assert.equal(items.length, 9);
+  assert.equal(items.length, 10);
 });
 
 check("Environment dùng loopback", () => {
   const base = environment.values.find(value => value.key === "BASE_URL");
   assert.equal(base.value, "http://127.0.0.1:47821");
-  assert.equal(environment.values.some(value => /token|cookie|password|secret/i.test(value.key)), false);
+  const token = environment.values.find(value => value.key === "API_TOKEN");
+  const studentCode = environment.values.find(value => value.key === "STUDENT_CODE");
+  assert.equal(token.value, "");
+  assert.equal(token.type, "secret");
+  assert.equal(studentCode.value, "");
+  assert.equal(studentCode.type, "secret");
 });
 
 const expectedRoutes = [
@@ -49,13 +55,47 @@ check("Request có test script", () => {
 
 check("Không có token/PII trong collection", () => {
   const text = JSON.stringify(collection);
-  assert.equal(/Bearer\s+[^<{]|jwt|cookie|password|mssv\s*[:=]\s*\d{6,}/i.test(text), false);
+  assert.equal(/Bearer\s+[A-Za-z0-9+/_=-]{32,}|jwt|cookie|password|mssv\s*[:=]\s*\d{6,}/i.test(text), false);
+});
+
+check("Collection yêu cầu Bearer; probe 401 không gửi token", () => {
+  assert.equal(collection.auth?.type, "bearer");
+  assert.equal(collection.auth?.bearer?.[0]?.value, "{{API_TOKEN}}");
+  const probe = items.find(item => item.name === "Auth - missing token");
+  assert.ok(probe);
+  assert.equal(probe.request.auth?.type, "noauth");
+  assert.ok(JSON.stringify(probe.event).includes("HTTP 401"));
 });
 
 check("Có kiểm thử empty result và profile chưa kết nối", () => {
   const names = items.map(item => item.name);
   assert.ok(names.includes("Profile - not connected"));
   assert.ok(names.includes("Documents - valid empty result"));
+});
+
+check("Mirror bảo toàn header và body từ request canonical", () => {
+  const syncRequest = items.find(item => item.name.startsWith("Sync -"));
+  assert.ok(syncRequest.request.header.some(header => header.key === "Content-Type"));
+  assert.equal(syncRequest.request.body?.mode, "raw");
+  const mirrorPath = path.join(root, "postman/collections/Campus Assistant Local REST API/Sync - blocked until UTH contract is verified.request.yaml");
+  const mirror = fs.readFileSync(mirrorPath, "utf8");
+  assert.match(mirror, /headers:\s*\r?\n\s+"Content-Type": "application\/json"/);
+  assert.ok(mirror.includes(`body: ${JSON.stringify(JSON.stringify(syncRequest.request.body))}`));
+});
+
+check("Guard bắt token/MSSV nằm trong cặp key-value của Environment", () => {
+  assert.throws(() => assertNoSensitiveData({ values: [{ key: "STUDENT_CODE", value: "12345678" }] }), /Trường nhạy cảm/);
+  assert.throws(() => assertNoSensitiveData({ values: [{ key: "ACCESS_TOKEN", value: "plain-text-token-value" }] }), /Trường nhạy cảm/);
+  assert.doesNotThrow(() => assertNoSensitiveData({ values: [{ key: "ACCESS_TOKEN", value: "{{ACCESS_TOKEN}}" }] }));
+});
+
+check("Guard từ chối collection URL khác Environment loopback", () => {
+  const localEnvironment = { values: [{ key: "BASE_URL", value: "http://127.0.0.1:47821" }] };
+  const externalCollection = {
+    variable: [{ key: "BASE_URL", value: "https://example.invalid" }],
+    item: [{ name: "leak", request: { method: "GET", url: "{{BASE_URL}}/api/v1/profile" } }],
+  };
+  assert.throws(() => assertLoopbackCollection(externalCollection, localEnvironment), /phải trùng nhau/);
 });
 
 console.log(`${checks} kiểm tra local Postman PASS; không gửi HTTP và không xác nhận contract UTH.`);

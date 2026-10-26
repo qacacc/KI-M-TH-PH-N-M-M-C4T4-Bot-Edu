@@ -1,14 +1,16 @@
 # FEATURE CATALOG - CAMPUS ASSISTANT LOCAL
 
 ## FEATURE: LOCAL_REST_API
+- **Truth status**: `CONFIRMED` for local source/tests only; UTH contract is `UNKNOWN`; manual desktop/Postman HTTP smoke is `UNKNOWN`.
 - **Status**: `CURRENT / LOOPBACK`
 - **Owner**: Rust API module (`src-tauri/src/api.rs`)
 - **Evidence**: `cargo test --manifest-path src-tauri/Cargo.toml api::tests`; `npm run check:postman`
 - **Address**: `127.0.0.1:47821`
-- **Scope**: Health, local sample provenance, validation/error envelope và Postman collection của project.
-- **Known limits**: Không public Internet; profile/schedule/exams/sync thật vẫn phụ thuộc UTH contract/auth/cache verification và không trả sample thay thế.
+- **Scope**: Health, local sample provenance, validation/error envelope, Bearer authentication và Postman collection của project.
+- **Address/Security**: `127.0.0.1:47821`; listener chỉ bật khi `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` hợp lệ; tất cả route yêu cầu Bearer.
+- **Known limits**: Không public Internet; profile/schedule/exams/sync thật vẫn phụ thuộc UTH contract/cache verification và không trả sample thay thế.
 
-CA-080 CURRENT (2026-10-11): bộ Postman local có 9 request, gồm profile chưa kết nối, empty-result, validation/error và UTH cache/sync gates; có Vault reference, consent/host/date guards, HTTP/JSON tests và JSON/YAML drift gate. Kiểm thử offline/local synthetic; không chứng nhận API/auth/business schema thật. CA-080 In Progress, CA-081 Proposed; UTH tiếp tục quarantined. Xem [contract](testing/UTH_API_CONTRACT.md).
+**CONFIRMED (source/tests), CA-098.01:** REST loopback dùng Bearer token process-local và `subtle::ConstantTimeEq`; token thiếu/sai hoặc REST thread/runtime/port không khả dụng chỉ tắt listener, không chặn desktop. Ghi log startup best-effort; stderr error không panic. Port conflict cho phép app thứ hai tiếp tục desktop-only. Query parse lỗi trả envelope `400 VALIDATION_ERROR`; lỗi nội bộ dùng message tổng quát. Profile chưa kết nối là 404; Schedule/Exams giữ 503 khi UTH contract chưa xác minh. **UNKNOWN:** manual HTTP smoke và UTH upstream contract. Postman collection có probe 401; probe không chứng minh UTH.
 
 Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhận đúng sự thật hiện tại (`CURRENT`) và mục tiêu (`TARGET`), kèm bằng chứng kiểm thử (`Evidence`), khe hở kỹ thuật (`Known Gaps`) và mã task theo dõi (`Tracking Task`).
 
@@ -162,7 +164,8 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
   - Last Verified: 2026-07-27
   - Verification Scope: AUTOMATED (`npm run check:all` PASS)
 - **Known Gaps & Tracking**:
-  - Persistence to SQLite for custom semester grades | Decision: **`DEFERRED`**
+  - Grade entry is manual/localStorage only; blank draft rows are excluded from GPA and persisted grade labels use an own-key allowlist. SQLite persistence remains **`DEFERRED`**; no verified school grade scale/data source.
+  - Verification (historical before dependency refresh): `npm run check:all` passed Vitest (84 tests), layout, Postman, TypeScript/Vite build, Rust check and Rust tests, then exited non-zero at `npm audit` for 2 moderate `@vitest/mocker` and 1 high Vite advisories. Latest merged-tree run passes `npm run check:all` with 84 Vitest, 55 Rust tests, and audit 0 vulnerabilities. Manual/native GPA validation remains `UNKNOWN`.
 
 ---
 
