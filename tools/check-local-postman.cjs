@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const { assertLoopbackCollection, assertNoSensitiveData } = require("./postman-guards.cjs");
 
 const root = path.resolve(__dirname, "..");
 const collectionPath = path.join(root, "postman/Campus_Assistant_Local_REST_API.postman_collection.json");
@@ -66,6 +67,21 @@ check("Mirror bảo toàn header và body từ request canonical", () => {
   const mirror = fs.readFileSync(mirrorPath, "utf8");
   assert.match(mirror, /headers:\s*\r?\n\s+"Content-Type": "application\/json"/);
   assert.ok(mirror.includes(`body: ${JSON.stringify(JSON.stringify(syncRequest.request.body))}`));
+});
+
+check("Guard bắt token/MSSV nằm trong cặp key-value của Environment", () => {
+  assert.throws(() => assertNoSensitiveData({ values: [{ key: "STUDENT_CODE", value: "12345678" }] }), /Trường nhạy cảm/);
+  assert.throws(() => assertNoSensitiveData({ values: [{ key: "ACCESS_TOKEN", value: "plain-text-token-value" }] }), /Trường nhạy cảm/);
+  assert.doesNotThrow(() => assertNoSensitiveData({ values: [{ key: "ACCESS_TOKEN", value: "{{ACCESS_TOKEN}}" }] }));
+});
+
+check("Guard từ chối collection URL khác Environment loopback", () => {
+  const localEnvironment = { values: [{ key: "BASE_URL", value: "http://127.0.0.1:47821" }] };
+  const externalCollection = {
+    variable: [{ key: "BASE_URL", value: "https://example.invalid" }],
+    item: [{ name: "leak", request: { method: "GET", url: "{{BASE_URL}}/api/v1/profile" } }],
+  };
+  assert.throws(() => assertLoopbackCollection(externalCollection, localEnvironment), /phải trùng nhau/);
 });
 
 console.log(`${checks} kiểm tra local Postman PASS; không gửi HTTP và không xác nhận contract UTH.`);

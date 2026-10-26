@@ -1,11 +1,13 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { assertLoopbackCollection } = require("./postman-guards.cjs");
 
 const root = path.resolve(__dirname, "..");
 const collectionPath = path.join(root, "postman/Campus_Assistant_Local_REST_API.postman_collection.json");
 const environmentPath = path.join(root, "postman/Campus_Assistant_Local_REST_API.postman_environment.json");
 const collection = JSON.parse(fs.readFileSync(collectionPath, "utf8"));
 const environment = JSON.parse(fs.readFileSync(environmentPath, "utf8"));
+assertLoopbackCollection(collection, environment);
 const directory = path.join(root, "postman/collections/Campus Assistant Local REST API");
 const write = process.argv.includes("--write");
 let stale = false;
@@ -36,13 +38,11 @@ function requestYaml(item, index) {
   ].join("\n");
 }
 
-const baseUrl = environment.values.find(value => value.key === "BASE_URL")?.value;
 const variables = collection.variable.map(variable => `  ${variable.key}: ${yamlString(variable.value)}`).join("\n");
 const description = collection.info.description.replace(/\r?\n/g, " ");
 const outputs = new Map([
   [path.join(directory, ".resources/definition.yaml"), `$kind: collection\ndescription: ${description}\nvariables:\n${variables}\n`],
 ]);
-if (baseUrl !== "http://127.0.0.1:47821") throw new Error("Environment canonical phải trỏ loopback 127.0.0.1:47821.");
 for (const [index, item] of collection.item.entries()) {
   if (!item?.name || /[\\/]|\.\./.test(item.name)) throw new Error("Tên request không an toàn.");
   outputs.set(path.join(directory, `${item.name}.request.yaml`), requestYaml(item, index));
