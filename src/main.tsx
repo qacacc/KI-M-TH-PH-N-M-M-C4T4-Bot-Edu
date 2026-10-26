@@ -36,12 +36,11 @@ class ErrorBoundary extends Component<Props, State> {
           </p>
           <button
             onClick={() => {
-              localStorage.clear();
               window.location.reload();
             }}
             style={{ padding: "10px 20px", borderRadius: "8px", border: "none", background: "var(--accent, #6d5dfc)", color: "#fff", cursor: "pointer", fontWeight: "bold" }}
           >
-            Đặt lại Cấu hình Local & Tải lại
+            Tải lại ứng dụng
           </button>
         </div>
       );

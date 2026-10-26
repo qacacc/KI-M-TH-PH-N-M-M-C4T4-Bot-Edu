@@ -1,5 +1,14 @@
 # FLOW MAP - CAMPUS ASSISTANT LOCAL
 
+## CA-090.01 - Reset cấu hình và khởi động SQLite CURRENT 2026-10-19
+
+1. App mở SQLite và chạy migration theo `PRAGMA user_version`; foreign key được bật trước khi dùng schema.
+2. `init_app` seed dữ liệu mẫu nhưng không tự xóa lịch sử chat cũ.
+3. ErrorBoundary chỉ cho phép reload; không tự xóa localStorage.
+4. Reset trong Settings yêu cầu confirm và chỉ xóa allowlist cấu hình giao diện/bố cục/tùy chọn; GPA, chat và hồ sơ trường được giữ nguyên.
+
+Manual native/UI verification và review Jira vẫn `PLANNED`; chưa mô tả task là Done.
+
 ## CA-103 - Local REST API + Postman
 
 ### Runtime Status: `CURRENT / LOCAL LOOPBACK`

@@ -1,5 +1,12 @@
 # Project Tasks
 
+## CA-090.01 - SQLite migration và reset an toàn (2026-10-19)
+
+- Status: In Progress; triển khai native migration/reset đã có evidence, chưa review/merge Jira.
+- CURRENT: `init_app` không còn xóa lịch sử chat; SQLite bật foreign key và test migration giữ message cũ; ErrorBoundary chỉ reload; Settings reset có allowlist và confirm.
+- Evidence: `npm run check:all` PASS (67 Vitest, 43 Rust, build/layout/Postman/npm audit); manual native/UI chưa chạy.
+- Giới hạn: CA-090.02 backup round-trip và xóa DB/assets không thuộc phần CA-090.01 này.
+
 ## CA-080 - Setup Postman local (2026-10-10)
 
 - Status: In Progress; local REST/Postman đã có, API/auth/business schema trường UNKNOWN.
@@ -441,6 +448,13 @@
 - Tổng cộng 55 spec: 31 done, 22 chua-xong, 2 hoan-lam. Chua-xong gồm cả chờ đối chiếu/thiếu Status/Superseded, không đồng nghĩa cần viết lại tất cả.
 - Chỉ sửa tài liệu/cấu trúc task; không đổi runtime/schema/collection hay trạng thái task cũ.
 - Kiểm chứng sau chuyển thư mục: 55 spec đúng nhóm và có liên kết README; git diff --check pass; npm run check:all pass 62 Vitest/39 Rust/layout/build/cargo check, audit 0. Không nghiệm thu lại native auth hoặc UI cũ.
+
+## CA-084 release checklist reconciliation - 2026-10-21
+
+- CONFIRMED: `ReleasePage` trước đây đánh `Dữ liệu mẫu` là FAIL khi bootstrap local-only không seed academic data và đánh một số capability PASS từ nhãn tĩnh.
+- CURRENT: checklist được tách thành `src/releaseChecklist.ts`; local-only/connector chưa verified là WARN, còn FAIL chỉ đến từ version sai hoặc health report có lỗi runtime.
+- AUTOMATED: `npm run test -- --run src/releaseChecklist.test.ts` PASS 2/2.
+- PENDING: xử lý advisory `npm audit` ngoài scope dependency, native smoke, restart/upgrade DB, privacy/path checks, installer và review; chưa chuyển CA-084 sang Done.
 
 ## Audit tổng thể và lập backlog - 2026-10-09
 

@@ -71,7 +71,8 @@ Core local đã có implementation và green baseline, nhưng chưa đủ để 
 - Tracking: CA-087.
 
 ### A04 - P1 - Cleanup lịch sử tự động và lỗi CRUD bị che
-- CONFIRMED: `src-tauri/src/lib.rs:37` init gọi clear_chat_history; `src-tauri/src/db.rs:208` DELETE toàn bộ messages nếu marker chatHistoryClearedV2 chưa true, không consent ở UI. Đây là cleanup một lần theo marker, không phải xóa mỗi lần mở app.
+- HISTORICAL BASELINE (2026-10-09, đã được remediation bởi CA-090.01 ngày 2026-10-19): `src-tauri/src/lib.rs:37` từng gọi clear_chat_history; `src-tauri/src/db.rs:208` từng DELETE toàn bộ messages nếu marker chatHistoryClearedV2 chưa true, không consent ở UI. Đây là cleanup một lần theo marker, không phải xóa mỗi lần mở app.
+- CURRENT: `init_app` không còn gọi cleanup lịch sử; helper xóa toàn bộ lịch sử đã được loại bỏ. Migration SQLite giữ dữ liệu cũ và bật foreign keys; reset UI chỉ xóa các key cấu hình được allowlist. Phần CRUD/error handling bên dưới vẫn là finding độc lập.
 - `src/pages/ChatHistoryPage.tsx:77` lỗi load chỉ console; CRUD catch tương tự; delete finally dòng164 đóng modal kể cả lỗi; chưa báo App active session đã bị xóa. Archive filter dòng184 không có UI restore.
 - Dialog dòng384 có aria-modal nhưng chưa focus trap/restore; card-main dòng241 là click div không keyboard. Composer App.tsx:644 chưa guard IME composing.
 - Tracking: CA-087. Không đổi CA-066/067 lịch sử thành Done chỉ nhờ audit.
