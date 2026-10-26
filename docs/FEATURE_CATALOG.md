@@ -162,7 +162,8 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
   - Last Verified: 2026-07-27
   - Verification Scope: AUTOMATED (`npm run check:all` PASS)
 - **Known Gaps & Tracking**:
-  - Persistence to SQLite for custom semester grades | Decision: **`DEFERRED`**
+  - Grade entry is manual/localStorage only; blank draft rows are excluded from GPA and persisted grade labels use an own-key allowlist. SQLite persistence remains **`DEFERRED`**; no verified school grade scale/data source.
+  - Verification: `npm run check:all` passed Vitest (84 tests), layout, Postman, TypeScript/Vite build, Rust check and Rust tests; command exits non-zero at `npm audit` for 2 moderate `@vitest/mocker` and 1 high Vite advisories. Manual/native GPA validation remains `UNKNOWN`.
 
 ---
 
