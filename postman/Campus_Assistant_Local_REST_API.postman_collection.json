@@ -41,7 +41,7 @@
         "script": { "type": "text/javascript", "exec": [
           "pm.test('HTTP 401', function () { pm.response.to.have.status(401); });",
           "const body = pm.response.json();",
-          "pm.test('Có Bearer challenge', function () { pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer'); });",
+          "pm.test('Có header WWW-Authenticate', function () { pm.expect(pm.response.headers.get('WWW-Authenticate')).to.eql('Bearer'); });",
           "pm.test('Envelope lỗi chuẩn', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql('UNAUTHORIZED'); pm.expect(body.data).to.eql(null); });"
         ] }
       }]

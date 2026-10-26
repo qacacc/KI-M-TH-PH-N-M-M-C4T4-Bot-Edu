@@ -1,6 +1,6 @@
 # CA-090 - Sao lưu và reset đúng phạm vi, không mất dữ liệu
 
-- Status: Proposed
+- Status: In Progress (CA-090.01 implementation)
 - Priority: P1
 - Created: 2026-10-09
 - Owner: AI + User review
@@ -52,4 +52,15 @@ Các lệnh mới/test mới là PLANNED: agent triển khai phải ghi tên l�
 ## Rollback
 
 Commit nhỏ riêng cho task; không revert thay đổi user. Migration/data recovery phải có bản sao và thử trên DB fixture trước dữ liệu thật.
+
+## Evidence cập nhật CA-090.01 (2026-10-19)
+
+- `src-tauri/src/lib.rs:34-36`: khởi động không còn tự xóa lịch sử chat cũ.
+- `src-tauri/src/db.rs:64-68`: bật `PRAGMA foreign_keys` trước khi kiểm tra/nâng cấp schema.
+- `src-tauri/src/db.rs:551-596`: migration v1 -> v2 được kiểm tra giữ nguyên message cũ và bật foreign key.
+- `src/main.tsx:37-44`: ErrorBoundary chỉ reload, không xóa localStorage âm thầm.
+- `src/resetConfig.ts:1-31` và `src/pages/SettingsPage.tsx:209-232`: reset chỉ xóa allowlist cấu hình; GPA, chat và hồ sơ trường được giữ lại.
+- Automated: `npm run check:all` PASS (67 Vitest, 43 Rust, build/layout/Postman/npm audit).
+- Static source check: không còn `localStorage.clear()` trong flow reset khởi động/settings.
+- Manual visual/native check: chưa thực hiện; task chưa chuyển Done.
 

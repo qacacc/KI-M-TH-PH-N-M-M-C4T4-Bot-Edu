@@ -33,7 +33,6 @@ fn init_app() -> Result<BootstrapState, String> {
     let exams = Vec::new();
     let conn = open_db(&roots)?;
     seed_sample_documents(&conn, &roots, &documents)?;
-    clear_chat_history(&conn)?;
 
     Ok(BootstrapState {
         paths: AppPaths {

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import type { StorageSummary, HealthReport } from "../types";
 import { downloadBackupFile, exportLocalAppDataJSON, importLocalAppDataJSON, uploadBackupFile } from "../utils/backupRestore";
+import { resetLocalConfiguration } from "../resetConfig";
 import {
   SUPPORTED_UNIVERSITIES,
   StudentSession,
@@ -208,16 +209,22 @@ export function SettingsPage({
 
   const handleWipeAllLocalData = async () => {
     const ok = await openGlassConfirm(
-      "CẢNH BÁO: Bạn sắp xóa sạch cấu hình cài đặt local, bộ nhớ đệm và thiết lập ứng dụng. Tiếp tục?",
-      "Xóa toàn bộ dữ liệu ứng dụng"
+      "Thao tác này chỉ đặt lại cấu hình giao diện, bố cục và tùy chọn local. Lịch sử chat, GPA, hồ sơ trường và dữ liệu khác sẽ được giữ nguyên. Tiếp tục?",
+      "Đặt lại cấu hình ứng dụng"
     );
     if (ok) {
-      localStorage.clear();
-      revokeSession();
-      setSession(null);
+      const result = resetLocalConfiguration(localStorage);
       onResetAppearance();
       onResetLayout();
-      await openGlassAlert("Đã khôi phục cài đặt ứng dụng về trạng thái ban đầu.", "Hoàn tất");
+      if (result.failed.length > 0) {
+        await openGlassAlert(
+          `Đã đặt lại một phần cấu hình. Không thể xóa: ${result.failed.join(", ")}.`,
+          "Cấu hình chưa được đặt lại hoàn toàn",
+        );
+        return;
+      }
+      await openGlassAlert("Đã đặt lại cấu hình ứng dụng. Dữ liệu chat, GPA và hồ sơ vẫn được giữ nguyên.", "Hoàn tất");
+      window.location.reload();
     }
   };
 

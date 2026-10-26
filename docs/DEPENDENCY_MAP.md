@@ -39,7 +39,7 @@ CampusDataPages.tsx / App.tsx (Schedule, Exams)
    ├──> academicData.ts -> tauriApi.ts -> SQLite cache đúng account/source
    └──> useAcademicCache.ts -> schoolProfile / academicEvents (reload, cleanup)
 
-GpaCalculator.tsx -> gpaData.ts -> LocalStorage manual_v2 (trống mặc định)
+GpaCalculator.tsx -> gpaData.ts -> LocalStorage manual_v2 (hàng chưa chấm để trống; parser chỉ nhận grade là own key trong allowlist; F/0 thật vẫn tính)
 FilesPage.tsx -> tài liệu trường chưa đồng bộ / tab mẫu opt-in / file service
 
 
