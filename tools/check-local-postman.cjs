@@ -58,4 +58,14 @@ check("Có kiểm thử empty result và profile chưa kết nối", () => {
   assert.ok(names.includes("Documents - valid empty result"));
 });
 
+check("Mirror bảo toàn header và body từ request canonical", () => {
+  const syncRequest = items.find(item => item.name.startsWith("Sync -"));
+  assert.ok(syncRequest.request.header.some(header => header.key === "Content-Type"));
+  assert.equal(syncRequest.request.body?.mode, "raw");
+  const mirrorPath = path.join(root, "postman/collections/Campus Assistant Local REST API/Sync - blocked until UTH contract is verified.request.yaml");
+  const mirror = fs.readFileSync(mirrorPath, "utf8");
+  assert.match(mirror, /headers:\s*\r?\n\s+"Content-Type": "application\/json"/);
+  assert.ok(mirror.includes(`body: ${JSON.stringify(JSON.stringify(syncRequest.request.body))}`));
+});
+
 console.log(`${checks} kiểm tra local Postman PASS; không gửi HTTP và không xác nhận contract UTH.`);

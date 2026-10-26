@@ -9,11 +9,11 @@ Import hai file JSON trên vào Postman, chọn environment local rồi gửi re
 ## Đồng bộ và kiểm tra
 
 - Chỉnh method, URL, biến và test script trong collection JSON chuẩn.
-- `npm run sync:postman` tạo/cập nhật các request YAML trong `postman/collections/Campus Assistant Local REST API/` từ JSON. Lệnh không gửi HTTP và không xóa file hay collection nào khác.
-- `npm run check:postman` kiểm tra JSON/environment canonical, chạy secret guard và báo lỗi nếu mirror YAML bị lệch hoặc thiếu.
+- `npm run sync:postman` tạo/cập nhật các request YAML trong `postman/collections/Campus Assistant Local REST API/` từ JSON, gồm URL, method, header, auth, body và test scripts. Lệnh không gửi HTTP, không tự xóa file; mirror thừa trong thư mục được quản lý sẽ làm check thất bại để người dùng rà soát.
+- `npm run check:postman` kiểm tra JSON/environment canonical, secret/PII guard, URL loopback và báo lỗi nếu mirror YAML bị lệch, thiếu hoặc thừa.
 - Các collection UTH và bản Copy trong workspace là tài liệu/bản sao riêng. Không ghi đè, đổi workspace ID hoặc xóa chúng khi đồng bộ collection local.
 
-Secret guard chặn token/Bearer, API key, mật khẩu, cookie và dữ liệu nhận dạng phổ biến trong JSON canonical. Chỉ commit environment mẫu không chứa secret; không commit response thật, HAR, token, mật khẩu hoặc dữ liệu cá nhân.
+Secret guard chặn token/Bearer, API key, mật khẩu, cookie và dữ liệu nhận dạng phổ biến trong JSON canonical. Trường nhạy cảm chỉ được để trống hoặc dùng placeholder; kiểm tra thêm MSSV dạng 8 chữ số. Chỉ commit environment mẫu không chứa secret; không commit response thật, HAR, token, mật khẩu hoặc dữ liệu cá nhân.
 
 ## Giới hạn dữ liệu UTH
 

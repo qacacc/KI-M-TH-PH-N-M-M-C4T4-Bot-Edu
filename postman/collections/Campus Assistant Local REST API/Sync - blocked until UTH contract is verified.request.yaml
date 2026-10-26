@@ -1,6 +1,9 @@
 $kind: http-request
 url: "{{BASE_URL}}/api/v1/sync"
 method: POST
+headers:
+  "Content-Type": "application/json"
+body: "{\"mode\":\"raw\",\"raw\":\"{}\"}"
 scripts:
   - type: afterResponse
     code: |-

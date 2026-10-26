@@ -18,6 +18,8 @@ Postman collection của project là `postman/Campus_Assistant_Local_REST_API.po
 
 Collection local JSON -> `tools/check-local-postman.cjs` kiểm tra 9 request/error contract; collection UTH nếu chưa có nguồn chuẩn thì `sync:postman` SKIP an toàn. Desktop đã import collection/environment local và chạy local contract; chưa gửi API trường hoặc live sandbox test. Response HTTP/JSON local không nâng contract UTH lên VERIFIED; auth/business schema vẫn UNKNOWN. Không tạo session app, không gỡ quarantine Rust. Hướng dẫn: [postman/README](../postman/README.md), [contract](testing/UTH_API_CONTRACT.md).
 
+**Evidence update:** `tools/check-postman.cjs` validates canonical JSON/environment, sensitive values and loopback-only request URLs. `tools/sync-postman.cjs` mirrors URL/method/headers/auth/body/scripts, then fails on missing, drifted, or unexpected `*.request.yaml` files in the managed local collection directory; it does not delete stale files. UTH business/auth contract remains `UNKNOWN`.
+
 ## CA-083 - Luồng UTH CURRENT 2026-10-09
 
 Mô tả thử nghiệm bên dưới là lịch sử trước CA-083. Hiện native từ chối open_uth_login_window/receive_uth_jwt/sync_uth_after_login/list_connector_schedules/list_connector_exams trước mọi xử lý bằng CONTRACT_UNVERIFIED. Không mở WebView thu token, không HTTP/mapping đoán, không ghi DB. Prototype command trả SAMPLE_SYNC_DISABLED. Portal browser độc lập vẫn mở; cache cũ giữ nguyên nhưng cách ly khỏi lịch UI. API/auth thật vẫn PLANNED, CA-080/081.

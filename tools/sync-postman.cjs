@@ -18,10 +18,14 @@ function requestYaml(item, index) {
   const request = item.request;
   const url = typeof request.url === "string" ? request.url : request.url.raw;
   const scripts = (item.event || []).filter(event => event.listen === "test").flatMap(event => event.script.exec || []);
+  const headers = (request.header || []).filter(header => !header.disabled).map(header => [header.key, header.value]);
   return [
     "$kind: http-request",
     `url: ${yamlString(url)}`,
     `method: ${request.method}`,
+    ...(headers.length ? ["headers:", ...headers.map(([key, value]) => `  ${JSON.stringify(key)}: ${yamlString(value)}`)] : []),
+    ...(request.auth ? [`auth: ${yamlString(JSON.stringify(request.auth))}`] : []),
+    ...(request.body ? [`body: ${yamlString(JSON.stringify(request.body))}`] : []),
     "scripts:",
     "  - type: afterResponse",
     "    code: | -".replace("| -", "|-"),
@@ -42,6 +46,20 @@ if (baseUrl !== "http://127.0.0.1:47821") throw new Error("Environment canonical
 for (const [index, item] of collection.item.entries()) {
   if (!item?.name || /[\\/]|\.\./.test(item.name)) throw new Error("Tên request không an toàn.");
   outputs.set(path.join(directory, `${item.name}.request.yaml`), requestYaml(item, index));
+}
+
+function listRequestMirrors(folder) {
+  if (!fs.existsSync(folder)) return [];
+  return fs.readdirSync(folder, { withFileTypes: true }).flatMap(entry => {
+    const filename = path.join(folder, entry.name);
+    return entry.isDirectory() ? listRequestMirrors(filename) : (entry.isFile() && entry.name.endsWith(".request.yaml") ? [filename] : []);
+  });
+}
+const expectedFiles = new Set(outputs.keys());
+for (const filename of listRequestMirrors(directory)) {
+  if (expectedFiles.has(filename)) continue;
+  stale = true;
+  console.error(`Postman mirror thừa, cần rà soát/xóa tường minh: ${path.relative(root, filename)}`);
 }
 
 for (const [filename, expected] of outputs) {
