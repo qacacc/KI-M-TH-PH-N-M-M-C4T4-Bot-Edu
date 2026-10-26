@@ -1,8 +1,10 @@
 # DEPENDENCY MAP - CAMPUS ASSISTANT LOCAL
 
-CA-103: Tauri startup -> `api::start()` -> Axum loopback `127.0.0.1:47821`; REST routes -> existing Rust data/connector services -> SQLite hoặc explicit error. Postman local collection/environment -> `tools/check-local-postman.cjs`; collection UTH remains upstream contract probe.
+**CONFIRMED (source/tests):** CA-098.01 Tauri startup calls best-effort `api::start()`; missing/invalid token or thread/runtime/bind failure leaves desktop running. Startup log ignores stderr errors. Two instances contend for `127.0.0.1:47821`; first listener stays active and second continues desktop-only. Bearer middleware protects routes; query validation precedes data/connector services; token comparison uses `subtle::ConstantTimeEq`. Postman local Collection uses HTTP loopback with Environment `BASE_URL`/secret `API_TOKEN`, checked by `tools/check-local-postman.cjs`.
 
-CA-080 setup (2026-10-10): collection JSON + postman/scripts -> tools/sync-postman.cjs -> JSON events/YAML mirrors; tools/check-postman.cjs -> Node VM synthetic và drift check; npm check:all -> check:postman. Postman Local Vault chỉ dùng trong Desktop được user cấp quyền, không có dependency runtime React/Rust/SQLite mới. Contract verified vẫn là dependency bắt buộc của CA-081.
+**UNKNOWN:** UTH upstream API/auth/schema; the local collection is not evidence for it. Manual Windows/Postman HTTP smoke is not verified by automated tests.
+
+**CONFIRMED (scripts):** CA-080 collection JSON + scripts -> `tools/sync-postman.cjs` -> YAML mirrors; `tools/check-postman.cjs` runs synthetic checks and drift checks; `npm run check:all` includes `check:postman`. No new React/Rust/SQLite runtime dependency is introduced by these scripts. **PLANNED:** Verified UTH contract remains a prerequisite for CA-081.
 
 CA-083 (2026-10-09): mọi entry UTH auth/sync/đọc lịch -> ensure_uth_contract_verified -> Err trước IO. academicDataErrorMessage -> chat/useAcademicCache trả thông báo an toàn. Prototype command giữ tên/payload để tương thích nhưng không ghi DB. Dependencies HTTP/parser UTH đã gỡ; portal browser và SQLite/cache management không đổi.
 
