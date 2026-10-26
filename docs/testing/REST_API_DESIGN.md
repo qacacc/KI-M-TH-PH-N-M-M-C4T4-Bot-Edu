@@ -2,6 +2,8 @@
 
 ## 1. Mục đích và trạng thái
 
+**CONFIRMED (source/tests):** This document specifies the local loopback REST implementation and its static Postman collection. **UNKNOWN:** manual Postman HTTP smoke has not been completed; UTH upstream auth/schema remains unverified. Success response shapes below describe source-level branches and do not prove UTH data availability.
+
 Tài liệu này mô tả REST API HTTP của **Campus Assistant Local** để kiểm thử bằng Postman trên cùng máy. Postman gửi HTTP đến `127.0.0.1:47821`; API không dùng Tauri IPC làm transport cho request của collection.
 
 - **CONFIRMED trước task:** Axum loopback đã có các route `GET /api/v1/profile`, `GET /api/v1/schedule`, `GET /api/v1/exams` và envelope JSON chung. Xem `src-tauri/src/api.rs`.

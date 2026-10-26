@@ -1,6 +1,7 @@
 # FEATURE CATALOG - CAMPUS ASSISTANT LOCAL
 
 ## FEATURE: LOCAL_REST_API
+- **Truth status**: `CONFIRMED` for local source/tests only; UTH contract is `UNKNOWN`; manual desktop/Postman HTTP smoke is `UNKNOWN`.
 - **Status**: `CURRENT / LOOPBACK`
 - **Owner**: Rust API module (`src-tauri/src/api.rs`)
 - **Evidence**: `cargo test --manifest-path src-tauri/Cargo.toml api::tests`; `npm run check:postman`
@@ -9,7 +10,7 @@
 - **Address/Security**: `127.0.0.1:47821`; listener chỉ bật khi `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` hợp lệ; tất cả route yêu cầu Bearer.
 - **Known limits**: Không public Internet; profile/schedule/exams/sync thật vẫn phụ thuộc UTH contract/cache verification và không trả sample thay thế.
 
-CA-098.01 CURRENT (2026-10-25): REST loopback bảo vệ bằng Bearer token process-local và `subtle::ConstantTimeEq`; token thiếu/sai hoặc REST thread/runtime/port không khả dụng chỉ tắt listener, không chặn desktop. Ghi log startup là best-effort, stderr lỗi không panic. Port conflict giữa hai app được xử lý để app thứ hai tiếp tục chạy desktop-only. Query parse lỗi trả envelope `400 VALIDATION_ERROR`; lỗi nội bộ trả message tổng quát. Postman collection dùng biến `API_TOKEN`, template để trống và có probe 401. CA-080 UTH collection vẫn là probe upstream riêng. Profile chưa kết nối là 404; Schedule/Exams giữ 503 khi contract chưa xác minh.
+**CONFIRMED (source/tests), CA-098.01:** REST loopback dùng Bearer token process-local và `subtle::ConstantTimeEq`; token thiếu/sai hoặc REST thread/runtime/port không khả dụng chỉ tắt listener, không chặn desktop. Ghi log startup best-effort; stderr error không panic. Port conflict cho phép app thứ hai tiếp tục desktop-only. Query parse lỗi trả envelope `400 VALIDATION_ERROR`; lỗi nội bộ dùng message tổng quát. Profile chưa kết nối là 404; Schedule/Exams giữ 503 khi UTH contract chưa xác minh. **UNKNOWN:** manual HTTP smoke và UTH upstream contract. Postman collection có probe 401; probe không chứng minh UTH.
 
 Tài liệu quản lý danh mục tính năng toàn bộ ứng dụng, ghi nhận đúng sự thật hiện tại (`CURRENT`) và mục tiêu (`TARGET`), kèm bằng chứng kiểm thử (`Evidence`), khe hở kỹ thuật (`Known Gaps`) và mã task theo dõi (`Tracking Task`).
 

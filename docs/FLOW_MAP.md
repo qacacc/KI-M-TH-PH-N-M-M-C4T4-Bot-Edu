@@ -2,17 +2,17 @@
 
 ## CA-103 - Local REST API + Postman
 
-### Runtime Status: `CURRENT / LOCAL LOOPBACK`
+### Runtime Status: `CONFIRMED / LOCAL LOOPBACK` (automated source/tests; manual HTTP smoke `UNKNOWN`)
 
 ```text
-1. Desktop app starts Rust; `api::start()` reads `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` as a best-effort service.
-2. Missing/invalid token, thread/runtime failure, or port bind failure disables REST only; Tauri desktop startup continues. With two app instances, the first listener owns `127.0.0.1:47821`; the second logs only a generic conflict and continues without a listener.
-3. Postman sends HTTP to `/api/v1/*` with `Authorization: Bearer {{API_TOKEN}}`; missing/invalid tokens return `401` before route processing.
-4. Query deserialization failures become `400 VALIDATION_ERROR`; internal read/serialization failures use a generic error envelope without raw details.
-5. Bearer token bytes are checked with `subtle::ConstantTimeEq`; Schedule/exams/sync do not fabricate data and an unverified UTH contract remains `503 CONNECTOR_UNAVAILABLE`.
+1. **CONFIRMED:** Desktop app starts Rust; `api::start()` reads `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` as a best-effort service.
+2. **CONFIRMED (source/tests):** Missing/invalid token, thread/runtime failure, or port bind failure disables REST only; Tauri desktop startup continues. With two app instances, first listener owns `127.0.0.1:47821`; second logs a generic conflict and continues without a listener.
+3. **CONFIRMED (source/static collection):** Postman is configured to send HTTP to `/api/v1/*` with `Authorization: Bearer {{API_TOKEN}}`; missing/invalid tokens return `401` before route processing.
+4. **CONFIRMED (source/tests):** Query deserialization failures become `400 VALIDATION_ERROR`; internal read/serialization failures use a generic error envelope without raw details.
+5. **CONFIRMED (source/tests):** Bearer token bytes are checked with `subtle::ConstantTimeEq`; Schedule/exams/sync do not fabricate data and unverified UTH contract remains `503 CONNECTOR_UNAVAILABLE`.
 ```
 
-Startup log output is best-effort: a closed/broken stderr must not panic or prevent the desktop app from continuing. `UNKNOWN`: manual Windows launch under a closed stderr handle remains a manual smoke-test item; the writer failure path is covered by a Rust unit test.
+**CONFIRMED (source/test):** Startup logging is best-effort; a Rust unit test verifies broken stderr does not panic. **UNKNOWN:** manual Windows launch and real Postman HTTP smoke have not been performed in this pass.
 
 Postman collection của project là `postman/Campus_Assistant_Local_REST_API.postman_collection.json`. Collection UTH là upstream probe riêng, không phải runtime REST API của project.
 
