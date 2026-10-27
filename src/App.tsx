@@ -46,6 +46,7 @@ import {
   detectIntent,
   extractSemester,
   findSubjectInText,
+  findSubjectMatchInText,
   parseConfirmationIntent,
   parseDocumentActionIntent,
   parseFlowControlIntent,
@@ -175,6 +176,9 @@ export default function App() {
   const [isBusy, setIsBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  // Ref theo dõi trạng thái composition IME (nhập tiếng Việt)
+  // Không dùng useState để tránh re-render không cần thiết
+  const isComposingRef = useRef(false);
   const backgroundInputRef = useRef<HTMLInputElement | null>(null);
   const bootstrapRequestRef = useRef(createBootstrapRequest(initApp));
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
@@ -615,6 +619,11 @@ export default function App() {
 
   async function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
+      // Chặn gửi tin khi đang trong quá trình composition IME (nhập tiếng Việt)
+      // isComposing = true có nghĩa người dùng đang chọn từ gợi ý của bộ nhập tiếng Việt
+      if (event.nativeEvent.isComposing || isComposingRef.current) {
+        return;
+      }
       event.preventDefault();
       await submitText(input);
       return;
@@ -757,6 +766,17 @@ export default function App() {
           return;
         }
         await showDocuments(intent.subjectId, intent.subjectName, intent.semester);
+        return;
+      }
+      case "AMBIGUOUS_SUBJECT": {
+        // Nhiều môn cùng mức độ khớp — yêu cầu người dùng chọn rõ hơn
+        const list = intent.candidates.map((name, i) => `${i + 1}. ${name}`).join("\n");
+        appendAssistant(`Tui tìm thấy nhiều môn có tên tương tự:\n${list}\nBạn muốn tìm tài liệu môn nào? Vui lòng nhập đủ tên môn để tôi xác nhận.`);
+        setConversation({
+          flow: "FIND_DOCUMENTS",
+          step: "WAITING_FOR_SUBJECT",
+          data: { subjectId: null, subjectName: null, semester: intent.semester },
+        });
         return;
       }
       case "NEEDS_SUBJECT":
@@ -1585,6 +1605,8 @@ export default function App() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => void handleComposerKeyDown(event)}
+                onCompositionStart={() => { isComposingRef.current = true; }}
+                onCompositionEnd={() => { isComposingRef.current = false; }}
                 placeholder="Nhập yêu cầu, ví dụ: tìm tài liệu lập trình mạng"
                 rows={3}
               />
