@@ -1,10 +1,10 @@
 /* @vitest-environment jsdom */
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { GPA_STORAGE_KEY } from "../gpaData";
 import { GpaCalculator } from "./GpaCalculator";
 
+// Ghi đè localStorage bị hỏng của Node.js
 const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
   return {
@@ -42,7 +42,7 @@ describe("GpaCalculator UI Integration Tests (CA-088.02)", () => {
     render(<GpaCalculator />);
     expect(screen.getByText("3.70")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /Thêm môn học/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Thêm môn/i }));
 
     expect(screen.getByText("3.70")).toBeTruthy();
     expect(screen.getAllByPlaceholderText("Nhập tên môn...")).toHaveLength(2);
@@ -50,7 +50,8 @@ describe("GpaCalculator UI Integration Tests (CA-088.02)", () => {
 
   it("nhập điểm F thật sự được tính vào GPA", () => {
     render(<GpaCalculator />);
-    fireEvent.click(screen.getByRole("button", { name: /Thêm môn học/i }));
+    
+    fireEvent.click(screen.getByRole("button", { name: /Thêm môn/i }));
 
     const scoreInput = screen.getAllByRole("spinbutton")[1];
     fireEvent.change(scoreInput, { target: { value: "2" } });
