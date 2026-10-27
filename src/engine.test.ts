@@ -14,7 +14,7 @@ import {
   parseFlowControlIntent,
   parseSlashCommand,
 } from "./engine";
-import type { Subject } from "./types";
+import type { ExamRecord, ScheduleRecord, Subject } from "./types";
 
 const subjects: Subject[] = [
   {
@@ -325,6 +325,18 @@ describe("subject longest-match", () => {
     const resultNoMatch = findSubjectMatchInText("tài liệu management", networkSubjects);
     expect(resultNoMatch.kind).toBe("none");
   });
+
+  it("nhận diện môn hợp lệ kể cả khi xuất hiện sau một từ chứa alias (Comment 3)", () => {
+    const subjects: Subject[] = [
+      { id: "math", name: "Toán cao cấp", aliases: ["toán", "toan"] },
+    ];
+    // 'toan' xuất hiện trước trong 'thanhtoan' (không hợp lệ), sau đó xuất hiện lại độc lập 'toan'
+    const result = findSubjectMatchInText("tài liệu thanhtoan học phí môn toan cao cấp", subjects);
+    expect(result.kind).toBe("match");
+    if (result.kind === "match") {
+      expect(result.subject.id).toBe("math");
+    }
+  });
 });
 
 describe("relative time filter (Asia/Ho_Chi_Minh)", () => {
@@ -332,23 +344,44 @@ describe("relative time filter (Asia/Ho_Chi_Minh)", () => {
     expect(extractTimeFilter("xem lịch học học kỳ 1")).toBeNull();
   });
 
-  it("nhận diện 'hôm nay' => kind=today với weekday có giá trị hợp lệ", () => {
-    // Mock thời gian: 2026-10-27 16:00 +07 (T3 = weekday 2)
+  it("nhận diện 'hôm nay' => kind=today với weekday quy ước ScheduleRecord (Thứ 3 = 3)", () => {
+    // Mock thời gian: 2026-10-27 16:00 +07 (Thứ 3 => weekday 3 theo chuẩn ScheduleRecord: 2=T2..8=CN)
     const mockNow = new Date("2026-10-27T09:00:00Z"); // UTC tương đương 16:00 +07
     const result = extractTimeFilter("lịch học hôm nay", mockNow);
     expect(result).not.toBeNull();
     expect(result!.kind).toBe("today");
     expect(result!.isoDate).toBe("2026-10-27");
-    expect(result!.weekday).toBe(2); // T3 = 2
+    expect(result!.weekday).toBe(3); // T3 = 3
   });
 
-  it("nhận diện 'ngày mai' => kind=tomorrow với ngày tăng 1", () => {
+  it("nhận diện 'ngày mai' => kind=tomorrow với ngày tăng 1 và weekday tăng 1 (Thứ 4 = 4)", () => {
     const mockNow = new Date("2026-10-27T09:00:00Z");
     const result = extractTimeFilter("lịch học ngày mai", mockNow);
     expect(result).not.toBeNull();
     expect(result!.kind).toBe("tomorrow");
     expect(result!.isoDate).toBe("2026-10-28");
-    expect(result!.weekday).toBe(3); // T4 = 3
+    expect(result!.weekday).toBe(4); // T4 = 4
+  });
+
+  it("chuyển đổi đúng weekday cho Chủ nhật (8) và Thứ 2 (2)", () => {
+    // 2026-10-25 là Chủ nhật
+    const mockSunday = new Date("2026-10-25T05:00:00Z");
+    const tfSunday = extractTimeFilter("lịch học hôm nay", mockSunday);
+    expect(tfSunday?.weekday).toBe(8); // Chủ nhật = 8
+
+    // 2026-10-26 là Thứ 2
+    const mockMonday = new Date("2026-10-26T05:00:00Z");
+    const tfMonday = extractTimeFilter("lịch học hôm nay", mockMonday);
+    expect(tfMonday?.weekday).toBe(2); // Thứ 2 = 2
+  });
+
+  it("độc lập múi giờ: tính đúng ngày VN khi host lệch timezone (Comment 1)", () => {
+    // 2026-10-25T18:00:00Z tương đương 01:00 AM 2026-10-26 tại VN (+07)
+    // Nếu host timezone là UTC/Mỹ thì Date.getDay() sẽ ra Chủ nhật (0), nhưng ở VN đã là Thứ 2 (2)
+    const mockShift = new Date("2026-10-25T18:00:00Z");
+    const tf = extractTimeFilter("lịch học hôm nay", mockShift);
+    expect(tf?.isoDate).toBe("2026-10-26");
+    expect(tf?.weekday).toBe(2); // Thứ 2 tại VN
   });
 
   it("tính đúng ranh giới ngày: 23:30 UTC = 06:30 +07 (vẫn là ngày hôm trước ở VN)", () => {
@@ -365,35 +398,45 @@ describe("relative time filter (Asia/Ho_Chi_Minh)", () => {
     expect(result!.isoDate).toBe("2026-10-27");
   });
 
-  it("FIND_SCHEDULE có timeFilter=today khi hỏi 'lịch học hôm nay'", () => {
+  it("detectIntent trả về FIND_SCHEDULE có timeFilter trực tiếp (Comment 5)", () => {
     const mockNow = new Date("2026-10-27T09:00:00Z");
-    // extractTimeFilter không nhận now param từ detectIntent => test trực tiếp extractTimeFilter
-    const tf = extractTimeFilter("lịch học hôm nay", mockNow);
-    expect(tf).toMatchObject({ kind: "today", isoDate: "2026-10-27", weekday: 2 });
-    // detectIntent được test riêng để xác nhận intent đúng
-    const intent = detectIntent("lịch học hôm nay", []);
-    expect(intent.intent).toBe("FIND_SCHEDULE");
+    const intent = detectIntent("lịch học hôm nay", [], mockNow);
+    expect(intent).toMatchObject({
+      intent: "FIND_SCHEDULE",
+      timeFilter: { kind: "today", isoDate: "2026-10-27", weekday: 3 },
+    });
+
+    const intentTomorrow = detectIntent("lịch học ngày mai", [], mockNow);
+    expect(intentTomorrow).toMatchObject({
+      intent: "FIND_SCHEDULE",
+      timeFilter: { kind: "tomorrow", isoDate: "2026-10-28", weekday: 4 },
+    });
   });
 
-  it("FIND_EXAMS có timeFilter khi hỏi 'lịch thi hôm nay'", () => {
-    const intent = detectIntent("lịch thi hôm nay", []);
-    expect(intent.intent).toBe("FIND_EXAMS");
-    if (intent.intent === "FIND_EXAMS") {
-      expect(intent.timeFilter).not.toBeNull();
-      expect(intent.timeFilter?.kind).toBe("today");
-    }
+  it("detectIntent nhận diện các câu hỏi lịch thi hôm nay và ngày mai không cần từ 'lịch' (Comment 4)", () => {
+    const mockNow = new Date("2026-10-27T09:00:00Z");
+    const expectedToday = { kind: "today", isoDate: "2026-10-27", weekday: 3 };
+    const expectedTomorrow = { kind: "tomorrow", isoDate: "2026-10-28", weekday: 4 };
+
+    // Có từ "lịch"
+    expect(detectIntent("lịch thi hôm nay", [], mockNow)).toMatchObject({ intent: "FIND_EXAMS", timeFilter: expectedToday });
+    expect(detectIntent("lịch thi ngày mai", [], mockNow)).toMatchObject({ intent: "FIND_EXAMS", timeFilter: expectedTomorrow });
+
+    // Không có từ "lịch"
+    expect(detectIntent("thi hôm nay", [], mockNow)).toMatchObject({ intent: "FIND_EXAMS", timeFilter: expectedToday });
+    expect(detectIntent("hôm nay thi gì?", [], mockNow)).toMatchObject({ intent: "FIND_EXAMS", timeFilter: expectedToday });
+    expect(detectIntent("hôm nay có thi không", [], mockNow)).toMatchObject({ intent: "FIND_EXAMS", timeFilter: expectedToday });
+    expect(detectIntent("thi ngày mai", [], mockNow)).toMatchObject({ intent: "FIND_EXAMS", timeFilter: expectedTomorrow });
+    expect(detectIntent("ngày mai thi môn gì", [], mockNow)).toMatchObject({ intent: "FIND_EXAMS", timeFilter: expectedTomorrow });
   });
 
   it("schema giới hạn: ScheduleRecord chỉ có weekday, không thể lọc theo ngày chính xác", () => {
-    // Đây là test tài liệu hóa giới hạn: timeFilter.isoDate tồn tại nhưng
-    // ScheduleRecord chỉ có weekday, không có effectiveFrom/effectiveTo.
-    // => Lọc chỉ thực hiện được theo weekday, không phải theo ngày cụ thể.
-    // Test này xác nhận rằng extractTimeFilter trả về weekday để lọc được, nhưng
-    // cần app/UI thông báo rõ giới hạn này cho người dùng.
-    const mockNow = new Date("2026-10-27T09:00:00Z"); // T3
+    // ScheduleRecord chỉ có weekday (2..8), không có effectiveFrom/effectiveTo.
+    // Lọc chỉ thực hiện được theo weekday, không phải theo ngày cụ thể.
+    const mockNow = new Date("2026-10-27T09:00:00Z"); // T3 => weekday 3
     const tf = extractTimeFilter("lịch học hôm nay", mockNow);
-    expect(tf?.weekday).toBe(2); // Có weekday để lọc
-    expect(tf?.isoDate).toBeDefined(); // Có isoDate nhưng schema không hỗ trợ
+    expect(tf?.weekday).toBe(3); // Có weekday để lọc
+    expect(tf?.isoDate).toBeDefined();
   });
 });
 
@@ -438,5 +481,40 @@ describe("IME composition logic", () => {
     // Test chỉ xác nhận logic: nếu hàm chỉ được gọi một lần thì pass
     // Đây là test xác nhận được logic, không phải simulation đầy đủ
     expect(calls.length).toBeGreaterThan(0);
+  });
+});
+describe("timeFilter record matching logic", () => {
+  it("lọc đúng ScheduleRecord theo weekday của timeFilter", () => {
+    const mockNow = new Date("2026-10-27T09:00:00Z"); // Thứ 3 (weekday = 3)
+    const tf = extractTimeFilter("lịch học hôm nay", mockNow);
+    expect(tf?.weekday).toBe(3);
+
+    const schedules: ScheduleRecord[] = [
+      { id: "1", subjectId: "s1", subjectName: "Toán", semester: 1, weekday: 2, startTime: "07:30", endTime: "09:00", room: "A101", lecturer: "GV A", note: "" },
+      { id: "2", subjectId: "s2", subjectName: "Lý", semester: 1, weekday: 3, startTime: "09:30", endTime: "11:00", room: "A102", lecturer: "GV B", note: "" },
+      { id: "3", subjectId: "s3", subjectName: "Hóa", semester: 1, weekday: 4, startTime: "13:30", endTime: "15:00", room: "A103", lecturer: "GV C", note: "" },
+    ];
+
+    const matched = schedules.filter((s) => s.weekday === tf?.weekday);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].id).toBe("2");
+    expect(matched[0].subjectName).toBe("Lý");
+  });
+
+  it("lọc đúng ExamRecord theo isoDate của timeFilter", () => {
+    const mockNow = new Date("2026-10-27T09:00:00Z"); // 2026-10-27
+    const tf = extractTimeFilter("thi hôm nay", mockNow);
+    expect(tf?.isoDate).toBe("2026-10-27");
+
+    const exams: ExamRecord[] = [
+      { id: "e1", subjectId: "s1", subjectName: "Toán", semester: 1, examDate: "2026-10-26", startTime: "08:00", durationMinutes: 60, room: "P1", format: "Tự luận", note: "" },
+      { id: "e2", subjectId: "s2", subjectName: "Lý", semester: 1, examDate: "2026-10-27", startTime: "08:00", durationMinutes: 60, room: "P2", format: "Trắc nghiệm", note: "" },
+      { id: "e3", subjectId: "s3", subjectName: "Hóa", semester: 1, examDate: "2026-10-28", startTime: "08:00", durationMinutes: 60, room: "P3", format: "Vấn đáp", note: "" },
+    ];
+
+    const matched = exams.filter((e) => e.examDate === tf?.isoDate);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].id).toBe("e2");
+    expect(matched[0].subjectName).toBe("Lý");
   });
 });

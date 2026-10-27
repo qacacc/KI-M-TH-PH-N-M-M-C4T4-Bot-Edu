@@ -51,6 +51,7 @@ import {
   parseDocumentActionIntent,
   parseFlowControlIntent,
   parseSlashCommand,
+  type TimeFilter,
 } from "./engine";
 import { useAppearanceDraft } from "./hooks/useAppearanceDraft";
 import { useLayoutState } from "./hooks/useLayoutState";
@@ -797,10 +798,10 @@ export default function App() {
         await showAnnouncements();
         return;
       case "FIND_SCHEDULE":
-        await showSchedule(intent.semester ?? undefined);
+        await showSchedule(intent.semester ?? undefined, intent.timeFilter);
         return;
       case "FIND_EXAMS":
-        await showExams(intent.semester ?? undefined);
+        await showExams(intent.semester ?? undefined, intent.timeFilter);
         return;
       case "PUBLIC_ADMISSIONS_INFO":
         await runPublicSchoolSearch(value);
@@ -971,12 +972,26 @@ export default function App() {
     }
   }
 
-  async function showSchedule(semester?: number) {
+  async function showSchedule(semester?: number, timeFilter?: TimeFilter) {
     setIsBusy(true);
     try {
       const scheduleItems = await loadAcademicSchedule(readSchoolProfile());
       setView("schedule");
-      appendAssistant(scheduleItems.length ? `Có ${scheduleItems.length} buổi học trong cache tài khoản trường.${semester ? " Cache chưa có thông tin học kỳ để lọc." : ""}` : ACADEMIC_CONNECTION_REQUIRED, { scheduleItems });
+      if (!scheduleItems.length) {
+        appendAssistant(ACADEMIC_CONNECTION_REQUIRED);
+        return;
+      }
+      const filtered = timeFilter
+        ? scheduleItems.filter((item) => item.weekday === timeFilter.weekday)
+        : scheduleItems;
+      const timeLabel = timeFilter ? (timeFilter.kind === "today" ? "hôm nay" : "ngày mai") : "";
+      const countMsg = timeFilter
+        ? (filtered.length
+            ? `Có ${filtered.length} buổi học ${timeLabel} trong cache tài khoản trường.`
+            : `Không có buổi học nào ${timeLabel} trong cache tài khoản trường.`)
+        : `Có ${scheduleItems.length} buổi học trong cache tài khoản trường.`;
+      const semesterNotice = semester ? " Cache chưa có thông tin học kỳ để lọc." : "";
+      appendAssistant(`${countMsg}${semesterNotice}`, { scheduleItems: filtered.length ? filtered : undefined });
     } catch (err) {
       setError(academicDataErrorMessage(err));
     } finally {
@@ -984,12 +999,26 @@ export default function App() {
     }
   }
 
-  async function showExams(semester?: number) {
+  async function showExams(semester?: number, timeFilter?: TimeFilter) {
     setIsBusy(true);
     try {
       const examItems = await loadAcademicExams(readSchoolProfile());
       setView("exams");
-      appendAssistant(examItems.length ? `Có ${examItems.length} lịch thi trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.${semester ? " Cache chưa có thông tin học kỳ để lọc." : ""}` : ACADEMIC_CONNECTION_REQUIRED, { examItems });
+      if (!examItems.length) {
+        appendAssistant(ACADEMIC_CONNECTION_REQUIRED);
+        return;
+      }
+      const filtered = timeFilter
+        ? examItems.filter((item) => item.examDate === timeFilter.isoDate)
+        : examItems;
+      const timeLabel = timeFilter ? (timeFilter.kind === "today" ? "hôm nay" : "ngày mai") : "";
+      const countMsg = timeFilter
+        ? (filtered.length
+            ? `Có ${filtered.length} lịch thi ${timeLabel} trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.`
+            : `Không có lịch thi nào ${timeLabel} trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.`)
+        : `Có ${examItems.length} lịch thi trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.`;
+      const semesterNotice = semester ? " Cache chưa có thông tin học kỳ để lọc." : "";
+      appendAssistant(`${countMsg}${semesterNotice}`, { examItems: filtered.length ? filtered : undefined });
     } catch (err) {
       setError(academicDataErrorMessage(err));
     } finally {

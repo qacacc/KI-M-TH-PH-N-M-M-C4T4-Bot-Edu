@@ -1,4 +1,4 @@
-import type { ConversationState, Subject } from "./types";
+import type { ConversationState, ExamRecord, ScheduleRecord, Subject } from "./types";
 
 export type DataSensitivity = "public" | "private" | "local";
 
@@ -208,8 +208,9 @@ export function buildAdmissionsAnswer(input: string): string | null {
 }
 
 /**
- * Lấy weekday (0=Chủ nhật, 1=T2...6=T7) và ngày ISO cho "hôm nay" hoặc "ngày mai"
- * theo timezone Asia/Ho_Chi_Minh (+07:00), bất kể môi trường chạy ở UTC.
+ * Lấy weekday (2=Thứ 2...7=Thứ 7, 8=Chủ nhật theo quy ước ScheduleRecord)
+ * và ngày ISO cho "hôm nay" hoặc "ngày mai" theo timezone Asia/Ho_Chi_Minh (+07:00),
+ * độc lập hoàn toàn với múi giờ của máy chủ chạy code.
  */
 export function extractTimeFilter(input: string, now?: Date): TimeFilter {
   const normalized = normalizeVietnamese(input);
@@ -228,40 +229,40 @@ export function extractTimeFilter(input: string, now?: Date): TimeFilter {
 
   // Xác định ngày theo timezone Asia/Ho_Chi_Minh
   const base = now ?? new Date();
-  // Dùng Intl.DateTimeFormat để lấy ngày đúng theo +07:00
-  const formatter = new Intl.DateTimeFormat("en-CA", {
+  const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Ho_Chi_Minh",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
-  // Lấy ngày hôm nay theo VN time dưới dạng YYYY-MM-DD
   const todayParts = formatter.formatToParts(base);
-  const todayYear = todayParts.find((p) => p.type === "year")?.value ?? "";
-  const todayMonth = todayParts.find((p) => p.type === "month")?.value ?? "";
-  const todayDay = todayParts.find((p) => p.type === "day")?.value ?? "";
-  const todayISO = `${todayYear}-${todayMonth}-${todayDay}`;
-  // weekday cũng cần tính theo VN time
-  const todayDate = new Date(`${todayISO}T00:00:00+07:00`);
-  const todayWeekday = todayDate.getDay(); // 0=CN, 1=T2 ... 6=T7
+  const todayYear = Number(todayParts.find((p) => p.type === "year")?.value);
+  const todayMonth = Number(todayParts.find((p) => p.type === "month")?.value);
+  const todayDay = Number(todayParts.find((p) => p.type === "day")?.value);
+
+  const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
   if (isToday) {
-    return { kind: "today", weekday: todayWeekday, isoDate: todayISO };
+    const todayISO = `${todayYear}-${pad2(todayMonth)}-${pad2(todayDay)}`;
+    // Tính weekday qua UTC để tránh bị lệch múi giờ trên máy chủ khác UTC+7
+    const todayUtc = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay));
+    const jsDay = todayUtc.getUTCDay(); // 0=CN, 1=T2, ... 6=T7
+    const weekday = jsDay === 0 ? 8 : jsDay + 1; // Quy ước ScheduleRecord: 2..8
+    return { kind: "today", weekday, isoDate: todayISO };
   }
-  // ngày mai — phải dùng formatter theo VN timezone, không dùng toISOString() (UTC bias)
-  const tomorrowDate = new Date(todayDate.getTime() + 86400000);
-  const tomorrowParts = formatter.formatToParts(tomorrowDate);
-  const tomorrowYear = tomorrowParts.find((p) => p.type === "year")?.value ?? "";
-  const tomorrowMonth = tomorrowParts.find((p) => p.type === "month")?.value ?? "";
-  const tomorrowDay = tomorrowParts.find((p) => p.type === "day")?.value ?? "";
-  const tomorrowISO = `${tomorrowYear}-${tomorrowMonth}-${tomorrowDay}`;
-  // Tính weekday từ tomorrowISO+07:00 để tránh UTC offset bias
-  const tomorrowVNDate = new Date(`${tomorrowISO}T00:00:00+07:00`);
-  const tomorrowWeekday = tomorrowVNDate.getDay();
+
+  // Ngày mai: cộng 1 ngày trên UTC để xử lý chuẩn xác chuyển tháng/năm
+  const tomorrowUtc = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay + 1));
+  const tYear = tomorrowUtc.getUTCFullYear();
+  const tMonth = tomorrowUtc.getUTCMonth() + 1;
+  const tDay = tomorrowUtc.getUTCDate();
+  const tomorrowISO = `${tYear}-${pad2(tMonth)}-${pad2(tDay)}`;
+  const tJsDay = tomorrowUtc.getUTCDay();
+  const tomorrowWeekday = tJsDay === 0 ? 8 : tJsDay + 1;
   return { kind: "tomorrow", weekday: tomorrowWeekday, isoDate: tomorrowISO };
 }
 
-export function detectIntent(input: string, subjects: Subject[]): IntentResult {
+export function detectIntent(input: string, subjects: Subject[], now?: Date): IntentResult {
   const normalized = normalizeVietnamese(input);
   const semester = extractSemester(input);
 
@@ -300,23 +301,22 @@ export function detectIntent(input: string, subjects: Subject[]): IntentResult {
     normalized.includes("buoi hoc") ||
     normalized.includes("hom nay hoc") ||
     normalized.includes("ngay mai hoc") ||
-    // "lịch hôm nay" / "lịch ngày mai" mà chưa phân biệt schedule vs exam
-    (normalized.includes("lich hom nay") && !normalized.includes("thi")) ||
-    (normalized.includes("lich ngay mai") && !normalized.includes("thi"));
+    // "lịch hôm nay" / "lịch ngày mai" mà không có từ thi
+    (normalized.includes("lich hom nay") && !/\bthi\b/.test(normalized)) ||
+    (normalized.includes("lich ngay mai") && !/\bthi\b/.test(normalized));
 
   if (isScheduleQuery) {
-    return { intent: "FIND_SCHEDULE", semester, timeFilter: extractTimeFilter(input) };
+    return { intent: "FIND_SCHEDULE", semester, timeFilter: extractTimeFilter(input, now) };
   }
 
   const isExamQuery =
     normalized.includes("lich thi") ||
     normalized.includes("thi cu") ||
     normalized.includes("ngay thi") ||
-    (normalized.includes("lich hom nay") && normalized.includes("thi")) ||
-    (normalized.includes("lich ngay mai") && normalized.includes("thi"));
+    (/\bthi\b/.test(normalized) && (normalized.includes("hom nay") || normalized.includes("ngay mai")));
 
   if (isExamQuery) {
-    return { intent: "FIND_EXAMS", semester, timeFilter: extractTimeFilter(input) };
+    return { intent: "FIND_EXAMS", semester, timeFilter: extractTimeFilter(input, now) };
   }
 
   const wantsDocuments =
@@ -378,16 +378,23 @@ export function findSubjectMatchInText(input: string, subjects: Subject[]): Subj
     let bestLen = 0;
     for (const name of names) {
       if (name.length === 0) continue;
-      // Kiểm tra xuất hiện với ranh giới từ đơn giản (ký tự trước/sau phải là \s hoặc đầu/cuối chuỗi)
-      const idx = normalized.indexOf(name);
-      if (idx === -1) continue;
-      const before = idx > 0 ? normalized[idx - 1] : " ";
-      const after = idx + name.length < normalized.length ? normalized[idx + name.length] : " ";
-      // Cho phép ranh giới: khoảng trắng, đầu chuỗi, cuối chuỗi, hoặc ký tự không phải chữ/số
-      const validBefore = /[\s/.,\-]/.test(before) || idx === 0;
-      const validAfter = /[\s/.,\-]/.test(after) || idx + name.length === normalized.length;
-      if (validBefore && validAfter && name.length > bestLen) {
-        bestLen = name.length;
+      // Tìm tất cả các lần xuất hiện cho đến khi gặp ranh giới từ hợp lệ
+      let startIdx = 0;
+      while (startIdx < normalized.length) {
+        const idx = normalized.indexOf(name, startIdx);
+        if (idx === -1) break;
+        const before = idx > 0 ? normalized[idx - 1] : " ";
+        const after = idx + name.length < normalized.length ? normalized[idx + name.length] : " ";
+        // Cho phép ranh giới: khoảng trắng, đầu chuỗi, cuối chuỗi, hoặc ký tự không phải chữ/số
+        const validBefore = /[\s/.,\-]/.test(before) || idx === 0;
+        const validAfter = /[\s/.,\-]/.test(after) || idx + name.length === normalized.length;
+        if (validBefore && validAfter) {
+          if (name.length > bestLen) {
+            bestLen = name.length;
+          }
+          break;
+        }
+        startIdx = idx + 1;
       }
     }
     if (bestLen > 0) {
