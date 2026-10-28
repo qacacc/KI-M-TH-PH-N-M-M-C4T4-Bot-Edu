@@ -26,9 +26,7 @@ import {
   PanelLeft,
   Search,
   Activity,
-  SlidersHorizontal,
   Settings,
-  Pin,
   GraduationCap,
   History,
   Minus,
@@ -37,7 +35,7 @@ import {
 } from "lucide-react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { ChangeEvent, CSSProperties, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, CSSProperties, FormEvent, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { accentOptions } from "./appearanceOptions";
 import { AnnouncementTable, DocumentTable, ExamTable, ScheduleTable } from "./components/DataTables";
 import { StatusLine } from "./components/StatusLine";
@@ -53,6 +51,8 @@ import {
 } from "./engine";
 import { useAppearanceDraft } from "./hooks/useAppearanceDraft";
 import { useLayoutState } from "./hooks/useLayoutState";
+import { useAppBootstrap } from "./hooks/useAppBootstrap";
+import { useChatSession, welcomeMessage } from "./hooks/useChatSession";
 import { AppearancePage } from "./pages/AppearancePage";
 import { AnnouncementsPage, ExamsPage, SchedulePage, GpaPage } from "./pages/CampusDataPages";
 import { FilesPage } from "./pages/FilesPage";
@@ -80,7 +80,6 @@ import {
   exportDiagnosticReport,
   getHealthReport,
   getStorageSummary,
-  initApp,
   listActionLogs,
   openDocument,
   openDownloadsFolder,
@@ -89,13 +88,14 @@ import {
   searchPublicSchoolInfo,
   deleteThemeBackground,
 } from "./tauriApi";
-import { ChatHistoryPage, type ChatSession } from "./pages/ChatHistoryPage";
+import { ChatHistoryPage } from "./pages/ChatHistoryPage";
 import appLogo from "./assets/logo.png";
 import { ACADEMIC_CONNECTION_REQUIRED, academicDataErrorMessage, loadAcademicSchedule, loadAcademicExams } from "./academicData";
 import type {
   ActionLogEntry,
   BootstrapState,
   ChatMessage,
+  ChatSession,
   ConversationState,
   DiagnosticExportResult,
   DocumentRecord,
@@ -103,42 +103,13 @@ import type {
   PublicSearchResponse,
   StorageSummary,
   UpdateCheckResult,
+  UserMessageSource,
+  View,
 } from "./types";
 import { formatBytes } from "./utils/format";
-import { createBootstrapRequest } from "./bootstrapRequest";
-
-type View =
-  | "chat"
-  | "announcements"
-  | "schedule"
-  | "exams"
-  | "files"
-  | "storage"
-  | "health"
-  | "release"
-  | "appearance"
-  | "logs"
-  | "school"
-  | "privacy"
-  | "settings"
-  | "gpa"
-  | "history";
-
-type UserMessageSource =
-  | "composer"
-  | "starter"
-  | "shortcut"
-  | "command-suggestion"
-  | "command-palette";
 
 const appVersion = "1.0.1";
 const defaultStartViews: View[] = ["chat", "schedule", "files", "school", "appearance"];
-
-const welcomeMessage: ChatMessage = {
-  id: "welcome",
-  role: "assistant",
-  content: "Chào bạn. v1.0.1 tập trung chat-first, tùy biến giao diện và các luồng local đã có.",
-};
 
 function readDefaultStartView(): View {
   const stored = localStorage.getItem("ca-settings-default-view") as View | null;
@@ -155,9 +126,8 @@ function newId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+
 export default function App() {
-  const [bootstrap, setBootstrap] = useState<BootstrapState | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [view, setView] = useState<View>(() => readDefaultStartView());
   const [settingsBackView, setSettingsBackView] = useState<View>(() => readDefaultStartView());
@@ -171,18 +141,61 @@ export default function App() {
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [historyPersistenceWarning, setHistoryPersistenceWarning] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const backgroundInputRef = useRef<HTMLInputElement | null>(null);
-  const bootstrapRequestRef = useRef(createBootstrapRequest(initApp));
-  const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
-  const [bootstrapError, setBootstrapError] = useState(false);
-  /** Hiển thị thông báo chờ khi native layer mất >5 giây. */
-  const [bootstrapSlow, setBootstrapSlow] = useState(false);
-  /** Đảm bảo welcome message chỉ được đưa vào messages 1 lần duy nhất. */
-  const welcomeShownRef = useRef(false);
+
+  // --- Hook: Chat session (tin nhắn, lưu lịch sử, phửn) ---
+  const {
+    messages,
+    historyPersistenceWarning,
+    appendMessage,
+    appendAssistant,
+    resetToWelcome,
+    startNewChat: startNewChatSession,
+    handleSelectSession: handleSelectSessionInternal,
+  } = useChatSession();
+
+  // --- Hook: Bootstrap lifecycle (khởi động native layer) ---
+  const onBootstrapSuccess = useCallback(
+    (state: BootstrapState) => {
+      hydrateSavedAppearance(state.theme, state.accentColor);
+      resetToWelcome();
+      if (autoFocusChatEnabled && view === "chat") {
+        window.setTimeout(() => inputRef.current?.focus(), 0);
+      }
+      window.setTimeout(() => {
+        void Promise.allSettled([listActionLogs(100), getStorageSummary()]).then(
+          ([logsResult, storageResult]) => {
+            if (logsResult.status === "fulfilled") setActionLogs(logsResult.value);
+            if (storageResult.status === "fulfilled") setStorageSummary(storageResult.value);
+          },
+        );
+      }, 220);
+      window.setTimeout(() => {
+        void checkForUpdate()
+          .then((info) => setUpdateInfo(info))
+          .catch(() =>
+            setUpdateInfo({
+              configured: true,
+              currentVersion: appVersion,
+              latestVersion: null,
+              updateAvailable: false,
+              required: false,
+              message: "Không kiểm tra được phiên bản mới.",
+              downloadUrl: null,
+            }),
+          );
+      }, 1200);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const { bootstrap, bootstrapSlow, bootstrapError, retryBootstrap } =
+    useAppBootstrap(onBootstrapSuccess);
+
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() => {
     return localStorage.getItem("campus-assistant-sidebar-expanded") === "true";
   });
@@ -382,99 +395,6 @@ export default function App() {
   }, [bootstrap, draftTheme, draftAccentColor, applyAppearanceImmediately, toggleSidebarExpanded]);
 
   useEffect(() => {
-    setBootstrapError(false);
-    setBootstrapSlow(false);
-    let isCancelled = false;
-    const deferredTimers: number[] = [];
-
-    const defer = (task: () => void, delayMs: number) => {
-      const timer = window.setTimeout(() => {
-        if (!isCancelled) task();
-      }, delayMs);
-      deferredTimers.push(timer);
-    };
-
-    // Khi retry: reset request để buộc gọi lại initApp.
-    if (bootstrapAttempt > 0) {
-      bootstrapRequestRef.current.reset();
-    }
-
-    // Slow-timer: nếu sau 5 giây chưa xong, hiển thị thông báo chờ.
-    const slowTimer = window.setTimeout(() => {
-      if (!isCancelled) setBootstrapSlow(true);
-    }, 5_000);
-
-    bootstrapRequestRef.current.get()
-      .then((state) => {
-        if (isCancelled) return;
-        window.clearTimeout(slowTimer);
-        setBootstrapSlow(false);
-        setBootstrap(state);
-        hydrateSavedAppearance(state.theme, state.accentColor);
-
-        // Chỉ set welcome message 1 lần duy nhất trong toàn bộ vòng đời.
-        // Tránh StrictMode render 2 lần gây duplicate hoặc reset hội thoại.
-        if (!welcomeShownRef.current) {
-          welcomeShownRef.current = true;
-          setMessages([welcomeMessage]);
-        }
-
-        if (autoFocusChatEnabled && view === "chat") {
-          defer(() => inputRef.current?.focus(), 0);
-        }
-        defer(() => {
-          void Promise.allSettled([listActionLogs(100), getStorageSummary()]).then(
-            ([logsResult, storageResult]) => {
-              if (isCancelled) return;
-              if (logsResult.status === "fulfilled") setActionLogs(logsResult.value);
-              if (storageResult.status === "fulfilled") setStorageSummary(storageResult.value);
-            },
-          );
-        }, 220);
-        defer(() => {
-          void checkForUpdate()
-            .then((info) => {
-              if (!isCancelled) setUpdateInfo(info);
-            })
-            .catch(() => {
-              if (isCancelled) return;
-              setUpdateInfo({
-                configured: true,
-                currentVersion: appVersion,
-                latestVersion: null,
-                updateAvailable: false,
-                required: false,
-                message: "Không kiểm tra được phiên bản mới.",
-                downloadUrl: null,
-              });
-            });
-        }, 1200);
-      })
-      .catch((err: unknown) => {
-        if (isCancelled) return;
-        window.clearTimeout(slowTimer);
-        setBootstrapSlow(false);
-        const isTimeout = err instanceof Error && err.message === "BOOTSTRAP_TIMEOUT";
-        // TIMEOUT → vẫn set lỗi nhưng không clear promise (có thể retry)
-        // Các lỗi khác → set lỗi bình thường
-        setBootstrapError(true);
-        console.error(
-          isTimeout
-            ? "[Bootstrap] Native layer không phản hồi sau 12 giây."
-            : "[Bootstrap] Lỗi khởi tạo:",
-          err,
-        );
-      });
-
-    return () => {
-      isCancelled = true;
-      window.clearTimeout(slowTimer);
-      deferredTimers.forEach((timer) => window.clearTimeout(timer));
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bootstrapAttempt]); // Setup mới đăng ký lại vào cùng yêu cầu, retry sau lỗi.
-
-  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages.length, conversation?.step]);
 
@@ -541,62 +461,16 @@ export default function App() {
     setView(settingsBackView === "settings" ? "chat" : settingsBackView);
   }
 
-  const [activeSessionId, setActiveSessionId] = useState<string>("default");
-
   useEffect(() => {
     setSelectedCommandIndex(0);
   }, [commandQuery]);
-
-  function appendMessage(message: ChatMessage) {
-    setMessages((current) => {
-      const next = [...current, message];
-      return next.length > 150 ? next.slice(-150) : next;
-    });
-
-    if (message.role === "user" || message.role === "assistant") {
-      invoke("save_chat_message", {
-        sessionId: activeSessionId,
-        role: message.role,
-        content: message.content,
-      })
-        .then(() => setHistoryPersistenceWarning(null))
-        .catch((err) => {
-          const safeError = String(err ?? "");
-          if (safeError.includes("Chưa bật lưu lịch sử")) return;
-          console.warn("Lỗi lưu lịch sử chat local.", { errorType: typeof err });
-          setHistoryPersistenceWarning("Lịch sử chat local chưa lưu được. Hội thoại hiện tại vẫn hoạt động.");
-        });
-    }
-  }
-
-  function appendAssistant(content: string, payload: Partial<ChatMessage> = {}) {
-    appendMessage({ id: newId(), role: "assistant", content, ...payload });
-  }
 
   function handleHistoryClick() {
     setView("history");
   }
 
   async function handleSelectSession(session: ChatSession) {
-    setActiveSessionId(session.id);
-    try {
-      const msgs = await invoke<Array<{ id: number; role: string; content: string; createdAt: string }>>("get_session_messages", { sessionId: session.id });
-      if (msgs && msgs.length > 0) {
-        const chatMsgs: ChatMessage[] = msgs.map((m: { id: number; role: string; content: string; createdAt: string }) => ({
-          id: String(m.id),
-          role: m.role as "user" | "assistant" | "system",
-          content: m.content,
-          timestamp: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }));
-        setMessages(chatMsgs);
-      } else {
-        setMessages([welcomeMessage]);
-      }
-    } catch (err) {
-      console.error("Lỗi đọc tin nhắn phiên:", err);
-      setMessages([welcomeMessage]);
-    }
-    setView("chat");
+    await handleSelectSessionInternal(session, () => setView("chat"));
   }
 
   function buildSubjectClarificationMessage() {
@@ -1136,22 +1010,7 @@ export default function App() {
     setView("chat");
     setInput("");
     setConversation(null);
-
-    try {
-      const enabled = await invoke<string>("get_setting_cmd", { key: "chatHistoryEnabled", fallback: "false" });
-      if (enabled === "true") {
-        const newSess = await invoke<{ id: string }>("create_chat_session", { title: "Cuộc trò chuyện mới" });
-        setActiveSessionId(newSess.id);
-      } else {
-        setActiveSessionId("default");
-      }
-    } catch (err) {
-      console.error("Lỗi khi tạo phiên mới:", err);
-      setActiveSessionId("default");
-    }
-
-    setMessages([welcomeMessage]);
-    window.setTimeout(() => inputRef.current?.focus(), 0);
+    await startNewChatSession(inputRef);
   }
 
   async function refreshStorageSummary() {
@@ -1514,7 +1373,7 @@ export default function App() {
                   ? "Không khởi tạo được dữ liệu local. Dữ liệu đã lưu được giữ nguyên."
                   : "Bản xem trước trình duyệt chưa kết nối backend desktop."}
                 </span>
-                <button type="button" onClick={() => setBootstrapAttempt((attempt) => attempt + 1)}>Thử lại</button>
+                <button type="button" onClick={retryBootstrap}>Thử lại</button>
               </>
             ) : bootstrapSlow ? (
               <>

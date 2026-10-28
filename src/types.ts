@@ -178,3 +178,37 @@ export type PublicSearchResponse = {
   results: PublicSearchResult[];
   message: string;
 };
+
+export type ChatSession = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt?: string;
+  pinned?: boolean;
+  archived?: boolean;
+};
+
+export type View =
+  | "chat"
+  | "announcements"
+  | "schedule"
+  | "exams"
+  | "files"
+  | "storage"
+  | "health"
+  | "release"
+  | "appearance"
+  | "logs"
+  | "school"
+  | "privacy"
+  | "settings"
+  | "gpa"
+  | "history";
+
+export type UserMessageSource =
+  | "composer"
+  | "starter"
+  | "shortcut"
+  | "command-suggestion"
+  | "command-palette";
+
