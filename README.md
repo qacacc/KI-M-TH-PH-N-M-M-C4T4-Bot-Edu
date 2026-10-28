@@ -1,198 +1,229 @@
 # Campus Assistant Local
 
-Ung dung desktop local-first ho tro sinh vien voi chat intent, lich su opt-in, tai lieu va GPA nhap tay. Khong dung du lieu mau lam du lieu tai khoan truong.
+[English](#english) · [Tiếng Việt](#tiếng-việt)
 
-## Trang thai source 2026-10-09 (CA-083)
+<p align="center">
+  <img src="src/assets/logo.png" alt="Campus Assistant Local logo" width="128" />
+</p>
 
-- Lich hoc/thi va bootstrap khong tu nap sample. GPA nhap tay trong mac dinh, khong tu seed diem.
-- API/auth UTH chua verified: dong bo va doc cache cu bi native gate, khong thu token hay tao lich gia. Cache cu giu nguyen tren may, chua coi la lich chinh thuc.
-- Mo website truong bang browser van hoat dong. Dang nhap browser ngoai khong tu noi session vao app.
-- JSON va tai lieu mau chi la fixture/test hoac tab minh hoa user chu dong chon.
-- Connector that can contract/fixture/security E2E theo CA-080/081; khong co cong tac bypass. Installer 2026-08-02 la artifact cu, chua build lai.
+<p align="center">
+  <a href="https://v2.tauri.app/"><img alt="Tauri 2" src="https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white" /></a>
+  <a href="https://react.dev/"><img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" /></a>
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" /></a>
+  <a href="https://vite.dev/"><img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" /></a>
+  <a href="https://www.rust-lang.org/"><img alt="Rust" src="https://img.shields.io/badge/Rust-2021-000000?logo=rust&logoColor=white" /></a>
+  <a href="https://www.sqlite.org/"><img alt="SQLite" src="https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white" /></a>
+</p>
 
-## Pham vi v1.0.1
+## English
 
-- Tauri + React + TypeScript.
-- SQLite local cho settings, session metadata, action log va chat history opt-in.
-- JSON local chi giu fixture/test va tai lieu minh hoa opt-in, khong fallback hoc tap mac dinh.
-- Bon intent local: `FIND_DOCUMENTS`, `FIND_ANNOUNCEMENTS`, `FIND_SCHEDULE`, `FIND_EXAMS`.
-- Dark mode, light mode va accent color.
-- Custom titlebar, sidebar hover rail, chatbox trung tam, utility panel, customize panel va privacy page.
-- Mo file hoac copy file mau sang `Documents/CampusAssistant/downloads` sau khi xac nhan.
-- Lich su chat local la opt-in: mac dinh khong luu raw chat; chi luu khi nguoi dung bat trong trang Lich su tro chuyen.
-- Co tab Nhat ky hien thi action log metadata an toan.
-- Co lenh nhanh trong chat: `/help`, `/documents`, `/announcements`, `/schedule`, `/exams`, `/files`, `/logs`, `/privacy`, `/clear`.
-- Trang File mau hien danh sach metadata tai lieu mau local, khong mo/copy truc tiep.
-- Trang Thong bao, Lich hoc, Lich thi, File mau va Nhat ky co tim kiem, loc, sap xep hoac thong ke nhanh tren metadata.
-- Chat co starter cards de bat dau nhanh cac tac vu v1.0.1.
-- Tab Bo nho thong ke workspace local, mo thu muc downloads va xoa action log metadata co xac nhan.
-- Tab Kiem tra tao health report local cho SQLite, file mau, downloads, JSON va cau hinh update.
-- Tab Kiem tra co the xuat bao cao chan doan JSON vao downloads cua CampusAssistant.
-- Tab Phat hanh gom checklist release local-first cho ban 1.0.1.
-- Refactor UI theo huong chat-first voi split-view co the resize/collapse cac panel phu.
-- Sidebar trai mac dinh gon nhu rail, hover/focus moi hien day du menu.
-- Tab Giao dien cho nguoi dung tuy bien accent, mau nen, panel, mau chu, font, density, opacity panel, skin preset, anh nen local, fit/focus/overlay nen.
-- Tab Giao dien dung draft/apply/discard/reset de tranh doi giao dien live lien tuc gay lag.
-- Rust health test dung temp root rieng, khong dung truc tiep AppLocalData that cua nguoi dung.
+Campus Assistant Local is a local-first desktop application for students. It provides a rule-based chat interface, local academic views, document access, opt-in chat history, storage diagnostics, and a manual GPA calculator without sending credentials, tokens, cookies, chat content, or documents to a developer server.
 
-## Khong co trong v1.0.1
+### Current status
 
-- Khong Ollama, OpenAI API, API AI, RAG, embedding, vector database.
-- Chua co connector truong production-ready.
-- Chua co SSO/session/vault truong production-ready.
-- Chua lay API truong that end-to-end; WebView/portal va public admissions search hien o muc experimental/partial.
-- Khong Zalo Guide.
-- Khong file manager toan he thong.
-- Khong xoa, doi ten, di chuyen file.
-- Khong chon thu muc tuy y.
+**CONFIRMED:** the current product boundary is a Tauri 2 + React + TypeScript + Rust desktop app with SQLite-local settings, session metadata, action logs, and opt-in chat history.
 
-## Vung du lieu
+**LIMITED / NOT VERIFIED:** UTH authentication, live synchronization, and school API/business contracts are not verified. The release checklist now reports this as a warning instead of treating missing local academic data as a failure or claiming an unverified connector is ready.
 
-Du lieu noi bo:
+**IN PROGRESS:** CA-084 release audit and checklist reconciliation. CA-090.01 has migration/reset evidence but still needs its own native/UI verification and review gate. CA-080 local REST/Postman checks are available; the real UTH contract remains unknown.
+
+### Features in the verified local scope
+
+- Tauri 2 desktop shell with React, TypeScript, Vite, and Rust.
+- Rule-based local intent engine; this is not a general-purpose AI chat service.
+- Local SQLite settings, metadata logs, and opt-in raw chat history.
+- Local documents, announcements, schedules, and exams with explicit source boundaries.
+- Manual GPA/CPA calculator with local persistence.
+- Health report, storage summary, diagnostic export, and local-first release checklist.
+- Appearance customization, light/dark themes, accent colors, managed background assets, and split-view layout.
+- Managed file actions limited to the application workspace.
+- Local Postman collection for REST error, empty-result, validation, cache, and sync-gate scenarios.
+
+### Technology and development tools
+
+| Category | Technologies / tools |
+| --- | --- |
+| Desktop shell | Tauri 2 |
+| Frontend | React, TypeScript, Vite |
+| Native layer | Rust, Cargo |
+| Local storage | SQLite |
+| Testing | Vitest, Rust tests, Node.js local Postman checks |
+| Quality gates | TypeScript build, Vite build, Cargo checks, `npm run check:all` |
+
+### Explicit boundaries
+
+- No Ollama, OpenAI API, RAG, embeddings, vector database, or Zalo production bot.
+- No production-ready school connector, SSO, credential vault, cookie capture, or session proxy.
+- No default claim that local fixtures are a student's real academic data.
+- No arbitrary filesystem browsing, rename, move, or system-wide file manager.
+- Reward/minigame and mini-pet work remain frozen unless explicitly activated.
+
+### Architecture
 
 ```text
-AppLocalData/
-├── database/
-├── settings/
-├── sessions/
-└── logs/
+React + TypeScript + Vite
+          │
+          │ Tauri IPC
+          ▼
+Rust + Tauri 2
+          │
+          ├── SQLite local data
+          ├── Managed workspace/file boundary
+          ├── Health and diagnostic services
+          └── Explicitly gated school connector surface
 ```
 
-Vung tai lieu do ung dung quan ly:
+### Development
 
-```text
-Documents/CampusAssistant/
-├── sample-documents/
-├── managed-files/
-└── downloads/
-```
-
-Moi duong dan deu phai duoc chuan hoa va kiem tra nam trong allowlist truoc khi doc, mo hoac sao chep.
-
-## Lenh phat trien
-
-```bash
+```powershell
 npm install
-npm run dev:web
 npm run dev:desktop
-npm run dev:app
+```
+
+For the browser-only development server:
+
+```powershell
+npm run dev:web
+```
+
+Use `CampusAssistantLocal-Dev.exe` when working on the desktop UI with Vite HMR. Do not use `http://127.0.0.1:5173` as a substitute for the Tauri desktop runtime when testing native IPC.
+
+### Verification
+
+```powershell
 npm run test
+npm run test:layout
+npm run check:postman
 npm run build
 npm run check:rust
 npm run test:rust
-npm run check
 npm run check:all
-npm run build:installer
-npm run build:release
-npm run build:dev-launcher
 ```
 
-`cargo check` phai chay trong `src-tauri`, hoac dung `npm run check:rust` tu thu muc goc du an.
-Xem day du tai `DEV_COMMANDS.md`.
+`npm run check:all` is the canonical gate. It runs Vitest, layout checks, local Postman checks, TypeScript/Vite build, Rust checks/tests, and `npm audit`.
 
-## Quy trinh task cho AI
+### Release and package status
 
-Tu sau v1.0.1, moi thay doi nen di qua task rieng trong `tasks/`.
+The repository currently has no published GitHub Release or package. Those GitHub pages are separate from this README. A release or Docker/package publication must be created deliberately from a verified commit; it is not implied by a passing local build.
 
-## Trang thai release freeze 2026-08-02
+### Contribution workflow
 
-- Core local app, chat intent rule-based, file safety, action log, chat history opt-in, appearance/theme va cac trang local da co test/build pass.
-- Public school/admissions search chi la `CURRENT / LIMITED`, khong duoc xem la connector truong production-ready.
-- UTH WebView/portal la experimental/partial; app khong thu mat khau va khong luu token/cookie persistent vault.
-- Reward/Minigame dang dong bang trong `CA-064`, chi kich hoat khi user yeu cau ro.
+1. Update your branch from the latest `main`.
+2. Make a focused change on a feature branch.
+3. Run the relevant tests and `npm run check:all`.
+4. Open a pull request with the task ID, files changed, test output, and known limits.
+5. Merge only after review and checks pass.
 
-File bat buoc doc truoc khi AI sua code:
+Never commit credentials, tokens, cookies, `.env` secrets, raw chat, or personal academic data.
 
-- `AI_PROJECT_RULES.md`
-- `ARCHITECTURE.md`
-- `SECURITY_NOTES.md`
-- Task active trong `tasks/chua-xong/CA-XXX-*.md`; task hoàn thành ở `tasks/done/`, game/phần thưởng và mini pet hoãn ở `tasks/hoan-lam/`.
+### Team / contributors
 
-File theo loai task:
+| Name | GitHub |
+| --- | --- |
+| Huỳnh Tấn Đạt | [@qacacc](https://github.com/qacacc) |
+| Nguyễn Hữu Gia Khang | [@Bryan13032004](https://github.com/Bryan13032004) |
+| Nguyễn Văn Hà | [@hakury9662](https://github.com/hakury9662) |
+| Nguyễn Thị Ngọc Trâm | [@NgocTram05](https://github.com/NgocTram05) |
+| Lê Đức Toàn | [@toan-ei](https://github.com/toan-ei) |
+| Nguyễn Đình Khiêm | [@Khiem1074](https://github.com/Khiem1074) |
+| Võ Anh Sơn | [@anhson05](https://github.com/anhson05) |
 
-- UI/UX: `UX_UI_GUIDELINES.md`
-- Backend/Rust/SQLite/file system: `BACKEND_GUIDELINES.md`
-- Performance/refactor: `OPTIMIZATION_TARGETS.md`
+## Tiếng Việt
 
-Task index nam tai:
+Campus Assistant Local là ứng dụng desktop local-first dành cho sinh viên. Ứng dụng cung cấp giao diện chat theo luật, các màn hình dữ liệu học tập cục bộ, truy cập tài liệu, lịch sử chat bật theo lựa chọn, chẩn đoán bộ nhớ và tính GPA thủ công. Ứng dụng không gửi mật khẩu, token, cookie, nội dung chat hoặc tài liệu đến máy chủ của nhóm phát triển.
 
-```text
-tasks/TASK_INDEX.md
-```
+### Trạng thái hiện tại
 
-Quy tac lam viec:
+**ĐÃ XÁC NHẬN:** sản phẩm hiện tại là ứng dụng desktop Tauri 2 + React + TypeScript + Rust, dùng SQLite cục bộ cho cấu hình, metadata phiên, nhật ký thao tác và lịch sử chat opt-in.
 
-- Moi lan chi co mot task active.
-- AI phai tom tat muc tieu, ngoai scope, file du kien sua va cach test truoc khi sua code.
-- Neu can sua file ngoai task, phai dung lai xin duyet.
-- Sau khi sua phai chay `npm run check:all`.
+**GIỚI HẠN / CHƯA XÁC MINH:** đăng nhập UTH, đồng bộ trực tiếp và hợp đồng API/nghiệp vụ của trường chưa được xác minh. Checklist phát hành hiện cảnh báo rõ giới hạn này, không còn coi dữ liệu học tập cục bộ rỗng là lỗi và không tự nhận connector chưa xác minh là sẵn sàng.
 
-## Lenh trong chat
+**ĐANG THỰC HIỆN:** CA-084 — audit và đối chiếu checklist phát hành. CA-090.01 đã có bằng chứng migration/reset nhưng vẫn còn cần kiểm tra native/UI và review riêng. CA-080 đã có bộ kiểm tra REST/Postman local; hợp đồng UTH thật vẫn chưa biết.
 
-```text
-/help       Xem danh sach lenh.
-/documents  Bat dau luong tim tai lieu mau.
-/announcements Xem thong bao mau local.
-/schedule   Xem lich hoc mau local.
-/exams      Xem lich thi mau local.
-/files      Mo trang file mau.
-/storage    Mo thong ke bo nho local.
-/health     Kiem tra suc khoe app local.
-/release    Xem checklist phat hanh 1.0.1.
-/appearance Tuy bien giao dien local.
-/logs       Mo tab nhat ky metadata.
-/privacy    Mo trang quyen rieng tu.
-/clear      Xoa noi dung chat dang hien thi trong phien hien tai.
-```
+### Tính năng trong phạm vi local đã xác nhận
 
-Trong luong `FIND_DOCUMENTS`, khi bot hoi hoc ky co the nhap `hoc ky 1`, `hk 1` hoac chi `1`. Khi danh sach file da hien thi, co the nhap `mo 1`, `mo file 1`, `copy 2` hoac `sao chep file 2`. Nhap `quay lai` de chon lai hoc ky, hoac `huy` de thoat luong hien tai. Khi bot cho xac nhan file, co the nhap `xac nhan`, `dong y`, `ok` de thuc hien, hoac `huy`, `khong`, `cancel` de huy thao tac file.
+- Desktop Tauri 2 với React, TypeScript, Vite và Rust.
+- Engine intent local theo luật, không phải dịch vụ AI chat tổng quát.
+- SQLite cục bộ cho cấu hình, metadata log và lịch sử chat opt-in.
+- Tài liệu, thông báo, lịch học và lịch thi local với ranh giới nguồn rõ ràng.
+- Công cụ tính GPA/CPA thủ công và lưu cục bộ.
+- Health report, thống kê storage, diagnostic export và checklist release local-first.
+- Tùy chỉnh giao diện, light/dark, màu accent, ảnh nền được quản lý và bố cục split-view.
+- Thao tác file chỉ nằm trong workspace do ứng dụng quản lý.
+- Bộ Postman local cho các tình huống lỗi, kết quả rỗng, validation, cache và sync gate.
 
-Composer ho tro `Enter` de gui tin va `Shift+Enter` de xuong dong.
-Go `/` trong composer de hien danh sach lenh nhanh. Dung `ArrowUp`/`ArrowDown` de chon lenh, `Enter` de chay lenh dang chon va `Escape` de dong goi y.
-Composer hien trang thai flow hien tai va cac nut theo ngu canh nhu `Huy`, `Quay lai`, `Xac nhan`.
-Dung `Ctrl+K` de quay ve chat va focus vao composer.
-Composer actions tu doi theo state, vi du dang xem danh sach se hien `Mo 1`, `Copy 1`, `Quay lai`.
+### Công nghệ và công cụ phát triển
 
-Khi phat trien desktop, uu tien dung:
+| Nhóm | Công nghệ / công cụ |
+| --- | --- |
+| Desktop shell | Tauri 2 |
+| Frontend | React, TypeScript, Vite |
+| Native layer | Rust, Cargo |
+| Lưu trữ cục bộ | SQLite |
+| Kiểm thử | Vitest, Rust tests, kiểm tra Postman local bằng Node.js |
+| Quality gate | TypeScript build, Vite build, Cargo checks, `npm run check:all` |
+
+### Ranh giới không được hiểu nhầm
+
+- Không có Ollama, OpenAI API, RAG, embedding, vector database hoặc bot Zalo production.
+- Chưa có connector trường production-ready, SSO, vault credential, thu cookie hoặc proxy session.
+- Không mặc định coi fixture local là dữ liệu học tập thật của sinh viên.
+- Không duyệt file tùy ý trên toàn hệ thống, không rename/move file ngoài phạm vi quản lý.
+- Reward/minigame và mini pet vẫn frozen nếu chưa được yêu cầu kích hoạt rõ ràng.
+
+### Chạy dự án
 
 ```powershell
+npm install
 npm run dev:desktop
 ```
 
-Lenh nay tu dong giai phong port `5173` truoc khi chay Tauri dev. Neu chay truc tiep `npm run tauri dev`, Tauri config cung se tu dong goi `npm run free:dev-port` truoc khi mo Vite.
-
-## Dev launcher
-
-Trong luc phat trien, dung file:
-
-```text
-CampusAssistantLocal-Dev.exe
-```
-
-File nay chay `npm run dev:tauri`, giup sua React/CSS thay doi truc tiep trong app qua Vite HMR. Khong can go cai dat va cai lai installer sau moi lan sua UI.
-
-Khong mo `http://127.0.0.1:5173` bang trinh duyet de test app, vi cac Tauri command nhu `invoke` chi hoat dong trong cua so desktop Tauri.
-
-## Kiem tra cap nhat
-
-App ho tro check version qua manifest JSON HTTPS. Mac dinh chua cau hinh URL thi app khong tu goi mang.
-
-Build voi URL manifest:
+Chạy web server riêng:
 
 ```powershell
-$env:CAMPUS_ASSISTANT_UPDATE_MANIFEST_URL="https://example.com/campus-assistant/update.json"
-npm run tauri build
+npm run dev:web
 ```
 
-Manifest mau:
+Khi sửa giao diện desktop, ưu tiên `CampusAssistantLocal-Dev.exe` để dùng Vite HMR. Không dùng `http://127.0.0.1:5173` thay cho runtime Tauri khi kiểm tra IPC native.
 
-```json
-{
-  "version": "1.1.0",
-  "required": true,
-  "message": "Co ban cap nhat bao mat. Vui long tai ban moi.",
-  "downloadUrl": "https://example.com/campus-assistant/CampusAssistantLocal-1.1.0.exe"
-}
+### Kiểm tra
+
+```powershell
+npm run check:all
 ```
 
-Khi `version` trong manifest lon hon version hien tai, app cu se hien banner yeu cau cap nhat va nut tai ban moi. App chi doc manifest, khong gui hoi thoai, tai lieu, token hay du lieu ca nhan.
+Đây là cổng kiểm tra chuẩn, bao gồm Vitest, layout, Postman local, build TypeScript/Vite, Cargo check/test và `npm audit`.
+
+### Release/Package
+
+Repository hiện chưa có GitHub Release hoặc package được publish. Hai khu vực **Releases** và **Packages** trên GitHub không được tạo tự động bằng README. Chỉ tạo release hoặc publish Docker/package sau khi đã xác minh commit, test và artifact tương ứng.
+
+### Quy trình đóng góp
+
+1. Cập nhật branch từ `main` mới nhất.
+2. Làm thay đổi trên feature branch riêng.
+3. Chạy test liên quan và `npm run check:all`.
+4. Tạo PR kèm task ID, file đã sửa, kết quả test và giới hạn còn lại.
+5. Chỉ merge sau khi review và check đạt.
+
+Không commit credential, token, cookie, secret `.env`, raw chat hoặc dữ liệu học tập cá nhân.
+
+### Thành viên / contributors
+
+| Họ và tên | GitHub |
+| --- | --- |
+| Huỳnh Tấn Đạt | [@qacacc](https://github.com/qacacc) |
+| Nguyễn Hữu Gia Khang | [@Bryan13032004](https://github.com/Bryan13032004) |
+| Nguyễn Văn Hà | [@hakury9662](https://github.com/hakury9662) |
+| Nguyễn Thị Ngọc Trâm | [@NgocTram05](https://github.com/NgocTram05) |
+| Lê Đức Toàn | [@toan-ei](https://github.com/toan-ei) |
+| Nguyễn Đình Khiêm | [@Khiem1074](https://github.com/Khiem1074) |
+| Võ Anh Sơn | [@anhson05](https://github.com/anhson05) |
+
+### Tài liệu chính
+
+- [`AGENTS.md`](AGENTS.md) — quy tắc làm việc và evidence gate.
+- [`docs/AI_CHANGE_PROTOCOL.md`](docs/AI_CHANGE_PROTOCOL.md) — quy trình thay đổi.
+- [`docs/INVARIANTS.md`](docs/INVARIANTS.md) — các bất biến bảo mật/dữ liệu/UI.
+- [`tasks/TASK_INDEX.md`](tasks/TASK_INDEX.md) — trạng thái task và backlog.
+- [`docs/REGRESSION_MATRIX.md`](docs/REGRESSION_MATRIX.md) — ma trận kiểm thử hồi quy.

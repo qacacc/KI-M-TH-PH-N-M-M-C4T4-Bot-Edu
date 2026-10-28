@@ -21,7 +21,7 @@ Cập nhật: 2026-10-17. Theo dõi 36 file cần làm/đối chiếu (13 spec m
 | CA-087 - Toàn vẹn phiên chat và lưu lịch sử (P1) | Proposed | [CA-087-chat-session-integrity.md](CA-087-chat-session-integrity.md) |
 | CA-088 - Sửa lưu, phục hồi và tính GPA (P1) | Proposed | [CA-088-gpa-persistence-calculation.md](CA-088-gpa-persistence-calculation.md) |
 | CA-089 - Nguồn dữ liệu và trạng thái trường trung thực (P1) | Proposed | [CA-089-school-ui-source-truth.md](CA-089-school-ui-source-truth.md) |
-| CA-090 - Sao lưu và reset đúng phạm vi, không mất dữ liệu (P1) | Proposed | [CA-090-backup-reset-data-safety.md](CA-090-backup-reset-data-safety.md) |
+| CA-090 - Sao lưu và reset đúng phạm vi, không mất dữ liệu (P1) | In Progress | [CA-090-backup-reset-data-safety.md](CA-090-backup-reset-data-safety.md) |
 | CA-091 - Thùng rác an toàn và một nguồn dữ liệu (P1) | Proposed | [CA-091-trash-recovery-native-owner.md](CA-091-trash-recovery-native-owner.md) |
 | CA-092 - Xuất lịch đúng múi giờ và phạm vi học kỳ (P1) | Proposed | [CA-092-calendar-timezone-validity.md](CA-092-calendar-timezone-validity.md) |
 | CA-093 - Tìm kiếm công khai: lỗi, thời gian và nguồn tin (P1) | Proposed | [CA-093-public-search-error-budget.md](CA-093-public-search-error-budget.md) |

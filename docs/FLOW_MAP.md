@@ -1,5 +1,14 @@
 # FLOW MAP - CAMPUS ASSISTANT LOCAL
 
+## CA-090.01 - Reset cấu hình và khởi động SQLite CURRENT 2026-10-19
+
+1. App mở SQLite và chạy migration theo `PRAGMA user_version`; foreign key được bật trước khi dùng schema.
+2. `init_app` seed dữ liệu mẫu nhưng không tự xóa lịch sử chat cũ.
+3. ErrorBoundary chỉ cho phép reload; không tự xóa localStorage.
+4. Reset trong Settings yêu cầu confirm và chỉ xóa allowlist cấu hình giao diện/bố cục/tùy chọn; GPA, chat và hồ sơ trường được giữ nguyên.
+
+Manual native/UI verification và review Jira vẫn `PLANNED`; chưa mô tả task là Done.
+
 ## CA-103 - Local REST API + Postman
 
 ### Runtime Status: `CONFIRMED / LOCAL LOOPBACK` (automated source/tests; manual HTTP smoke `UNKNOWN`)
@@ -19,6 +28,9 @@ Postman collection của project là `postman/Campus_Assistant_Local_REST_API.po
 ## CA-080 - Postman setup CURRENT 2026-10-10
 
 Collection local JSON -> `tools/check-local-postman.cjs` kiểm tra route/auth/error contract; collection UTH nếu chưa có nguồn chuẩn thì `sync:postman` SKIP an toàn. Không gửi API trường hoặc live sandbox test. Response HTTP/JSON local không nâng contract UTH lên VERIFIED; business schema UTH vẫn UNKNOWN. Không tạo session app, không gỡ quarantine Rust. Hướng dẫn: [REST API contract](testing/REST_API_DESIGN.md), [postman/README](../postman/README.md), [UTH contract](testing/UTH_API_CONTRACT.md).
+
+
+**Evidence update:** `tools/check-postman.cjs` validates canonical JSON/environment, sensitive values and loopback-only request URLs. `tools/sync-postman.cjs` mirrors URL/method/headers/auth/body/scripts, then fails on missing, drifted, or unexpected `*.request.yaml` files in the managed local collection directory; it does not delete stale files. UTH business/auth contract remains `UNKNOWN`.
 
 ## CA-083 - Luồng UTH CURRENT 2026-10-09
 

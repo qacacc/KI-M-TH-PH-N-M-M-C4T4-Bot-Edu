@@ -1,6 +1,6 @@
 # CA-084 - Nghiệm thu và phát hành từ source đã sửa
 
-- Status: Proposed
+- Status: In Progress (implementation)
 - Priority: P1
 - Created: 2026-10-09
 - Owner: AI + User review
@@ -18,6 +18,8 @@ PLANNED: Tạo tiêu chí release theo khả năng thực tế; phân biệt loc
 ## File dự kiến sửa sau duyệt
 
 - `src/pages/ReleasePage.tsx`
+- `src/releaseChecklist.ts`
+- `src/releaseChecklist.test.ts`
 - `src/pages/HealthPage.tsx`
 - `src-tauri/src/diagnostics.rs`
 - `package.json`
@@ -47,6 +49,15 @@ PLANNED: Tạo tiêu chí release theo khả năng thực tế; phân biệt loc
 npm run check:all; npm run build:installer; native smoke theo checklist; đối chiếu artifact với commit.
 
 Các lệnh mới/test mới là PLANNED: agent triển khai phải ghi tên lệnh thực tế, expected failure trước sửa và pass sau sửa. Không dùng rg thay cho test hành vi.
+
+## Evidence cập nhật 2026-10-21
+
+- `src/pages/ReleasePage.tsx:1-31` dùng checklist builder thuần, không tự quyết định trạng thái từ JSX tĩnh.
+- `src/releaseChecklist.ts:24-75` coi dữ liệu học tập local-only/connector chưa verified là `WARN`, chỉ tạo `FAIL` từ version sai hoặc health report có lỗi runtime.
+- `src/releaseChecklist.test.ts:4-33` kiểm tra dữ liệu học tập rỗng không bị báo `FAIL` và lỗi runtime vẫn được phản ánh.
+- Automated targeted: `npm run test -- --run src/releaseChecklist.test.ts` PASS (2 tests).
+- Full `npm run check:all`: Vitest 69/69, layout, Postman local, TypeScript/Vite build, Cargo check và Rust 43/43 PASS; dừng ở `npm audit` vì `vite` có 1 advisory mức High, chưa chạy `npm audit fix` do ngoài scope dependency.
+- Native/manual/installer verification vẫn PENDING; task chưa đủ gate Done.
 
 ## Rollback
 
