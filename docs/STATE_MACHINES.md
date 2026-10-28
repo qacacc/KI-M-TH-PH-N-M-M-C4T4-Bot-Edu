@@ -89,7 +89,7 @@ Tách biệt hoàn toàn giữa Trạng thái Phiên Đăng nhập (Auth State) 
               ┌────────────────────────┐
               │          IDLE          │
               └───────────┬────────────┘
-                          │ Event: intent == NEEDS_SUBJECT
+                          │ Event: intent == NEEDS_SUBJECT / AMBIGUOUS_SUBJECT
                           ▼
               ┌────────────────────────┐
               │  WAITING_FOR_SUBJECT   │
@@ -141,7 +141,7 @@ Tách biệt hoàn toàn giữa Trạng thái Phiên Đăng nhập (Auth State) 
 ```
 
 ### Invariant Rule:
-- Bot không được tự chọn môn đầu tiên khi user chưa nêu môn. Nếu không xác định được môn, phải vào `WAITING_FOR_SUBJECT`.
+- Bot không được tự chọn môn đầu tiên khi user chưa nêu môn. Nếu không xác định được môn (NEEDS_SUBJECT) hoặc có nhiều môn trùng khớp (AMBIGUOUS_SUBJECT), phải vào `WAITING_FOR_SUBJECT` để làm rõ.
 - Người dùng có thể gửi từ khóa `"hủy"` (hoặc `"cancel"`) ở bất kỳ trạng thái trung gian nào (`WAITING_FOR_SUBJECT`, `WAITING_FOR_SEMESTER`, `SHOWING_DOCUMENTS`, `WAITING_FILE_CONFIRMED`) để chuyển ngay về trạng thái `IDLE`.
 
 ---

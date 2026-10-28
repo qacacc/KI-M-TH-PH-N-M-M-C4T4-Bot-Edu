@@ -46,10 +46,12 @@ import {
   detectIntent,
   extractSemester,
   findSubjectInText,
+  findSubjectMatchInText,
   parseConfirmationIntent,
   parseDocumentActionIntent,
   parseFlowControlIntent,
   parseSlashCommand,
+  type TimeFilter,
 } from "./engine";
 import { useAppearanceDraft } from "./hooks/useAppearanceDraft";
 import { useLayoutState } from "./hooks/useLayoutState";
@@ -175,6 +177,9 @@ export default function App() {
   const [isBusy, setIsBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  // Ref theo dõi trạng thái composition IME (nhập tiếng Việt)
+  // Không dùng useState để tránh re-render không cần thiết
+  const isComposingRef = useRef(false);
   const backgroundInputRef = useRef<HTMLInputElement | null>(null);
   const bootstrapRequestRef = useRef(createBootstrapRequest(initApp));
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
@@ -615,6 +620,11 @@ export default function App() {
 
   async function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
+      // Chặn gửi tin khi đang trong quá trình composition IME (nhập tiếng Việt)
+      // isComposing = true có nghĩa người dùng đang chọn từ gợi ý của bộ nhập tiếng Việt
+      if (event.nativeEvent.isComposing || isComposingRef.current) {
+        return;
+      }
       event.preventDefault();
       await submitText(input);
       return;
@@ -759,6 +769,17 @@ export default function App() {
         await showDocuments(intent.subjectId, intent.subjectName, intent.semester);
         return;
       }
+      case "AMBIGUOUS_SUBJECT": {
+        // Nhiều môn cùng mức độ khớp — yêu cầu người dùng chọn rõ hơn
+        const list = intent.candidates.map((name, i) => `${i + 1}. ${name}`).join("\n");
+        appendAssistant(`Tui tìm thấy nhiều môn có tên tương tự:\n${list}\nBạn muốn tìm tài liệu môn nào? Vui lòng nhập đủ tên môn để tôi xác nhận.`);
+        setConversation({
+          flow: "FIND_DOCUMENTS",
+          step: "WAITING_FOR_SUBJECT",
+          data: { subjectId: null, subjectName: null, semester: intent.semester },
+        });
+        return;
+      }
       case "NEEDS_SUBJECT":
         if (!bootstrap?.subjects.length) {
           setConversation(null);
@@ -777,10 +798,10 @@ export default function App() {
         await showAnnouncements();
         return;
       case "FIND_SCHEDULE":
-        await showSchedule(intent.semester ?? undefined);
+        await showSchedule(intent.semester ?? undefined, intent.timeFilter);
         return;
       case "FIND_EXAMS":
-        await showExams(intent.semester ?? undefined);
+        await showExams(intent.semester ?? undefined, intent.timeFilter);
         return;
       case "PUBLIC_ADMISSIONS_INFO":
         await runPublicSchoolSearch(value);
@@ -951,12 +972,26 @@ export default function App() {
     }
   }
 
-  async function showSchedule(semester?: number) {
+  async function showSchedule(semester?: number, timeFilter?: TimeFilter) {
     setIsBusy(true);
     try {
       const scheduleItems = await loadAcademicSchedule(readSchoolProfile());
       setView("schedule");
-      appendAssistant(scheduleItems.length ? `Có ${scheduleItems.length} buổi học trong cache tài khoản trường.${semester ? " Cache chưa có thông tin học kỳ để lọc." : ""}` : ACADEMIC_CONNECTION_REQUIRED, { scheduleItems });
+      if (!scheduleItems.length) {
+        appendAssistant(ACADEMIC_CONNECTION_REQUIRED);
+        return;
+      }
+      const filtered = timeFilter
+        ? scheduleItems.filter((item) => item.weekday === timeFilter.weekday)
+        : scheduleItems;
+      const timeLabel = timeFilter ? (timeFilter.kind === "today" ? "hôm nay" : "ngày mai") : "";
+      const countMsg = timeFilter
+        ? (filtered.length
+            ? `Có ${filtered.length} buổi học ${timeLabel} trong cache tài khoản trường.`
+            : `Không có buổi học nào ${timeLabel} trong cache tài khoản trường.`)
+        : `Có ${scheduleItems.length} buổi học trong cache tài khoản trường.`;
+      const semesterNotice = semester ? " Cache chưa có thông tin học kỳ để lọc." : "";
+      appendAssistant(`${countMsg}${semesterNotice}`, { scheduleItems: filtered.length ? filtered : undefined });
     } catch (err) {
       setError(academicDataErrorMessage(err));
     } finally {
@@ -964,12 +999,26 @@ export default function App() {
     }
   }
 
-  async function showExams(semester?: number) {
+  async function showExams(semester?: number, timeFilter?: TimeFilter) {
     setIsBusy(true);
     try {
       const examItems = await loadAcademicExams(readSchoolProfile());
       setView("exams");
-      appendAssistant(examItems.length ? `Có ${examItems.length} lịch thi trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.${semester ? " Cache chưa có thông tin học kỳ để lọc." : ""}` : ACADEMIC_CONNECTION_REQUIRED, { examItems });
+      if (!examItems.length) {
+        appendAssistant(ACADEMIC_CONNECTION_REQUIRED);
+        return;
+      }
+      const filtered = timeFilter
+        ? examItems.filter((item) => item.examDate === timeFilter.isoDate)
+        : examItems;
+      const timeLabel = timeFilter ? (timeFilter.kind === "today" ? "hôm nay" : "ngày mai") : "";
+      const countMsg = timeFilter
+        ? (filtered.length
+            ? `Có ${filtered.length} lịch thi ${timeLabel} trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.`
+            : `Không có lịch thi nào ${timeLabel} trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.`)
+        : `Có ${examItems.length} lịch thi trong cache UTH thử nghiệm; hãy đối chiếu cổng trường.`;
+      const semesterNotice = semester ? " Cache chưa có thông tin học kỳ để lọc." : "";
+      appendAssistant(`${countMsg}${semesterNotice}`, { examItems: filtered.length ? filtered : undefined });
     } catch (err) {
       setError(academicDataErrorMessage(err));
     } finally {
@@ -1585,6 +1634,8 @@ export default function App() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => void handleComposerKeyDown(event)}
+                onCompositionStart={() => { isComposingRef.current = true; }}
+                onCompositionEnd={() => { isComposingRef.current = false; }}
                 placeholder="Nhập yêu cầu, ví dụ: tìm tài liệu lập trình mạng"
                 rows={3}
               />
