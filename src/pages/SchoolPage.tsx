@@ -27,22 +27,23 @@ import {
 } from "../schoolProfile";
 
 import {
-  openExternalUrl,
-  openUthLoginWindow,
-  onUthSyncResult,
   getConnectorSyncStatus,
   disconnectConnector,
   deleteConnectorData,
   type ConnectorSyncStatus,
 } from "../tauriApi";
 import { ACADEMIC_CACHE_UPDATED_EVENT } from "../academicData";
+import { openPortal, isAuthenticated } from "../schoolConnector/schoolVault"; // CA-089.01
 
 export function SchoolPage() {
   const [profile, setProfile] = useState(() => readSchoolProfile());
   const [notice, setNotice] = useState("");
   const [syncStatus, setSyncStatus] = useState<ConnectorSyncStatus | null>(null);
-  const [openingPortal, setOpeningPortal] = useState(false);
   
+  // CA-089.01: State cho trạng thái mở portal
+  const [openingPortal, setOpeningPortal] = useState(false);
+  const isAuth = isAuthenticated();
+
   // Accordion state cho khu vực Nâng cao & Developer tools
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -50,7 +51,7 @@ export function SchoolPage() {
     () => schoolOptions.find((item) => item.id === profile.schoolId) ?? schoolOptions[0],
     [profile.schoolId],
   );
-  // Kiểm tra trường có URL portal không (tất cả trường đều có thể mở, chỉ UTH có WebView thử nghiệm)
+  
   const hasPortalUrl = !!(selectedSchool.studentPortalUrl || selectedSchool.portalUrl);
   const isUthSelected = selectedSchool.id === "uth";
 
@@ -58,62 +59,23 @@ export function SchoolPage() {
     const codeToQuery = profile.studentCode.trim();
     let cancelled = false;
     setSyncStatus(null);
+    
     if (!codeToQuery || profile.schoolId !== "uth") {
       setSyncStatus(null);
       return;
     }
+    
     void getConnectorSyncStatus(codeToQuery)
       .then((status) => {
         if (cancelled) return;
-        if (status) {
-          setSyncStatus(status);
-        } else {
-          setSyncStatus(null);
-        }
+        setSyncStatus(status || null);
       })
-      .catch(() => { if (!cancelled) setNotice("Không đọc được trạng thái đồng bộ. Cache đã lưu được giữ nguyên."); });
+      .catch(() => { 
+        if (!cancelled) setNotice("Không đọc được trạng thái đồng bộ SQLite. Cache đã lưu được giữ nguyên."); 
+      });
+      
     return () => { cancelled = true; };
   }, [profile.studentCode, profile.schoolId]);
-
-  // Tự động nhận kết quả khi người dùng đăng nhập trong WebView UTH (Xác nhận 1 lần)
-  useEffect(() => {
-    let unlistenFn: (() => void) | undefined;
-    let disposed = false;
-    void onUthSyncResult((result) => {
-      if (disposed || !isUthSelected) return;
-      if (result.success) {
-        const nextCode = result.studentCode || profile.studentCode;
-        const nextName = result.studentName || profile.displayName;
-        const next = {
-          ...profile,
-          studentCode: nextCode,
-          displayName: nextName,
-          schoolId: "uth",
-          schoolName: "Trường Đại học Giao thông vận tải TP.HCM (UTH)",
-          mode: "student" as const,
-          updatedAt: new Date().toISOString(),
-        };
-        saveSchoolProfile(next);
-        setProfile(next);
-        setNotice(
-          `🎉 Đăng nhập & đồng bộ thành công! Đã nạp ${result.schedulesCount ?? 0} buổi học và ${result.examsCount ?? 0} môn thi vào máy.`
-        );
-        if (nextCode) {
-          void getConnectorSyncStatus(nextCode).then((st) => { if (!disposed) setSyncStatus(st); }).catch(() => { if (!disposed) setNotice("Đã nhận kết quả đồng bộ nhưng không đọc được trạng thái cache."); });
-        }
-      } else {
-        setNotice(`⚠️ Đồng bộ thất bại: ${result.message}`);
-      }
-    }).then((unsub) => {
-      if (disposed) { unsub(); return; }
-      unlistenFn = unsub;
-    }).catch(() => { if (!disposed) setNotice("Không đăng ký được thông báo đồng bộ. Hãy mở lại trang kết nối."); });
-
-    return () => {
-      disposed = true;
-      if (unlistenFn) unlistenFn();
-    };
-  }, [profile]);
 
   function updateSchool(school: SchoolOption) {
     setNotice("");
@@ -135,46 +97,36 @@ export function SchoolPage() {
     setNotice("✅ Đã lưu hồ sơ sinh viên local thành công.");
   }
 
+  // CA-089.01: Dùng await promise phân định rõ resolve/reject
   async function handleOpenSchoolPortalPrimary() {
-    const targetUrl = selectedSchool.studentPortalUrl || selectedSchool.portalUrl;
-    if (!targetUrl) {
-      setNotice(`Trường đang chọn chưa có URL cổng sinh viên trong manifest local.`);
+    if (!hasPortalUrl) {
+      setNotice(`Trường đang chọn chưa có URL cổng sinh viên.`);
       return;
     }
+    
     setOpeningPortal(true);
+    setNotice("Đang mở trình duyệt kết nối cổng trường...");
+    
     try {
-      await openExternalUrl(targetUrl);
-      setNotice(`Đã yêu cầu mở Portal ${selectedSchool.shortName} trên trình duyệt. Đăng nhập ở trình duyệt không tự kết nối phiên với app; MSSV nhập tay chỉ là hồ sơ tự khai.`);
-    } catch {
-      setNotice("Không mở được cổng trường. Hãy kiểm tra trình duyệt mặc định rồi thử lại.");
+      await openPortal();
+      // Chỉ xác nhận mở thành công, KHÔNG giả mạo trạng thái đăng nhập
+      setNotice(`✅ Đã mở Portal ${selectedSchool.shortName}. Đăng nhập trên trình duyệt không tự kết nối phiên vào app.`);
+    } catch (error) {
+      setNotice("❌ Lỗi: Không thể mở cổng kết nối trường.");
     } finally {
       setOpeningPortal(false);
     }
   }
 
-  async function handleOpenUthWebViewExperimental() {
-    if (!isUthSelected) {
-      setNotice(`WebView UTH không áp dụng cho ${selectedSchool.shortName}.`);
-      return;
-    }
-    try {
-      await openUthLoginWindow();
-      setNotice("✅ Đã mở WebView UTH thử nghiệm. Nếu cửa sổ trắng, hãy dùng nút mở portal bằng trình duyệt ngoài.");
-    } catch (err) {
-      setNotice(`⚠️ Không mở được WebView UTH thử nghiệm: ${String(err)}`);
-    }
-  }
-
-
   async function handleLogoutPortal() {
-    if (!window.confirm("Bạn có chắc chắn muốn đăng xuất khỏi phiên Cổng trường? Dữ liệu cache thời khóa biểu cũ vẫn sẽ được giữ lại để sử dụng offline.")) {
+    if (!window.confirm("Bạn có chắc chắn muốn ngắt kết nối phiên? Dữ liệu cache thời khóa biểu cũ vẫn sẽ được giữ lại.")) {
       return;
     }
     try {
       await disconnectConnector(profile.schoolId, profile.studentCode);
       const updated = await getConnectorSyncStatus(profile.studentCode);
       setSyncStatus(updated);
-      setNotice("Đã ngắt kết nối phiên đăng nhập backend. Dữ liệu thời khóa biểu đã lưu trong SQLite vẫn được giữ lại để sử dụng Offline.");
+      setNotice("Đã ngắt kết nối phiên backend. Dữ liệu lịch học trong SQLite vẫn được giữ lại.");
     } catch (err) {
       setNotice(`Lỗi ngắt kết nối: ${String(err)}`);
     }
@@ -182,19 +134,18 @@ export function SchoolPage() {
 
   async function handleClearConnectorData() {
     if (!profile.studentCode) return;
-    if (!window.confirm("CẢNH BÁO: Bạn sắp xóa toàn bộ dữ liệu lịch học và lịch thi của Connector khỏi SQLite Local. Hành động này không thể hoàn tác. Tiếp tục?")) {
+    if (!window.confirm("CẢNH BÁO: Xóa toàn bộ dữ liệu lịch học/lịch thi khỏi SQLite. Hành động này không thể hoàn tác. Tiếp tục?")) {
       return;
     }
     try {
       await deleteConnectorData(profile.studentCode);
       setSyncStatus(null);
       window.dispatchEvent(new Event(ACADEMIC_CACHE_UPDATED_EVENT));
-      setNotice("Đã xóa toàn bộ dữ liệu thời khóa biểu & lịch thi khỏi SQLite Local.");
+      setNotice("Đã xóa toàn bộ dữ liệu thời khóa biểu & lịch thi khỏi local.");
     } catch (err) {
       setNotice(`Lỗi xóa dữ liệu: ${String(err)}`);
     }
   }
-
 
   function handleClearProfile() {
     if (!window.confirm("Bạn có chắc chắn muốn xóa hồ sơ sinh viên local tự khai không?")) {
@@ -302,7 +253,7 @@ export function SchoolPage() {
           <span className="settings-status-pill neutral">Local-First Sandbox</span>
         </div>
 
-        {/* THÔNG TIN TRẠNG THÁI CHÍNH XÁC (WORDING TRUNG THỰC BAT BUOC) */}
+        {/* CA-089.01: HIỂN THỊ CHÍNH XÁC TRẠNG THÁI KHÔNG FAKE */}
         <div className="school-connector-status">
           <div className="school-connector-row">
             <Lock size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
@@ -313,20 +264,17 @@ export function SchoolPage() {
           </div>
           <div className="school-connector-row">
             <Wifi size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
-            <span className="school-connector-label">Đồng bộ {selectedSchool.shortName}</span>
+            <span className="school-connector-label">Kết nối API Trường</span>
             <span className={isUthSelected ? "settings-status-pill warning" : "settings-status-pill neutral"}>
               {isUthSelected ? "Chưa sẵn sàng" : "Chưa hỗ trợ"}
             </span>
           </div>
           <div className="school-connector-row">
-            <Shield size={13} style={{ color: "var(--muted)", flexShrink: 0 }} />
-            <span className="school-connector-label">Lưu token/cookie</span>
-            <span className="settings-status-pill neutral">Chưa bật thu phiên đăng nhập</span>
-          </div>
-          <div className="school-connector-row">
             <UserCheck size={13} style={{ color: "var(--muted)", flexShrink: 0 }} />
-            <span className="school-connector-label">Xác thực</span>
-            <span className="settings-status-pill neutral">Hồ sơ tự khai chưa xác thực</span>
+            <span className="school-connector-label">Xác thực hệ thống</span>
+            <span className={isAuth ? "settings-status-pill success" : "settings-status-pill neutral"}>
+              {isAuth ? "Đã liên kết (Có Session)" : "Chưa xác thực (Không có Session)"}
+            </span>
           </div>
         </div>
 
@@ -340,7 +288,7 @@ export function SchoolPage() {
             <p className="school-explain-note" style={{ marginTop: 0 }}>
               <Sparkles size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
               <span style={{ color: "var(--foreground)", fontSize: "13px", fontWeight: 500 }}>
-                Đồng bộ UTH đang tạm khóa vì API và phiên đăng nhập chưa được xác minh. Ứng dụng không nạp lịch mô phỏng. Mở portal để xem dữ liệu trực tiếp từ trường; cache cũ vẫn được giữ.
+                Đồng bộ UTH đang bị khóa để chờ API từ trường. Giao diện này không tự động tải hay phát sinh dữ liệu mô phỏng.
               </span>
             </p>
 
@@ -351,19 +299,8 @@ export function SchoolPage() {
                 onClick={handleOpenSchoolPortalPrimary}
                 disabled={!hasPortalUrl || openingPortal}
               >
-                <Sparkles size={16} />
+                <MonitorCheck size={16} />
                 {openingPortal ? "Đang mở portal..." : "Mở portal UTH trên trình duyệt"}
-              </button>
-
-              <button
-                className="settings-btn-secondary"
-                style={{ padding: "10px 18px", fontSize: "13px" }}
-                onClick={handleOpenUthWebViewExperimental}
-                disabled
-                title="Chưa xác minh contract API và bảo mật phiên đăng nhập UTH"
-              >
-                <ExternalLink size={14} />
-                Đồng bộ UTH chưa sẵn sàng
               </button>
             </div>
           </>
@@ -371,7 +308,7 @@ export function SchoolPage() {
           <>
             <p className="school-explain-note" style={{ marginTop: 0 }}>
               <span style={{ color: "var(--muted)", fontSize: "12px" }}>
-                Hồ sơ nhập tay chưa phải xác thực tài khoản trường. Trường này chưa có connector đồng bộ dữ liệu vào app.
+                Hồ sơ nhập tay chưa phải xác thực tài khoản trường. Trường này chưa có chức năng đồng bộ dữ liệu vào app.
               </span>
             </p>
 
@@ -383,14 +320,11 @@ export function SchoolPage() {
                 disabled={!hasPortalUrl || openingPortal}
               >
                 <MonitorCheck size={16} />
-                {hasPortalUrl
-                  ? `Mở Portal ${selectedSchool.shortName} trên trình duyệt`
-                  : `${selectedSchool.shortName}: chưa có URL portal`}
+                {openingPortal ? "Đang xử lý..." : (hasPortalUrl ? `Mở Portal ${selectedSchool.shortName}` : "Chưa có URL portal")}
               </button>
             </div>
           </>
         )}
-
       </section>
 
       {/* KHỐI 3: DỮ LIỆU LOCAL */}
@@ -404,43 +338,27 @@ export function SchoolPage() {
           <StatusTile
             title="Lịch học cache"
             value={syncStatus ? `${syncStatus.schedulesCount} buổi học` : "0 buổi học"}
-            detail={syncStatus ? "Cache local; kiểm tra nguồn và thời điểm đồng bộ" : "Chưa đồng bộ dữ liệu tài khoản trường"}
+            detail={syncStatus ? "Cache local SQLite" : "Chưa có dữ liệu"}
           />
           <StatusTile
             title="Lịch thi cache"
             value={syncStatus ? `${syncStatus.examsCount} môn thi` : "0 môn thi"}
-            detail={syncStatus ? "Cache local; lịch thi cần đối chiếu cổng trường" : "Chưa đồng bộ dữ liệu tài khoản trường"}
+            detail={syncStatus ? "Cache local SQLite" : "Chưa có dữ liệu"}
           />
           <StatusTile
             title="Nguồn dữ liệu"
-            value={
-              syncStatus
-                ? syncStatus.sourceName === "uth-portal"
-                  ? "UTH Portal Experimental"
-                  : "Prototype Mock"
-                : "Chưa có dữ liệu trường"
-            }
-            detail="Dữ liệu mô phỏng không được dùng trong lịch học và lịch thi"
+            value={syncStatus ? syncStatus.sourceName : "Chưa có kết nối"}
+            detail="Local Data App"
           />
           <StatusTile
             title="Lần đồng bộ gần nhất"
-            value={
-              syncStatus?.lastSuccessAt
-                ? new Date(syncStatus.lastSuccessAt).toLocaleDateString("vi-VN")
-                : "Chưa đồng bộ"
-            }
-            detail={
-              syncStatus?.lastSuccessAt
-                ? new Date(syncStatus.lastSuccessAt).toLocaleTimeString("vi-VN")
-                : isUthSelected
-                  ? "Chưa có cache từ connector UTH"
-                  : "Connector trường này chưa hỗ trợ"
-            }
+            value={syncStatus?.lastSuccessAt ? new Date(syncStatus.lastSuccessAt).toLocaleDateString("vi-VN") : "Chưa đồng bộ"}
+            detail={syncStatus?.lastSuccessAt ? new Date(syncStatus.lastSuccessAt).toLocaleTimeString("vi-VN") : "Không có lịch sử"}
           />
         </div>
       </section>
 
-      {/* KHỐI NÂNG CAO & VÙNG NGUY HIỂM — COLLAPSIBLE ACCORDION */}
+      {/* KHỐI NÂNG CAO */}
       <section className="school-section school-advanced-section">
         <button
           type="button"
@@ -449,7 +367,7 @@ export function SchoolPage() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Database size={15} style={{ color: "var(--muted)" }} />
-            <strong>Công cụ Nâng cao &amp; Vùng Nguy Hiểm (Developer / Danger Zone)</strong>
+            <strong>Công cụ Nâng cao (Developer Zone)</strong>
           </div>
           {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
@@ -457,18 +375,7 @@ export function SchoolPage() {
         {showAdvanced && (
           <div className="school-accordion-body">
             <div className="advanced-group">
-              <h4>Thao tác Thử nghiệm &amp; Phiên Đăng nhập</h4>
               <div className="school-block-actions">
-                <button className="settings-btn-secondary" onClick={handleOpenSchoolPortalPrimary} disabled={openingPortal || !hasPortalUrl}>
-                  <ExternalLink size={14} />
-                  Mở portal trên trình duyệt ngoài
-                </button>
-                {isUthSelected && (
-                  <button className="settings-btn-secondary" onClick={handleOpenUthWebViewExperimental}>
-                    <MonitorCheck size={14} />
-                    Thử nghiệm WebView UTH
-                  </button>
-                )}
                 {syncStatus && (
                   <button className="settings-btn-secondary" onClick={handleLogoutPortal}>
                     <LogOut size={14} />
@@ -478,11 +385,10 @@ export function SchoolPage() {
               </div>
             </div>
 
-            {/* VÙNG NGUY HIỂM — TÁCH BIỆT NẰM CUỐI CÙNG */}
             <div className="danger-zone-box" style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid color-mix(in srgb, #ef4444 30%, transparent)" }}>
               <h4 style={{ color: "#ef4444", margin: "0 0 8px 0", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <AlertTriangle size={14} />
-                Vùng Nguy Hiểm (Danger Zone)
+                Vùng Nguy Hiểm
               </h4>
               <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 12px 0" }}>
                 Các thao tác bên dưới sẽ xóa dữ liệu local vĩnh viễn khỏi thiết bị của bạn.
@@ -491,7 +397,7 @@ export function SchoolPage() {
                 {syncStatus && (
                   <button className="settings-btn-danger" onClick={handleClearConnectorData}>
                     <Trash2 size={14} />
-                    Xóa toàn bộ dữ liệu Connector khỏi SQLite
+                    Xóa toàn bộ dữ liệu khỏi SQLite
                   </button>
                 )}
                 <button className="settings-btn-danger" onClick={handleClearProfile} style={{ opacity: 0.85 }}>
