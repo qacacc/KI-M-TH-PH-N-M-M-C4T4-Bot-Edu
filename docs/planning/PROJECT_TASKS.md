@@ -1,5 +1,15 @@
 # Project Tasks
 
+## CA-098.01 - REST API project + Postman (2026-10-17)
+
+- Status: In Progress; branch `feat/khiem/ca-098-01-rest-design`.
+- **PLANNED:** loopback API requires `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`; all Postman calls use HTTP Bearer auth. Missing/invalid token returns 401; configuration is not committed.
+- **CONFIRMED (source/tests):** UTH contract gate returns 503 for schedule/exams; profile remains not connected (404). Local response is not UTH fixture evidence. Startup failure leaves desktop running, including the second-instance bind-conflict path; startup log failure is best-effort.
+- **UNKNOWN:** Manual Windows launch/Postman HTTP smoke has not been run. Full `npm run check:all` fails at npm audit advisories after code/test/build stages pass; task remains In Progress.
+- Design/how-to: [REST API contract](../testing/REST_API_DESIGN.md); [Postman README](../../postman/README.md).
+- **CONFIRMED (verification):** `cargo test --manifest-path src-tauri/Cargo.toml api::tests` passed 15 tests; `npm run check:postman` passed 9 checks; `npm run check:all` passed code/test/build/Rust stages but failed at npm audit (2 moderate, 1 high advisories).
+- **UNKNOWN:** Manual Postman local HTTP call and Windows launch not performed; do not mark task Done.
+
 ## CA-080 - Setup Postman local (2026-10-10)
 
 - Status: In Progress; local REST/Postman đã có, API/auth/business schema trường UNKNOWN.
