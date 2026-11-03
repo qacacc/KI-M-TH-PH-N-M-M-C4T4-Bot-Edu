@@ -40,6 +40,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 - CA-093.01: tìm kiếm công khai phân biệt lỗi/không thấy, hạn chót 20s, retry tối đa 2 lần, nút Thử lại đã triển khai; giữ In Progress, còn manual native ngắt mạng và PR/review.
 - CA-080 local REST/Postman vẫn chờ contract/fixture UTH thật; CA-086 dừng theo yêu cầu user; CA-081 Proposed.
 - CA-098.01: thiết kế contract và Bearer auth cho REST loopback Postman. CA-080 vẫn In Progress nhưng chờ evidence contract UTH riêng, không thuộc task implementation đang chạy; CA-086 dừng theo yêu cầu user, source chưa commit; CA-081 Proposed.
+- CA-080 local REST/Postman, bao gồm phần CA-098.01 về REST loopback/Bearer auth: latest automated `npm run check:all` PASS (84 Vitest, 10 Postman checks, 55 Rust, audit 0); vẫn chờ manual HTTP/two-instance smoke và contract/fixture UTH thật. CA-086 dừng theo yêu cầu user; CA-081 Proposed.
 
 ## Done
 

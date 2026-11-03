@@ -33,6 +33,14 @@ describe('GPA Calculation - CA-088.02 - Edge Cases', () => {
   it('trả về 0.00 khi bảng điểm trống', () => {
     expect(calculateGpaStats([]).gpaScale4).toBe('0.00');
   });
+
+  it('không tính grade không thuộc allowlist vào tổng GPA', () => {
+    const result = calculateGpaStats([
+      { id: '1', name: 'Dữ liệu lỗi', credits: 3, letterGrade: 'constructor', score10: 10 }
+    ]);
+    expect(result.totalCredits).toBe(0);
+    expect(result.gpaScale4).toBe('0.00');
+  });
 });
 
 describe('parseGpaSubjects - Validation & Security', () => {
@@ -85,5 +93,15 @@ describe('parseGpaSubjects - Validation & Security', () => {
 
     const creditTen = JSON.stringify([{ id: '2', name: 'Test', credits: 10, letterGrade: 'A', score10: 8 }]);
     expect(() => parseGpaSubjects(creditTen)).not.toThrow();
+  });
+
+  it('từ chối letterGrade không hợp lệ (VD: ABC)', () => {
+    const invalidGrade = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'ABC', score10: 8 }]);
+    expect(() => parseGpaSubjects(invalidGrade)).toThrow();
+  });
+
+  it.each(['constructor', 'toString', '__proto__'])('từ chối letterGrade kế thừa: %s', (letterGrade) => {
+    const invalidGrade = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade, score10: 8 }]);
+    expect(() => parseGpaSubjects(invalidGrade)).toThrow('Dữ liệu điểm đã lưu không hợp lệ.');
   });
 });

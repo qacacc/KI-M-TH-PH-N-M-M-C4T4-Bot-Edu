@@ -6,6 +6,16 @@
 - CURRENT: `search_public_school_info` trả `status` success/partial/no_match/error, `failedUrls`, `timedOut`; hạn chót tổng 20s, tối đa 2 lần retry mỗi URL, crawl chạy qua `spawn_blocking`. UI báo "Mất kết nối tới nguồn tài liệu" và nút Thử lại khi lỗi.
 - Evidence: `cargo test public_search` PASS 11/11; `tests/search.test.ts` PASS 5/5; `npm run check:all` FAIL chỉ ở bước cuối `npm audit` (3 advisory vite/@vitest/mocker có sẵn, package.json/lock không đổi, đã PENDING trong CA-084); các bước trước PASS: 84 Vitest, layout, Postman, build, cargo check, 49 Rust.
 - Giới hạn: manual ngắt mạng trong app desktop chưa chạy; redirect/content-type/cancel/cache vẫn PLANNED trong CA-093.
+## CA-098.01 - REST API project + Postman (2026-10-17)
+
+- Status: In Progress; branch `feat/khiem/ca-098-01-rest-design`.
+- **PLANNED:** loopback API requires `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`; all Postman calls use HTTP Bearer auth. Missing/invalid token returns 401; configuration is not committed.
+- **CONFIRMED (source/tests):** UTH contract gate returns 503 for schedule/exams; profile remains not connected (404). Local response is not UTH fixture evidence. Startup failure leaves desktop running, including the second-instance bind-conflict path; startup log failure is best-effort.
+- **UNKNOWN:** Manual Windows launch/Postman HTTP smoke has not been run. The earlier check failed at npm audit before the dependency refresh; the updated check result is recorded below after rerunning on the merged tree.
+- Design/how-to: [REST API contract](../testing/REST_API_DESIGN.md); [Postman README](../../postman/README.md).
+- **CONFIRMED (historical verification):** `cargo test --manifest-path src-tauri/Cargo.toml api::tests` passed 15 tests; `npm run check:postman` passed 9 checks; an earlier `npm run check:all` passed code/test/build/Rust stages but failed at npm audit (2 moderate, 1 high advisories).
+- **CONFIRMED (latest merged-tree verification, 2026-10-26):** `npm ci` and `npm run check:all` passed: 84 Vitest, layout, 10 local Postman checks, build, Rust check, 55 Rust tests, and npm audit 0 vulnerabilities.
+- **UNKNOWN:** Manual Postman local HTTP call and Windows launch not performed; do not mark task Done.
 
 ## CA-090.01 - SQLite migration và reset an toàn (2026-10-19)
 
@@ -27,7 +37,7 @@
 
 - Status: In Progress; local REST/Postman đã có, API/auth/business schema trường UNKNOWN.
 - Collection local là nguồn kiểm thử REST nội bộ; UTH probe không có collection chuẩn ở root, không tự tạo contract. Live/consent/review defaults vẫn bị khóa, redirect/cookie jar tắt khi có probe UTH.
-- Desktop import collection/environment thành công. Không HTTP trường hoặc live/Vault test. Local Postman PASS 6 static checks; check:all PASS 65 Vitest/42 Rust/layout/tsc/Vite/cargo check/npm audit0.
+- Desktop import collection/environment thành công. Không HTTP trường hoặc live/Vault test. Latest local Postman gate PASS 10 checks; latest `npm run check:all` PASS 84 Vitest/55 Rust/layout/build/cargo check/npm audit 0. Static checks do not replace manual HTTP smoke.
 - Scope ngoài: chưa fixture thật, chưa parser Rust, không gỡ quarantine. CA-086 source cũ chưa commit được giữ nguyên, dừng theo yêu cầu user.
 - Hướng dẫn: [Postman README](../../postman/README.md); [contract UNKNOWN](../testing/UTH_API_CONTRACT.md).
 

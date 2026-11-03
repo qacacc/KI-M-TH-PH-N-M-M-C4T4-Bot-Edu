@@ -1,9 +1,26 @@
 /* @vitest-environment jsdom */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { GPA_STORAGE_KEY } from "../gpaData";
 import { GpaCalculator } from "./GpaCalculator";
+
+const mockLocalStorage = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => {
+      store[key] = String(value);
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+  };
+})();
+vi.stubGlobal("localStorage", mockLocalStorage);
 
 describe("GpaCalculator UI Integration Tests (CA-088.02)", () => {
   afterEach(() => {

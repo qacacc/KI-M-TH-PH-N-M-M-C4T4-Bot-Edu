@@ -22,6 +22,7 @@ export function parseGpaSubjects(raw: string | null): GpaSubject[] {
     typeof item.name === "string" &&
     (item.credits === "" || (Number.isFinite(item.credits) && item.credits > 0 && item.credits <= 10)) &&
     typeof item.letterGrade === "string" &&
+    (item.letterGrade === "" || Object.prototype.hasOwnProperty.call(GRADE_CONVERSION, item.letterGrade)) &&
     (item.score10 === "" || (Number.isFinite(item.score10) && item.score10 >= 0 && item.score10 <= 10)))) {
     throw new Error("Dữ liệu điểm đã lưu không hợp lệ.");
   }
@@ -34,7 +35,8 @@ export function calculateGpaStats(subjects: GpaSubject[]) {
   let totalPoints10 = 0;
 
   for (const s of subjects) {
-    if (s.credits === "" || Number(s.credits) <= 0 || s.letterGrade === "" || s.score10 === "") {
+    if (s.credits === "" || Number(s.credits) <= 0 || s.letterGrade === "" || s.score10 === "" ||
+      !Object.prototype.hasOwnProperty.call(GRADE_CONVERSION, s.letterGrade)) {
       continue;
     }
 
