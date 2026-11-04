@@ -1,4 +1,5 @@
 import type { BootstrapState, HealthReport, StorageSummary } from "../types";
+import { buildReleaseChecklist } from "../releaseChecklist";
 
 export function ReleasePage({
   appVersion,
@@ -13,54 +14,13 @@ export function ReleasePage({
   storageSummary: StorageSummary | null;
   actionLogCount: number;
 }) {
-  const healthFailCount = healthReport?.items.filter((item) => item.status === "FAIL").length ?? 0;
-  const healthWarnCount = healthReport?.items.filter((item) => item.status === "WARN").length ?? 0;
-  const releaseItems = [
-    {
-      label: "Version",
-      status: appVersion === "1.0.1" ? "PASS" : "FAIL",
-      detail: `App version hiện tại: ${appVersion}.`,
-    },
-    {
-      label: "Dữ liệu mẫu",
-      status:
-        bootstrap &&
-        bootstrap.documents.length > 0 &&
-        bootstrap.announcements.length > 0 &&
-        bootstrap.scheduleItems.length > 0 &&
-        bootstrap.exams.length > 0
-          ? "PASS"
-          : "FAIL",
-      detail: `${bootstrap?.documents.length ?? 0} tài liệu, ${bootstrap?.announcements.length ?? 0} thông báo, ${bootstrap?.scheduleItems.length ?? 0} lịch học, ${bootstrap?.exams.length ?? 0} lịch thi.`,
-    },
-    {
-      label: "Health report",
-      status: !healthReport ? "WARN" : healthFailCount === 0 ? "PASS" : "FAIL",
-      detail: healthReport ? `${healthReport.items.length} hạng mục, ${healthFailCount} fail, ${healthWarnCount} warn.` : "Chưa có health report.",
-    },
-    {
-      label: "Storage",
-      status: storageSummary ? "PASS" : "WARN",
-      detail: storageSummary
-        ? `${storageSummary.sampleDocumentCount} file mẫu, ${storageSummary.downloadFileCount} file downloads, ${storageSummary.actionLogCount} action log trong SQLite.`
-        : "Chưa có storage summary.",
-    },
-    {
-      label: "Diagnostic export",
-      status: "PASS",
-      detail: "Có thể xuất JSON chẩn đoán vào downloads, không chứa chat/file/token/secret.",
-    },
-    {
-      label: "Local-first",
-      status: "PASS",
-      detail: "Không AI API, không connector trường thật, không đăng nhập tài khoản trường trong bản 1.0.1.",
-    },
-    {
-      label: "Action log",
-      status: "PASS",
-      detail: `${actionLogCount} bản ghi metadata đang được hiển thị trong UI.`,
-    },
-  ] as const;
+  const releaseItems = buildReleaseChecklist({
+    appVersion,
+    bootstrap,
+    healthReport,
+    storageSummary,
+    actionLogCount,
+  });
 
   return (
     <div className="page-card">

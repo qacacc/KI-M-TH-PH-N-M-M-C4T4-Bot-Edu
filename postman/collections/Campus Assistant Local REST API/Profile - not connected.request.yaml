@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{BASE_URL}}/api/v1/profile"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('HTTP 404', function () { pm.response.to.have.status(404); });
+      const body = pm.response.json();
+      pm.test('Không giả hồ sơ đã xác minh', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql('PROFILE_NOT_CONNECTED'); });
+    language: text/javascript
+order: 3000

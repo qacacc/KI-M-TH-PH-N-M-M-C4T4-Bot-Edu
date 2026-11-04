@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   exportLocalAppDataJSON,
   importLocalAppDataJSON,
@@ -26,12 +26,8 @@ const mockLocalStorage = (() => {
   };
 })();
 
-if (typeof globalThis.localStorage === "undefined") {
-  Object.defineProperty(globalThis, "localStorage", {
-    value: mockLocalStorage,
-    writable: true,
-  });
-}
+// Bắt buộc ghi đè localStorage của Node bằng mock object của Vitest
+vi.stubGlobal("localStorage", mockLocalStorage);
 
 describe("Backup & Restore JSON Security & Validation Test Suite", () => {
   beforeEach(() => {

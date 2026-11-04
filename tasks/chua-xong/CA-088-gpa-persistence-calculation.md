@@ -9,9 +9,11 @@
 
 ## Truth check và mục tiêu
 
-CONFIRMED (static source): storageFailed cố định chặn persist sau recovery; missing legacy parse [] thay bảng; hàng draft mặc định F/0 tính ngay vào GPA.
+CONFIRMED (audit baseline 2026-10-09): storage recovery và legacy missing/corrupt cần được kiểm tra theo source tương ứng; kết luận về hàng draft F/0 là lịch sử trước PR CA-088.02, không còn mô tả source hiện tại.
 
-Evidence: `src/components/GpaCalculator.tsx:34`, `src/components/GpaCalculator.tsx:46`, `src/components/GpaCalculator.tsx:72`, `src/gpaData.ts:6`. Hậu quả runtime chưa có repro riêng phải ghi ASSUMED/UNKNOWN trong triển khai; xem phân loại chi tiết ở audit.
+CONFIRMED (PR CA-088.02 source): hàng mới khởi tạo `credits`, `letterGrade`, `score10` rỗng; `calculateGpaStats` bỏ qua môn thiếu dữ liệu điểm; F/0 đã nhập vẫn là grade hợp lệ. `parseGpaSubjects` phải giới hạn grade bằng own-key allowlist, không chấp nhận key kế thừa như `constructor`/`toString`.
+
+Evidence hiện tại: `src/components/GpaCalculator.tsx` (`addSubject`), `src/gpaData.ts` (`parseGpaSubjects`, `calculateGpaStats`), `src/gpaData.test.ts`, `src/components/GpaCalculator.test.tsx`. Khả năng runtime ngoài test vẫn chưa xác minh bằng manual.
 
 PLANNED: Phân biệt missing/corrupt/valid và draft/chưa nhập/F0 thật. Recovery explicit mới gỡ chặn lưu. Giữ bản lỗi gốc; thang điểm chỉ tham khảo tới khi có contract trường.
 
@@ -44,7 +46,14 @@ PLANNED: Phân biệt missing/corrupt/valid và draft/chưa nhập/F0 thật. Re
 
 npm run check:all; GPA pure + component storage/recovery tests.
 
-Các lệnh mới/test mới là PLANNED: agent triển khai phải ghi tên lệnh thực tế, expected failure trước sửa và pass sau sửa. Không dùng rg thay cho test hành vi.
+Evidence commands tại thời điểm lập task là kế hoạch ban đầu; xem review update bên dưới để biết kết quả thực tế. Không dùng rg thay cho test hành vi.
+
+## Review remediation update (2026-10-26)
+
+- `CONFIRMED`: parser và calculator chỉ nhận own-key letter grade; điểm trống không tính, F/0 hợp lệ vẫn được tính.
+- Evidence: `src/gpaData.ts`, `src/gpaData.test.ts`, `src/components/GpaCalculator.test.tsx`; `npm run check:all` chạy 84 Vitest, layout, Postman, build, Rust check và Rust tests PASS.
+- Full command kết thúc non-zero ở `npm audit`: 2 moderate `@vitest/mocker`, 1 high Vite advisory. Chưa cập nhật dependency trong scope này.
+- CA-088 còn gồm recovery/legacy persistence chưa hoàn tất; status tổng tiếp tục `Proposed`, không chuyển `Done`. Điểm/tín chỉ trường thật và bảng quy đổi vẫn `UNKNOWN`.
 
 ## Rollback
 

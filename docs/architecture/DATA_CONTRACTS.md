@@ -143,8 +143,8 @@ Các ví dụ bên dưới không xác minh API trường. Native UTH hiện tr�
 ```json
 {
   "label": "Local-first",
-  "status": "PASS",
-  "detail": "Khong AI API, khong connector truong that, khong dang nhap tai khoan truong trong ban 1.0.1."
+  "status": "WARN",
+  "detail": "Phạm vi bản 1.0.1 là local-only; connector trường thật và đăng nhập tài khoản trường chưa verified."
 }
 ```
 

@@ -35,7 +35,9 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 ## Active task
 
-- CA-098.01: thiết kế contract và Bearer auth cho REST loopback Postman. CA-080 vẫn In Progress nhưng chờ evidence contract UTH riêng, không thuộc task implementation đang chạy; CA-086 dừng theo yêu cầu user, source chưa commit; CA-081 Proposed.
+- CA-084: release checklist local-only đang được sửa và đối chiếu; còn `npm run check:all`, native smoke, installer/review và đồng bộ Jira.
+- CA-090.01: migration SQLite/reset an toàn đã triển khai; giữ In Progress, không sửa trong scope CA-084; còn manual native/UI verification, PR/review và đồng bộ Jira.
+- CA-080 local REST/Postman, bao gồm phần CA-098.01 về REST loopback/Bearer auth: latest automated `npm run check:all` PASS (84 Vitest, 10 Postman checks, 55 Rust, audit 0); vẫn chờ manual HTTP/two-instance smoke và contract/fixture UTH thật. CA-086 dừng theo yêu cầu user; CA-081 Proposed.
 
 ## Done
 
@@ -93,12 +95,12 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 | CA-080 | P0 | Xác minh hợp đồng API trường bằng Postman | `tasks/chua-xong/CA-080-postman-school-api-contract-verification.md` | In Progress; local REST/Postman complete, UTH API/business contract UNKNOWN. |
 | CA-081 | P0 | Sửa parser UTH và tính toàn vẹn đồng bộ | `tasks/chua-xong/CA-081-uth-parser-sync-data-integrity.md` | Proposed / Remediation; phụ thuộc contract verified của CA-080. |
-| CA-084 | P1 | Nghiệm thu và phát hành từ source đã sửa | `tasks/chua-xong/CA-084-release-audit-security-checklist.md` | Proposed; chưa sửa runtime. |
+| CA-084 | P1 | Nghiệm thu và phát hành từ source đã sửa | `tasks/chua-xong/CA-084-release-audit-security-checklist.md` | In Progress; checklist local-only đã sửa, còn native smoke/installer/review. |
 | CA-086 | P1 | Sửa lifecycle khởi tạo và trạng thái degraded | `tasks/chua-xong/CA-086-app-bootstrap-lifecycle.md` | In Progress; source chưa commit, dừng theo yêu cầu user. |
 | CA-087 | P1 | Toàn vẹn phiên chat và lưu lịch sử | `tasks/chua-xong/CA-087-chat-session-integrity.md` | Proposed; chưa sửa runtime. |
 | CA-088 | P1 | Sửa lưu, phục hồi và tính GPA | `tasks/chua-xong/CA-088-gpa-persistence-calculation.md` | Proposed; chưa sửa runtime. |
 | CA-089 | P1 | Nguồn dữ liệu và trạng thái trường trung thực | `tasks/chua-xong/CA-089-school-ui-source-truth.md` | Proposed; chưa sửa runtime. |
-| CA-090 | P1 | Sao lưu và reset đúng phạm vi, không mất dữ liệu | `tasks/chua-xong/CA-090-backup-reset-data-safety.md` | Proposed; chưa sửa runtime. |
+| CA-090 | P1 | Sao lưu và reset đúng phạm vi, không mất dữ liệu | `tasks/chua-xong/CA-090-backup-reset-data-safety.md` | In Progress; CA-090.01 đã sửa migration/reset, backup round-trip vẫn chưa nghiệm thu. |
 | CA-091 | P1 | Thùng rác an toàn và một nguồn dữ liệu | `tasks/chua-xong/CA-091-trash-recovery-native-owner.md` | Proposed; chưa sửa runtime. |
 | CA-092 | P1 | Xuất lịch đúng múi giờ và phạm vi học kỳ | `tasks/chua-xong/CA-092-calendar-timezone-validity.md` | Proposed; chưa sửa runtime. |
 | CA-093 | P1 | Tìm kiếm công khai: lỗi, thời gian và nguồn tin | `tasks/chua-xong/CA-093-public-search-error-budget.md` | Proposed; chưa sửa runtime. |

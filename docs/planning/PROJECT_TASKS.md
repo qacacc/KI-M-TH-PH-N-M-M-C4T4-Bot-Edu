@@ -5,16 +5,24 @@
 - Status: In Progress; branch `feat/khiem/ca-098-01-rest-design`.
 - **PLANNED:** loopback API requires `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`; all Postman calls use HTTP Bearer auth. Missing/invalid token returns 401; configuration is not committed.
 - **CONFIRMED (source/tests):** UTH contract gate returns 503 for schedule/exams; profile remains not connected (404). Local response is not UTH fixture evidence. Startup failure leaves desktop running, including the second-instance bind-conflict path; startup log failure is best-effort.
-- **UNKNOWN:** Manual Windows launch/Postman HTTP smoke has not been run. Full `npm run check:all` fails at npm audit advisories after code/test/build stages pass; task remains In Progress.
+- **UNKNOWN:** Manual Windows launch/Postman HTTP smoke has not been run. The earlier check failed at npm audit before the dependency refresh; the updated check result is recorded below after rerunning on the merged tree.
 - Design/how-to: [REST API contract](../testing/REST_API_DESIGN.md); [Postman README](../../postman/README.md).
-- **CONFIRMED (verification):** `cargo test --manifest-path src-tauri/Cargo.toml api::tests` passed 15 tests; `npm run check:postman` passed 9 checks; `npm run check:all` passed code/test/build/Rust stages but failed at npm audit (2 moderate, 1 high advisories).
+- **CONFIRMED (historical verification):** `cargo test --manifest-path src-tauri/Cargo.toml api::tests` passed 15 tests; `npm run check:postman` passed 9 checks; an earlier `npm run check:all` passed code/test/build/Rust stages but failed at npm audit (2 moderate, 1 high advisories).
+- **CONFIRMED (latest merged-tree verification, 2026-10-26):** `npm ci` and `npm run check:all` passed: 84 Vitest, layout, 10 local Postman checks, build, Rust check, 55 Rust tests, and npm audit 0 vulnerabilities.
 - **UNKNOWN:** Manual Postman local HTTP call and Windows launch not performed; do not mark task Done.
+
+## CA-090.01 - SQLite migration và reset an toàn (2026-10-19)
+
+- Status: In Progress; triển khai native migration/reset đã có evidence, chưa review/merge Jira.
+- CURRENT: `init_app` không còn xóa lịch sử chat; SQLite bật foreign key và test migration giữ message cũ; ErrorBoundary chỉ reload; Settings reset có allowlist và confirm.
+- Evidence: `npm run check:all` PASS (67 Vitest, 43 Rust, build/layout/Postman/npm audit); manual native/UI chưa chạy.
+- Giới hạn: CA-090.02 backup round-trip và xóa DB/assets không thuộc phần CA-090.01 này.
 
 ## CA-080 - Setup Postman local (2026-10-10)
 
 - Status: In Progress; local REST/Postman đã có, API/auth/business schema trường UNKNOWN.
 - Collection local là nguồn kiểm thử REST nội bộ; UTH probe không có collection chuẩn ở root, không tự tạo contract. Live/consent/review defaults vẫn bị khóa, redirect/cookie jar tắt khi có probe UTH.
-- Desktop import collection/environment thành công. Không HTTP trường hoặc live/Vault test. Local Postman PASS 6 static checks; check:all PASS 65 Vitest/42 Rust/layout/tsc/Vite/cargo check/npm audit0.
+- Desktop import collection/environment thành công. Không HTTP trường hoặc live/Vault test. Latest local Postman gate PASS 10 checks; latest `npm run check:all` PASS 84 Vitest/55 Rust/layout/build/cargo check/npm audit 0. Static checks do not replace manual HTTP smoke.
 - Scope ngoài: chưa fixture thật, chưa parser Rust, không gỡ quarantine. CA-086 source cũ chưa commit được giữ nguyên, dừng theo yêu cầu user.
 - Hướng dẫn: [Postman README](../../postman/README.md); [contract UNKNOWN](../testing/UTH_API_CONTRACT.md).
 
@@ -451,6 +459,13 @@
 - Tổng cộng 55 spec: 31 done, 22 chua-xong, 2 hoan-lam. Chua-xong gồm cả chờ đối chiếu/thiếu Status/Superseded, không đồng nghĩa cần viết lại tất cả.
 - Chỉ sửa tài liệu/cấu trúc task; không đổi runtime/schema/collection hay trạng thái task cũ.
 - Kiểm chứng sau chuyển thư mục: 55 spec đúng nhóm và có liên kết README; git diff --check pass; npm run check:all pass 62 Vitest/39 Rust/layout/build/cargo check, audit 0. Không nghiệm thu lại native auth hoặc UI cũ.
+
+## CA-084 release checklist reconciliation - 2026-10-21
+
+- CONFIRMED: `ReleasePage` trước đây đánh `Dữ liệu mẫu` là FAIL khi bootstrap local-only không seed academic data và đánh một số capability PASS từ nhãn tĩnh.
+- CURRENT: checklist được tách thành `src/releaseChecklist.ts`; local-only/connector chưa verified là WARN, còn FAIL chỉ đến từ version sai hoặc health report có lỗi runtime.
+- AUTOMATED: `npm run test -- --run src/releaseChecklist.test.ts` PASS 2/2.
+- PENDING: xử lý advisory `npm audit` ngoài scope dependency, native smoke, restart/upgrade DB, privacy/path checks, installer và review; chưa chuyển CA-084 sang Done.
 
 ## Audit tổng thể và lập backlog - 2026-10-09
 

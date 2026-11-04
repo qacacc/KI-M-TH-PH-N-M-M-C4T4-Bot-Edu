@@ -3,6 +3,11 @@ Source: local REST collection/environment + UTH probe guard scripts. Không HTTP
 Verification: local Postman 6 static checks PASS; check:all PASS 65 Vitest / 42 Rust / layout / tsc+Vite / cargo check / npm audit 0.
 Status: CA-080 In Progress ở phạm vi local REST/Postman. API/business contract/Vault live UTH vẫn UNKNOWN. CA-081 Proposed; UTH runtime vẫn quarantined.
 CA-086: source dở chưa commit từ lượt trước, dừng theo user; không đổi runtime trong setup Postman.
+
+=== CA-084 RELEASE CHECKLIST - 2026-10-21 ===
+Source: `src/releaseChecklist.ts` và `src/pages/ReleasePage.tsx` đã phân biệt local-only với connector UTH chưa verified.
+Verification: targeted Vitest pass 2/2; full check chạy qua Vitest 69/69, layout, Postman local, TypeScript/Vite build, Cargo check và Rust 43/43, nhưng dừng ở `npm audit` vì `vite` có 1 advisory mức High. Native smoke, installer và manual UI vẫn pending.
+Limit: Không coi dữ liệu học tập rỗng là FAIL và không coi capability chưa smoke-test là PASS; không claim release ready.
 Git destination: origin https://github.com/qacacc/bot-edu.git, main. CA-086 source không thuộc commit Postman. Test 65 Vitest là working tree gồm 3 test CA-086 chưa commit. Baseline/audit lịch sử bên dưới không đại diện trạng thái mới.
 
 === SOURCE AUDIT - 2026-10-09 / baseline f5c0055 ===

@@ -1,26 +1,14 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Calculator, RotateCcw } from "lucide-react";
-import { GPA_STORAGE_KEY, GPA_LEGACY_STORAGE_KEY, parseGpaSubjects } from "../gpaData";
+import { GPA_STORAGE_KEY, GPA_LEGACY_STORAGE_KEY, parseGpaSubjects, calculateGpaStats } from "../gpaData";
 
 export interface GpaSubject {
   id: string;
   name: string;
-  credits: number;
-  letterGrade: string; // A+, A, B+, B, C+, C, D+, D, F
-  score10: number;
+  credits: number | "";
+  letterGrade: string;
+  score10: number | "";
 }
-
-const GRADE_CONVERSION: Record<string, { scale4: number; defaultScore10: number }> = {
-  "A+": { scale4: 4.0, defaultScore10: 9.5 },
-  A: { scale4: 3.7, defaultScore10: 8.5 },
-  "B+": { scale4: 3.5, defaultScore10: 8.0 },
-  B: { scale4: 3.0, defaultScore10: 7.2 },
-  "C+": { scale4: 2.5, defaultScore10: 6.5 },
-  C: { scale4: 2.0, defaultScore10: 5.8 },
-  "D+": { scale4: 1.5, defaultScore10: 5.0 },
-  D: { scale4: 1.0, defaultScore10: 4.2 },
-  F: { scale4: 0.0, defaultScore10: 2.0 },
-};
 
 export function GpaCalculator() {
   const [notice, setNotice] = useState("");
@@ -47,9 +35,9 @@ export function GpaCalculator() {
     const nextItem: GpaSubject = {
       id: crypto.randomUUID(),
       name: "",
-      credits: 1,
-      letterGrade: "F",
-      score10: 0,
+      credits: "",
+      letterGrade: "",
+      score10: "",
     };
     setSubjects([...subjects, nextItem]);
   }
@@ -63,8 +51,7 @@ export function GpaCalculator() {
     setSubjects(
       subjects.map((s) => {
         if (s.id !== id) return s;
-        const updated = { ...s, ...fields };
-        return updated;
+        return { ...s, ...fields };
       })
     );
   }
@@ -79,45 +66,36 @@ export function GpaCalculator() {
     }
   }
 
-  // Tính toán chỉ số GPA & CPA
-  const totalCredits = subjects.reduce((sum, s) => sum + (s.credits || 0), 0);
-  
-  const weightedScale4 = subjects.reduce((sum, s) => {
-    const scale4 = GRADE_CONVERSION[s.letterGrade]?.scale4 ?? 0;
-    return sum + scale4 * (s.credits || 0);
-  }, 0);
-
-  const weightedScale10 = subjects.reduce((sum, s) => {
-    return sum + (s.score10 || 0) * (s.credits || 0);
-  }, 0);
-
-  const gpaScale4 = totalCredits > 0 ? (weightedScale4 / totalCredits).toFixed(2) : "0.00";
-  const gpaScale10 = totalCredits > 0 ? (weightedScale10 / totalCredits).toFixed(2) : "0.00";
-
-  const numGpa4 = Number(gpaScale4);
+  const { totalCredits, gpaScale4, gpaScale10, numGpa4 } = calculateGpaStats(subjects);
 
   function getClassification(gpa4: number): { text: string; color: string } {
-    if (gpa4 >= 3.6) return { text: "Xuất sắc 🌟", color: "#22c55e" };
-    if (gpa4 >= 3.2) return { text: "Giỏi 🥇", color: "#3b82f6" };
-    if (gpa4 >= 2.5) return { text: "Khá 🥈", color: "#eab308" };
-    if (gpa4 >= 2.0) return { text: "Trung bình 🥉", color: "#f97316" };
+    if (gpa4 >= 3.6) return { text: "Xuất sắc", color: "#22c55e" };
+    if (gpa4 >= 3.2) return { text: "Giỏi", color: "#3b82f6" };
+    if (gpa4 >= 2.5) return { text: "Khá", color: "#eab308" };
+    if (gpa4 >= 2.0) return { text: "Trung bình", color: "#f97316" };
     return { text: "Yếu / Cảnh báo ⚠️", color: "#ef4444" };
   }
 
   const classification = totalCredits ? getClassification(numGpa4) : { text: "Chưa có điểm", color: "var(--muted)" };
 
+  function getLetterGradeFrom10(score: number): string {
+    if (score >= 9.0) return "A+";
+    if (score >= 8.5) return "A";
+    if (score >= 8.0) return "B+";
+    if (score >= 7.0) return "B";
+    if (score >= 6.5) return "C+";
+    if (score >= 5.5) return "C";
+    if (score >= 5.0) return "D+";
+    if (score >= 4.0) return "D";
+    return "F";
+  }
+
   return (
     <div className="gpa-calculator" style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
       {(notice || storageFailed) && <p role="alert" className="warning-box">{notice || "Không đọc được dữ liệu điểm đã lưu. Dữ liệu cũ được giữ nguyên; điểm mới chỉ ở trong phiên này."}</p>}
       {!subjects.length && <p className="empty-state">Chưa có bảng điểm. Thêm môn học và nhập điểm của bạn để ước tính.</p>}
-      {/* TỔNG QUAN GPA / CPA */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "12px",
-        }}
-      >
+      
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
         <div style={{ padding: "14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }}>
           <span style={{ fontSize: "12px", color: "var(--muted)" }}>Tổng tín chỉ tích lũy</span>
           <div style={{ fontSize: "24px", fontWeight: 700, color: "var(--accent)", marginTop: "4px" }}>
@@ -147,7 +125,6 @@ export function GpaCalculator() {
         </div>
       </div>
 
-      {/* BẢNG MÔN HỌC */}
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "16px" }}>
         <div className="gpa-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
           <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
@@ -168,8 +145,8 @@ export function GpaCalculator() {
             <tr style={{ borderBottom: "1px solid var(--border)", color: "var(--muted)", textAlign: "left" }}>
               <th style={{ padding: "8px", width: "40%" }}>Tên môn học</th>
               <th style={{ padding: "8px", width: "15%" }}>Tín chỉ</th>
-              <th style={{ padding: "8px", width: "20%" }}>Điểm chữ</th>
               <th style={{ padding: "8px", width: "15%" }}>Thang 10</th>
+              <th style={{ padding: "8px", width: "20%" }}>Điểm chữ</th>
               <th style={{ padding: "8px", width: "10%", textAlign: "center" }}>Xóa</th>
             </tr>
           </thead>
@@ -180,16 +157,9 @@ export function GpaCalculator() {
                   <input
                     type="text"
                     value={sub.name}
+                    placeholder="Nhập tên môn..."
                     onChange={(e) => updateSubject(sub.id, { name: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "6px 8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                      color: "var(--text)",
-                      fontSize: "13px",
-                    }}
+                    style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "13px" }}
                   />
                 </td>
                 <td style={{ padding: "8px" }}>
@@ -198,39 +168,13 @@ export function GpaCalculator() {
                     min={1}
                     max={10}
                     value={sub.credits}
-                    onChange={(e) => updateSubject(sub.id, { credits: Math.min(10, Math.max(1, Number(e.target.value))) })}
-                    style={{
-                      width: "100%",
-                      padding: "6px 8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                      color: "var(--text)",
-                      fontSize: "13px",
+                    placeholder="TC"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateSubject(sub.id, { credits: val === "" ? "" : Math.min(10, Math.max(1, Number(val))) });
                     }}
+                    style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "13px" }}
                   />
-                </td>
-                <td style={{ padding: "8px" }}>
-                  <select
-                    value={sub.letterGrade}
-                    onChange={(e) => updateSubject(sub.id, { letterGrade: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "6px 8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                      color: "var(--text)",
-                      fontSize: "13px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {Object.keys(GRADE_CONVERSION).map((g) => (
-                      <option key={g} value={g}>
-                        {g} ({GRADE_CONVERSION[g].scale4.toFixed(1)} / 4.0)
-                      </option>
-                    ))}
-                  </select>
                 </td>
                 <td style={{ padding: "8px" }}>
                   <input
@@ -239,16 +183,23 @@ export function GpaCalculator() {
                     min={0}
                     max={10}
                     value={sub.score10}
-                    onChange={(e) => updateSubject(sub.id, { score10: Math.min(10, Math.max(0, Number(e.target.value))) })}
-                    style={{
-                      width: "100%",
-                      padding: "6px 8px",
-                      borderRadius: "6px",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                      color: "var(--text)",
-                      fontSize: "13px",
+                    placeholder="Trống"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const numVal = val === "" ? "" : Math.min(10, Math.max(0, Number(val)));
+                      const autoLetterGrade = numVal === "" ? "" : getLetterGradeFrom10(numVal);
+                      updateSubject(sub.id, { score10: numVal, letterGrade: autoLetterGrade });
                     }}
+                    style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "13px" }}
+                  />
+                </td>
+                <td style={{ padding: "8px" }}>
+                  <input
+                    type="text"
+                    value={sub.letterGrade}
+                    placeholder="Tự động"
+                    readOnly
+                    style={{ width: "100%", padding: "6px 8px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "13px" }}
                   />
                 </td>
                 <td style={{ padding: "8px", textAlign: "center" }}>

@@ -6,6 +6,8 @@ CA-080 setup (2026-10-10): mặc định probe bị khóa; consent/live/request-
 
 CA-083 CURRENT (2026-10-09): contract_unverified là error riêng cho UTH; không transition sang authenticated/sync_success/cache_ready. Dữ liệu cache cũ không bị xóa nhưng không được hiển thị như lịch chính thức. Không đồng nhất error với empty, không tự retry thu token. Mở portal browser không đổi state auth của app.
 
+CA-090.01 CURRENT (2026-10-19): migration SQLite giữ dữ liệu cũ; khởi động không có transition xóa lịch sử chat. Reset cấu hình sau confirm chỉ chuyển các key cấu hình về trạng thái mặc định; GPA/chat/profile không bị chuyển sang trạng thái xóa. Manual native/UI verification chưa chạy.
+
 Tài liệu định nghĩa chính thức các máy trạng thái (State Machines) trong ứng dụng. AI không được tự phát minh ra trạng thái mới ngoài danh sách này.
 
 ---

@@ -1,8 +1,6 @@
 $kind: http-request
 url: "{{BASE_URL}}/api/v1/exams?studentCode={{STUDENT_CODE}}"
 method: GET
-queryParams:
-  studentCode: "{{STUDENT_CODE}}"
 scripts:
   - type: afterResponse
     code: |-
@@ -10,4 +8,4 @@ scripts:
       const body = pm.response.json();
       pm.test('Lỗi có mã rõ ràng', function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.be.a('string'); });
     language: text/javascript
-order: 5000
+order: 8000

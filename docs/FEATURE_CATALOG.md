@@ -32,7 +32,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 | THEME_AND_APPEARANCE | Silent save/two preset stores/shared asset cần CA-095 |
 | CORE_MAINTAINABILITY | Format/clippy fail và test helper/static gaps, CA-096 |
 | GOVERNANCE | Roadmap/duplicate ID/old evidence reconciliation, CA-097 |
-| RELEASE | Checklist static/samples-required/installer mới, CA-084 |
+| RELEASE | Checklist local-only semantics, native smoke/installer evidence và reconciliation, CA-084 |
 
 Đây là tracking PLANNED, không phải các fix đã triển khai. CA-080 đang In Progress ở phạm vi local REST/Postman; CA-081 vẫn Proposed; UTH auth/sync/read vẫn quarantined. CA-064/085 vẫn Frozen.
 
@@ -164,7 +164,8 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
   - Last Verified: 2026-07-27
   - Verification Scope: AUTOMATED (`npm run check:all` PASS)
 - **Known Gaps & Tracking**:
-  - Persistence to SQLite for custom semester grades | Decision: **`DEFERRED`**
+  - Grade entry is manual/localStorage only; blank draft rows are excluded from GPA and persisted grade labels use an own-key allowlist. SQLite persistence remains **`DEFERRED`**; no verified school grade scale/data source.
+  - Verification (historical before dependency refresh): `npm run check:all` passed Vitest (84 tests), layout, Postman, TypeScript/Vite build, Rust check and Rust tests, then exited non-zero at `npm audit` for 2 moderate `@vitest/mocker` and 1 high Vite advisories. Latest merged-tree run passes `npm run check:all` with 84 Vitest, 55 Rust tests, and audit 0 vulnerabilities. Manual/native GPA validation remains `UNKNOWN`.
 
 ---
 
