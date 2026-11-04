@@ -1,0 +1,245 @@
+# ci.yml  [CA-100.01]
+#
+# CI – Campus Assistant Local
+# Chạy trên Windows runner (bắt buộc cho Tauri / rusqlite bundled).
+# Trigger: mọi push và PR vào main; có thể kích hoạt thủ công.
+#
+# Jobs:
+#   1. frontend  – TypeScript build + Vitest unit tests
+#   2. rust      – cargo fmt, cargo clippy, cargo test
+#   3. report    – gom artifact từ cả hai job
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# ── Bảo mật: quyền tối thiểu cho toàn workflow ──────────────────────────────
+permissions:
+  contents: read      # checkout source
+  checks:   write     # upload test results
+  actions:  read      # download artifact liên job
+
+# Huỷ run cũ cùng branch/PR để tiết kiệm phút runner
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── Biến dùng chung ──────────────────────────────────────────────────────────
+env:
+  CARGO_TERM_COLOR: always
+  # Không cache registry toàn cục → ngăn rò rỉ secret qua GHA cache
+  CARGO_HOME: ${{ github.workspace }}/.cargo-home
+
+jobs:
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # JOB 1: Frontend — TypeScript + Vitest
+  # ══════════════════════════════════════════════════════════════════════════
+  frontend:
+    name: Frontend (TS build + tests)
+    runs-on: windows-latest    # Windows runner, nhất quán với môi trường dev
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # Cache node_modules theo hash của package-lock.json
+      # key gắn runner OS để tránh nhầm artifact cross-platform
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: node-${{ runner.os }}-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        # ci thay vì install: không sửa lock file, nhanh hơn
+        run: npm ci
+
+      # ── TypeScript type-check ─────────────────────────────────────────────
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+
+      # ── Vite production build (smoke test build artifacts) ────────────────
+      - name: Build (frontend)
+        run: npm run build
+
+      # ── Vitest unit tests với báo cáo JSON + JUnit ───────────────────────
+      - name: Run Vitest unit tests
+        run: npm run test:ci
+        env:
+          CI: true
+
+      # ── Upload test artifacts ─────────────────────────────────────────────
+      - name: Upload frontend test results
+        if: always()   # upload kể cả khi test thất bại
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-results-${{ github.run_number }}
+          path: test-results/
+          retention-days: 30
+          if-no-files-found: warn
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # JOB 2: Rust — fmt + clippy + cargo test
+  # ══════════════════════════════════════════════════════════════════════════
+  rust:
+    name: Rust (fmt + clippy + tests)
+    runs-on: windows-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # Rust stable toolchain với định danh component rõ ràng
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # Cache thư mục build Rust theo Cargo.lock
+      # Chỉ cache workspace .cargo-home (CARGO_HOME) và target/
+      # Không cache $HOME/.cargo/registry để tránh cross-project cache leak
+      - name: Cache Rust build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cargo-home
+            src-tauri/target
+          key: rust-${{ runner.os }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: rust-${{ runner.os }}-
+
+      # ── cargo fmt ─────────────────────────────────────────────────────────
+      - name: Check Rust formatting
+        working-directory: src-tauri
+        run: cargo fmt --all -- --check
+
+      # ── cargo clippy ──────────────────────────────────────────────────────
+      - name: Run Clippy lints
+        working-directory: src-tauri
+        # -D warnings: treat warnings as errors trong CI
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        env:
+          CARGO_HOME: ${{ github.workspace }}/.cargo-home
+
+      # ── cargo test ────────────────────────────────────────────────────────
+      - name: Run Rust unit tests
+        working-directory: src-tauri
+        run: >
+          cargo test --all-features
+          --no-fail-fast
+          -- --test-threads=4
+        env:
+          CARGO_HOME: ${{ github.workspace }}/.cargo-home
+
+      # Lưu Cargo test summary (không có junit natively → lưu log thô)
+      - name: Collect Rust test summary
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path rust-test-results | Out-Null
+          $summary = @{
+            run_number = "${{ github.run_number }}"
+            sha        = "${{ github.sha }}"
+            ref        = "${{ github.ref }}"
+            timestamp  = (Get-Date -Format o)
+          }
+          $summary | ConvertTo-Json | Set-Content rust-test-results/summary.json
+
+      - name: Upload Rust test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-test-results-${{ github.run_number }}
+          path: rust-test-results/
+          retention-days: 30
+          if-no-files-found: warn
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # JOB 3: Report — gom artifact, tạo CI summary
+  # ══════════════════════════════════════════════════════════════════════════
+  report:
+    name: CI Report
+    runs-on: windows-latest
+    needs: [frontend, rust]
+    if: always()   # chạy dù upstream fail
+
+    permissions:
+      contents: read
+      checks:   write
+
+    steps:
+      - name: Download frontend results
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-test-results-${{ github.run_number }}
+          path: all-results/frontend
+        continue-on-error: true   # không có artifact nếu job bị cancel
+
+      - name: Download rust results
+        uses: actions/download-artifact@v4
+        with:
+          name: rust-test-results-${{ github.run_number }}
+          path: all-results/rust
+        continue-on-error: true
+
+      # Publish JUnit XML lên GitHub Checks UI
+      - name: Publish test report to GitHub Checks
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Vitest Results
+          path: all-results/frontend/vitest.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      # Tạo GITHUB_STEP_SUMMARY dạng Markdown
+      - name: Write CI job summary
+        if: always()
+        shell: pwsh
+        run: |
+          $fe  = "${{ needs.frontend.result }}"
+          $rs  = "${{ needs.rust.result }}"
+          $ok  = ($fe -eq 'success') -and ($rs -eq 'success')
+          $icon = if ($ok) { '✅' } else { '❌' }
+
+          $md = @"
+          ## $icon CI — Campus Assistant Local
+
+          | Job | Kết quả |
+          |-----|---------|
+          | Frontend (TS + Vitest) | $fe |
+          | Rust (fmt + clippy + test) | $rs |
+
+          **Commit:** \`${{ github.sha }}\`
+          **Branch:** \`${{ github.ref_name }}\`
+          **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          "@
+
+          $md | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+
+      # Upload toàn bộ artifact gộp cho dễ tải
+      - name: Upload combined CI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-all-results-${{ github.run_number }}
+          path: all-results/
+          retention-days: 30
+          if-no-files-found: warn

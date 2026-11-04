@@ -1,0 +1,4 @@
+# rustfmt.toml  [CA-100.01]
+# Giữ nguyên style mặc định của rustfmt để cargo fmt --check không false-positive.
+# File này phải tồn tại để CI và local dev dùng cùng một cấu hình.
+edition = "2021"
