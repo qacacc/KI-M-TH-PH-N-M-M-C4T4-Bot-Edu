@@ -1,6 +1,6 @@
 # CA-093 - Tìm kiếm công khai: lỗi, thời gian và nguồn tin
 
-- Status: Proposed
+- Status: In Progress (CA-093.01 implementation)
 - Priority: P1
 - Created: 2026-10-09
 - Owner: AI + User review
@@ -46,6 +46,22 @@ PLANNED: Phân biệt complete/partial/offline/no-match; budget/cancel/bounded c
 npm run check:all; Rust fetcher fault tests + local HTTP redirect fixtures; query budget tests.
 
 Các lệnh mới/test mới là PLANNED: agent triển khai phải ghi tên lệnh thực tế, expected failure trước sửa và pass sau sửa. Không dùng rg thay cho test hành vi.
+
+## Evidence cập nhật CA-093.01 (2026-10-25)
+
+Phạm vi CA-093.01: phân biệt lỗi/không thấy, hạn chót tổng, retry tối đa 2 lần, nút Thử lại. Redirect/content-type, cancel và cache vẫn PLANNED trong CA-093.
+
+- CURRENT `src-tauri/src/public_search.rs:382-387`: hạn chót tổng 20s cho cả lượt tìm, timeout mỗi request <= 8s và không vượt thời gian còn lại, tối đa 3 lần gọi (1 + 2 retry) mỗi URL.
+- CURRENT `src-tauri/src/public_search.rs:424`: `fetch_with_retry` dừng khi hết hạn chót, không retry vô tận.
+- CURRENT `src-tauri/src/public_search.rs:499`: `status` = `error` khi không đọc được nguồn nào; `partial` khi có nguồn lỗi hoặc bị cắt bởi hạn chót; `no_match` chỉ khi mọi nguồn đọc được; `success` khi có kết quả đầy đủ.
+- CURRENT `src-tauri/src/public_search.rs:472`, `src-tauri/src/models.rs`: `failedUrls` giữ URL gốc của nguồn lỗi; `searchedUrls`/`sourceUrl` không đổi.
+- CURRENT `src-tauri/src/public_search.rs:557`: command chạy crawl qua `spawn_blocking`, không giữ main thread trong lúc chờ mạng.
+- CURRENT `src/publicSearchMessage.ts:24-26`: trạng thái `error` hiển thị "Mất kết nối tới nguồn tài liệu", không dùng câu "không tìm thấy".
+- CURRENT `src/App.tsx:899-909`, `src/App.tsx:1498`: tin nhắn `error`/`partial`/lỗi IPC gắn `retryQuery` và nút Thử lại (disable khi đang bận); `setIsBusy(false)` nằm trong `finally`.
+- AUTOMATED: `cargo test --manifest-path src-tauri/Cargo.toml public_search` PASS 11/11 (6 test mới: all-failure, retry 3 lần, retry thành công, partial + URL gốc, hạn chót 0s, timeout bị chặn). `tests/search.test.ts` PASS 5/5.
+- AUTOMATED: `npm run check:all` FAIL chỉ ở bước cuối `npm audit` (3 advisory vite/@vitest/mocker có sẵn, package.json/lock không đổi, đã PENDING trong CA-084); các bước trước PASS: 84 Vitest, layout, Postman, build, cargo check, 49 Rust.
+- MANUAL VISUAL CHECK: CHƯA CHẠY. Cần ngắt mạng trong app desktop, hỏi tuyển sinh, xác nhận thông báo lỗi + nút Thử lại và spinner kết thúc trong khoảng 20s.
+- Giới hạn: nút Thử lại không được khôi phục khi mở lại phiên cũ từ lịch sử (lịch sử chỉ lưu nội dung text).
 
 ## Rollback
 

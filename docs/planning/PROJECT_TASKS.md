@@ -1,5 +1,11 @@
 # Project Tasks
 
+## CA-093.01 - Tìm kiếm công khai phân biệt lỗi và không thấy (2026-10-25)
+
+- Status: In Progress; runtime và test tự động đã có, chưa manual native/PR review.
+- CURRENT: `search_public_school_info` trả `status` success/partial/no_match/error, `failedUrls`, `timedOut`; hạn chót tổng 20s, tối đa 2 lần retry mỗi URL, crawl chạy qua `spawn_blocking`. UI báo "Mất kết nối tới nguồn tài liệu" và nút Thử lại khi lỗi.
+- Evidence: `cargo test public_search` PASS 11/11; `tests/search.test.ts` PASS 5/5; `npm run check:all` FAIL chỉ ở bước cuối `npm audit` (3 advisory vite/@vitest/mocker có sẵn, package.json/lock không đổi, đã PENDING trong CA-084); các bước trước PASS: 84 Vitest, layout, Postman, build, cargo check, 49 Rust.
+- Giới hạn: manual ngắt mạng trong app desktop chưa chạy; redirect/content-type/cancel/cache vẫn PLANNED trong CA-093.
 ## CA-098.01 - REST API project + Postman (2026-10-17)
 
 - Status: In Progress; branch `feat/khiem/ca-098-01-rest-design`.
@@ -17,6 +23,15 @@
 - CURRENT: `init_app` không còn xóa lịch sử chat; SQLite bật foreign key và test migration giữ message cũ; ErrorBoundary chỉ reload; Settings reset có allowlist và confirm.
 - Evidence: `npm run check:all` PASS (67 Vitest, 43 Rust, build/layout/Postman/npm audit); manual native/UI chưa chạy.
 - Giới hạn: CA-090.02 backup round-trip và xóa DB/assets không thuộc phần CA-090.01 này.
+## CA-098.01 - REST API project + Postman (2026-10-17)
+
+- Status: In Progress; branch `feat/khiem/ca-098-01-rest-design`.
+- **PLANNED:** loopback API requires `CAMPUS_ASSISTANT_LOCAL_API_TOKEN`; all Postman calls use HTTP Bearer auth. Missing/invalid token returns 401; configuration is not committed.
+- **CONFIRMED (source/tests):** UTH contract gate returns 503 for schedule/exams; profile remains not connected (404). Local response is not UTH fixture evidence. Startup failure leaves desktop running, including the second-instance bind-conflict path; startup log failure is best-effort.
+- **UNKNOWN:** Manual Windows launch/Postman HTTP smoke has not been run. Full `npm run check:all` fails at npm audit advisories after code/test/build stages pass; task remains In Progress.
+- Design/how-to: [REST API contract](../testing/REST_API_DESIGN.md); [Postman README](../../postman/README.md).
+- **CONFIRMED (verification):** `cargo test --manifest-path src-tauri/Cargo.toml api::tests` passed 15 tests; `npm run check:postman` passed 9 checks; `npm run check:all` passed code/test/build/Rust stages but failed at npm audit (2 moderate, 1 high advisories).
+- **UNKNOWN:** Manual Postman local HTTP call and Windows launch not performed; do not mark task Done.
 
 ## CA-080 - Setup Postman local (2026-10-10)
 

@@ -1,6 +1,6 @@
 use crate::models::{PublicSearchResponse, PublicSearchResult};
 use std::io::Read;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 struct PublicSchoolSource {
     id: &'static str,
@@ -378,16 +378,24 @@ fn extract_candidate_links(
 }
 
 const MAX_RESPONSE_BYTES: u64 = 2 * 1024 * 1024; // 2MB max
+// CA-093.01: hạn chót tổng cho cả lượt tìm kiếm, không phụ thuộc số trang crawl
+const SEARCH_DEADLINE: Duration = Duration::from_secs(20);
+const PER_REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
+// Ngưỡng thời gian còn lại tối thiểu để còn đáng gửi thêm request
+const MIN_REQUEST_BUDGET: Duration = Duration::from_millis(200);
+// 1 lần gọi đầu + tối đa 2 lần thử lại
+const MAX_FETCH_ATTEMPTS: usize = 3;
 
-fn fetch_public_page(url: &str) -> Result<String, String> {
+fn fetch_public_page(url: &str, timeout: Duration) -> Result<String, String> {
     if !url.starts_with("https://") {
         return Err("Chi cho phep tra cuu nguon cong khai HTTPS.".to_string());
     }
 
+    let timeout = timeout.min(PER_REQUEST_TIMEOUT);
     let config = ureq::Agent::config_builder()
-        .timeout_global(Some(Duration::from_secs(8)))
-        .timeout_connect(Some(Duration::from_secs(3)))
-        .timeout_recv_response(Some(Duration::from_secs(5)))
+        .timeout_global(Some(timeout))
+        .timeout_connect(Some(timeout.min(Duration::from_secs(3))))
+        .timeout_recv_response(Some(timeout.min(Duration::from_secs(5))))
         .build();
     let agent = ureq::Agent::new_with_config(config);
 
@@ -406,15 +414,44 @@ fn fetch_public_page(url: &str) -> Result<String, String> {
     Ok(html)
 }
 
+enum FetchOutcome {
+    Fetched(String),
+    Failed,
+    DeadlineReached,
+}
+
+// Thử tải một URL tối đa MAX_FETCH_ATTEMPTS lần, timeout mỗi lần không vượt thời gian còn lại
+fn fetch_with_retry(
+    url: &str,
+    deadline: Instant,
+    fetcher: &impl Fn(&str, Duration) -> Result<String, String>,
+) -> FetchOutcome {
+    for _ in 0..MAX_FETCH_ATTEMPTS {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining < MIN_REQUEST_BUDGET {
+            return FetchOutcome::DeadlineReached;
+        }
+        if let Ok(html) = fetcher(url, remaining.min(PER_REQUEST_TIMEOUT)) {
+            return FetchOutcome::Fetched(html);
+        }
+    }
+    FetchOutcome::Failed
+}
+
 fn search_public_school_info_for_source(
     source: &'static PublicSchoolSource,
     query: &str,
-    fetcher: impl Fn(&str) -> Result<String, String>,
+    search_deadline: Duration,
+    fetcher: impl Fn(&str, Duration) -> Result<String, String>,
 ) -> Result<PublicSearchResponse, String> {
     let query = sanitize_query(query)?;
     let terms = search_terms(&query);
+    let deadline = Instant::now() + search_deadline;
     let mut results = Vec::new();
     let mut searched_urls = Vec::new();
+    let mut failed_urls = Vec::new();
+    let mut fetched_count = 0;
+    let mut timed_out = false;
     let mut pending_urls = source
         .urls
         .iter()
@@ -428,10 +465,20 @@ fn search_public_school_info_for_source(
         if searched_urls.contains(&url) {
             continue;
         }
-        searched_urls.push(url.clone());
-        let Ok(html) = fetcher(&url) else {
-            continue;
+        let html = match fetch_with_retry(&url, deadline, &fetcher) {
+            FetchOutcome::Fetched(html) => html,
+            FetchOutcome::Failed => {
+                searched_urls.push(url.clone());
+                failed_urls.push(url);
+                continue;
+            }
+            FetchOutcome::DeadlineReached => {
+                timed_out = true;
+                break;
+            }
         };
+        searched_urls.push(url.clone());
+        fetched_count += 1;
 
         for candidate in extract_candidate_links(&html, &url, source, &terms) {
             if !searched_urls.contains(&candidate) && !pending_urls.contains(&candidate) {
@@ -448,18 +495,42 @@ fn search_public_school_info_for_source(
         }
     }
 
-    let message = if results.is_empty() {
-        format!(
+    // DATA-001: chỉ báo "không tìm thấy" khi mọi nguồn đều đọc được và không bị cắt bởi hạn chót
+    let status = if fetched_count == 0 {
+        "error"
+    } else if !failed_urls.is_empty() || timed_out {
+        "partial"
+    } else if results.is_empty() {
+        "no_match"
+    } else {
+        "success"
+    };
+
+    let message = match status {
+        "error" if timed_out && failed_urls.is_empty() => format!(
+            "Het thoi gian cho nguon cong khai cua {}. Chua doc duoc trang nao.",
+            source.name
+        ),
+        "error" => format!(
+            "Mat ket noi toi nguon tai lieu cong khai cua {}. Khong doc duoc trang nao.",
+            source.name
+        ),
+        "partial" => format!(
+            "Chi doc duoc mot phan nguon cong khai cua {}; tim thay {} ket qua voi \"{}\".",
+            source.name,
+            results.len(),
+            query
+        ),
+        "no_match" => format!(
             "Khong tim thay tu khoa \"{}\" trong cac trang cong khai da cau hinh cho {}.",
             query, source.name
-        )
-    } else {
-        format!(
+        ),
+        _ => format!(
             "Tim thay {} ket qua cong khai phu hop voi \"{}\" tren nguon cua {}.",
             results.len(),
             query,
             source.name
-        )
+        ),
     };
 
     Ok(PublicSearchResponse {
@@ -469,17 +540,25 @@ fn search_public_school_info_for_source(
         searched_urls,
         results,
         message,
+        status: status.to_string(),
+        failed_urls,
+        timed_out,
     })
 }
 
+// CA-093.01: chạy crawl trên thread blocking riêng để không giữ main thread/UI trong lúc chờ mạng
 #[tauri::command]
-pub(crate) fn search_public_school_info(
+pub(crate) async fn search_public_school_info(
     school_id: String,
     query: String,
 ) -> Result<PublicSearchResponse, String> {
     let source = source_for_school(school_id.trim())
         .ok_or_else(|| "Truong nay chua co connector nguon cong khai.".to_string())?;
-    search_public_school_info_for_source(source, &query, fetch_public_page)
+    tauri::async_runtime::spawn_blocking(move || {
+        search_public_school_info_for_source(source, &query, SEARCH_DEADLINE, fetch_public_page)
+    })
+    .await
+    .map_err(|_| "Tac vu tra cuu cong khai bi dung bat thuong.".to_string())?
 }
 
 #[cfg(test)]
@@ -492,6 +571,8 @@ mod tests {
         urls: &["https://example.edu/news"],
     };
 
+    const TEST_DEADLINE: Duration = Duration::from_secs(5);
+
     #[test]
     fn strip_html_to_text_keeps_public_content() {
         let text = strip_html_to_text(
@@ -503,7 +584,7 @@ mod tests {
     #[test]
     fn search_public_school_info_matches_keyword_from_public_page() {
         let response =
-            search_public_school_info_for_source(&TEST_SOURCE, "2008 nhập học", |_| {
+            search_public_school_info_for_source(&TEST_SOURCE, "2008 nhập học", TEST_DEADLINE, |_, _| {
                 Ok("<title>Tuyen sinh</title><p>Thong tin tuyen sinh 2026 danh cho thi sinh sinh nam 2008 va xac nhan nhap hoc truc tuyen.</p>".to_string())
             })
             .unwrap();
@@ -514,13 +595,108 @@ mod tests {
 
     #[test]
     fn search_public_school_info_returns_empty_when_keyword_is_absent() {
-        let response = search_public_school_info_for_source(&TEST_SOURCE, "2008", |_| {
+        let response = search_public_school_info_for_source(&TEST_SOURCE, "2008", TEST_DEADLINE, |_, _| {
             Ok("<title>Tuyen sinh</title><p>Thong tin chung ve nha truong.</p>".to_string())
         })
         .unwrap();
 
         assert!(response.results.is_empty());
         assert!(response.message.contains("Khong tim thay"));
+        assert_eq!(response.status, "no_match");
+        assert!(response.failed_urls.is_empty());
+    }
+
+    // CA-093.01: mọi nguồn lỗi phải trả status error, không được giả làm no-match
+    #[test]
+    fn search_public_school_info_reports_error_when_all_fetches_fail() {
+        let response = search_public_school_info_for_source(&TEST_SOURCE, "tuyen sinh", TEST_DEADLINE, |_, _| {
+            Err("network down".to_string())
+        })
+        .unwrap();
+
+        assert_eq!(response.status, "error");
+        assert!(response.results.is_empty());
+        assert!(!response.message.contains("Khong tim thay"));
+        assert!(response.message.contains("Mat ket noi"));
+        assert_eq!(response.failed_urls, vec!["https://example.edu/news".to_string()]);
+    }
+
+    #[test]
+    fn search_public_school_info_retries_at_most_two_times_per_url() {
+        let attempts = std::cell::Cell::new(0);
+        let response = search_public_school_info_for_source(&TEST_SOURCE, "tuyen sinh", TEST_DEADLINE, |_, _| {
+            attempts.set(attempts.get() + 1);
+            Err("timeout".to_string())
+        })
+        .unwrap();
+
+        assert_eq!(attempts.get(), 3); // 1 lần đầu + 2 lần thử lại
+        assert_eq!(response.status, "error");
+    }
+
+    #[test]
+    fn search_public_school_info_recovers_when_retry_succeeds() {
+        let attempts = std::cell::Cell::new(0);
+        let response = search_public_school_info_for_source(&TEST_SOURCE, "2008", TEST_DEADLINE, |_, _| {
+            attempts.set(attempts.get() + 1);
+            if attempts.get() < 3 {
+                Err("flaky".to_string())
+            } else {
+                Ok("<title>Tuyen sinh</title><p>Thi sinh sinh nam 2008 xem lich nhap hoc tren trang tuyen sinh.</p>".to_string())
+            }
+        })
+        .unwrap();
+
+        assert_eq!(response.status, "success");
+        assert_eq!(response.results.len(), 1);
+        assert!(response.failed_urls.is_empty());
+    }
+
+    #[test]
+    fn search_public_school_info_marks_partial_and_keeps_original_urls() {
+        const MULTI_SOURCE: PublicSchoolSource = PublicSchoolSource {
+            id: "multi",
+            name: "Multi University",
+            urls: &["https://a.example.edu/", "https://b.example.edu/tuyen-sinh"],
+        };
+
+        let response = search_public_school_info_for_source(&MULTI_SOURCE, "2008", TEST_DEADLINE, |url, _| match url {
+            "https://a.example.edu/" => Err("dns".to_string()),
+            _ => Ok("<title>TS</title><p>Thi sinh sinh nam 2008 xem lich nhap hoc tren trang tuyen sinh.</p>".to_string()),
+        })
+        .unwrap();
+
+        assert_eq!(response.status, "partial");
+        assert_eq!(response.failed_urls, vec!["https://a.example.edu/".to_string()]);
+        assert_eq!(response.results[0].source_url, "https://b.example.edu/tuyen-sinh");
+        assert!(response.searched_urls.contains(&"https://a.example.edu/".to_string()));
+    }
+
+    #[test]
+    fn search_public_school_info_stops_at_overall_deadline() {
+        let calls = std::cell::Cell::new(0);
+        let response = search_public_school_info_for_source(&TEST_SOURCE, "tuyen sinh", Duration::ZERO, |_, _| {
+            calls.set(calls.get() + 1);
+            Ok(String::new())
+        })
+        .unwrap();
+
+        assert_eq!(calls.get(), 0);
+        assert!(response.timed_out);
+        assert_eq!(response.status, "error");
+        assert!(!response.message.contains("Khong tim thay"));
+    }
+
+    #[test]
+    fn search_public_school_info_passes_bounded_timeout_to_fetcher() {
+        let max_seen = std::cell::Cell::new(Duration::ZERO);
+        search_public_school_info_for_source(&TEST_SOURCE, "tuyen sinh", Duration::from_secs(60), |_, timeout| {
+            max_seen.set(max_seen.get().max(timeout));
+            Err("down".to_string())
+        })
+        .unwrap();
+
+        assert!(max_seen.get() <= PER_REQUEST_TIMEOUT);
     }
 
     #[test]
@@ -540,7 +716,7 @@ mod tests {
         };
 
         let response =
-            search_public_school_info_for_source(&CRAWL_SOURCE, "2008 nhập học", |url| {
+            search_public_school_info_for_source(&CRAWL_SOURCE, "2008 nhập học", TEST_DEADLINE, |url, _| {
                 match url {
                     "https://example.edu/" => Ok(
                         r#"<html><body><a href="/tuyen-sinh-2026">Tuyen sinh</a></body></html>"#

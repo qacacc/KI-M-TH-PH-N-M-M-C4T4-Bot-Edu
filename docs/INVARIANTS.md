@@ -59,7 +59,7 @@ Tài liệu này chứa các **Bất biến Hệ thống (System Invariants)**. 
 
 [Audit source](SOURCE_AUDIT_2026-10-09.md) phát hiện các giới hạn mà bảng lịch sử bên dưới chưa bao phủ. Không dùng ENFORCED để bỏ qua remediation:
 
-- DATA-001: PARTIAL ngoài connector: public all-fetch-failure thành no-match, history load failure thành welcome; CA-093/087.
+- DATA-001: PARTIAL ngoài connector: history load failure thành welcome (CA-087). Public all-fetch-failure đã trả `status: error` từ CA-093.01 (`src-tauri/src/public_search.rs:499`).
 - DATA-003: PARTIAL: native trash/localStorage fallback và hai owner preset; CA-091/095.
 - DATA-004 / UI-001: PARTIAL: public docs mock trong Settings ghi như tự động tải, auto-sync không scheduler; CA-089.
 - DATA-005: PARTIAL: trash schema CREATE ngoài user_version; CA-091.
