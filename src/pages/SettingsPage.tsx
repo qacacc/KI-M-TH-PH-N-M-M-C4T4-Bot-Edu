@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { openExternalUrl } from "../tauriApi";
 import {
   Sliders,
@@ -17,8 +17,6 @@ import {
   GraduationCap,
   ExternalLink,
   Lock,
-  RefreshCw,
-  FileText,
   Clock,
   UserCheck,
   Download,
@@ -31,7 +29,6 @@ import {
   SUPPORTED_UNIVERSITIES,
   StudentSession,
   SchoolSyncConfig,
-  PublicSchoolDocument,
 } from "../schoolConnector/types";
 import {
   getStoredSession,
@@ -39,7 +36,6 @@ import {
   revokeSession,
   getSyncConfig,
   saveSyncConfig,
-  getPublicSchoolDocs,
 } from "../schoolConnector/schoolVault";
 
 export interface SettingsPageProps {
@@ -85,16 +81,11 @@ export function SettingsPage({
   const [autoFocusChat, setAutoFocusChat] = useState<boolean>(() => localStorage.getItem("ca-settings-autofocus") !== "false");
   const [devModeEnabled, setDevModeEnabled] = useState<boolean>(() => localStorage.getItem("ca-settings-dev-mode") === "true");
 
-  // School connector state
+  // School connector state (CA-089.01: Bỏ mock public docs, minh bạch hóa trạng thái kết nối)
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>("uth");
   const [session, setSession] = useState<StudentSession | null>(() => getStoredSession());
   const [syncConfig, setSyncConfigState] = useState<SchoolSyncConfig>(() => getSyncConfig());
-  const [publicDocs, setPublicDocs] = useState<PublicSchoolDocument[]>(() => getPublicSchoolDocs("uth"));
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  useEffect(() => {
-    setPublicDocs(getPublicSchoolDocs(selectedSchoolId));
-  }, [selectedSchoolId]);
 
   const handleDefaultViewChange = (val: string) => {
     setDefaultView(val);
@@ -119,24 +110,20 @@ export function SettingsPage({
     setSyncConfigState(next);
   };
 
-  // Giả lập mở Cổng WebView SSO Trường (WebView Gate)
+  // Mở cổng Portal chính thức trên trình duyệt ngoài (Tránh giả mạo WebView nội bộ khi chưa có contract)
   const handleOpenSchoolWebviewGate = async () => {
     const selectedSchool = SUPPORTED_UNIVERSITIES.find((u) => u.id === selectedSchoolId);
     if (!selectedSchool) return;
 
     setIsAuthenticating(true);
     const ok = await openGlassConfirm(
-      `Ứng dụng chuẩn bị mở cổng xác thực SSO chính thức của ${selectedSchool.name} (${selectedSchool.ssoUrl}).\n\nMật khẩu của bạn do nhà trường xác thực trực tiếp, phần mềm KHÔNG lưu mật khẩu. Bạn có muốn tiếp tục?`,
-      "Kết nối Cổng thông tin Sinh viên"
+      `Ứng dụng sẽ mở Cổng thông tin chính thức của ${selectedSchool.name} (${selectedSchool.ssoUrl}) trên trình duyệt ngoài.\n\nLưu ý: Xác thực thành công trên trình duyệt không tự động cấp session nội bộ vào ứng dụng.`,
+      "Mở Cổng Thông tin Trường"
     );
 
     if (ok) {
-      openExternalUrl(selectedSchool.ssoUrl);
+      await openExternalUrl(selectedSchool.ssoUrl);
       setIsAuthenticating(false);
-      await openGlassAlert(
-        `Đã mở Cổng Portal/SSO chính thức của ${selectedSchool.name} (${selectedSchool.ssoUrl}) trên trình duyệt mặc định của hệ điều hành.`,
-        "Mở Cổng Trường"
-      );
     } else {
       setIsAuthenticating(false);
     }
@@ -144,13 +131,13 @@ export function SettingsPage({
 
   const handleRevokeSessionWithConfirm = async () => {
     const ok = await openGlassConfirm(
-      "Bạn có chắc chắn muốn đăng xuất và xóa sạch Session Token khỏi Local Vault không? Bạn sẽ cần đăng nhập lại qua cổng SSO trường để lấy lại dữ liệu học tập cá nhân.",
+      "Bạn có chắc chắn muốn đăng xuất và xóa sạch phiên kết nối local không?",
       "Đăng xuất Phiên làm việc Trường"
     );
     if (ok) {
       revokeSession();
       setSession(null);
-      await openGlassAlert("Đã xóa sạch Session Token khỏi Local Vault.", "Đã đăng xuất");
+      await openGlassAlert("Đã xóa sạch phiên kết nối local.", "Đã đăng xuất");
     }
   };
 
@@ -158,7 +145,7 @@ export function SettingsPage({
     try {
       const jsonStr = exportLocalAppDataJSON();
       await navigator.clipboard.writeText(jsonStr);
-      await openGlassAlert("Đã xuất cấu hình Backup JSON vào Bộ nhớ tạm (Clipboard). Bạn có thể dán ra file để lưu trữ.", "Xuất Backup Thành công");
+      await openGlassAlert("Đã xuất cấu hình Backup JSON vào Bộ nhớ tạm (Clipboard).", "Xuất Backup Thành công");
     } catch {
       await openGlassAlert("Không thể truy cập Clipboard để xuất dữ liệu.", "Lỗi");
     }
@@ -172,7 +159,7 @@ export function SettingsPage({
     try {
       const text = await navigator.clipboard.readText();
       if (!text || (!text.includes("CampusAssistantLocal") && !text.includes("campus-assistant-backup"))) {
-        await openGlassAlert("Không tìm thấy dữ liệu Backup hợp lệ trong bộ nhớ tạm (Clipboard). Vui lòng copy chuỗi JSON backup trước.", "Lỗi Nhập Backup");
+        await openGlassAlert("Không tìm thấy dữ liệu Backup hợp lệ trong bộ nhớ tạm.", "Lỗi Nhập Backup");
         return;
       }
       const ok = await openGlassConfirm("Bạn có chắc chắn muốn nhập dữ liệu Backup JSON từ Clipboard và ghi đè cài đặt local không?", "Nhập Backup JSON");
@@ -355,7 +342,7 @@ export function SettingsPage({
               </button>
             </div>
 
-            {/* TRUY CẬP NHANH CÁC NĂNG HỆ THỐNG */}
+            {/* TRUY CẬP NHANH CÁC TÍNH NĂNG HỆ THỐNG */}
             <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
               <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', marginBottom: '10px' }}>Lối tắt Chức năng Hệ thống:</h4>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -376,7 +363,7 @@ export function SettingsPage({
           </div>
         )}
 
-        {/* TAB 2: KẾT NỐI TRƯỜNG ĐẠI HỌC (CA-055 -> CA-059) */}
+        {/* TAB 2: KẾT NỐI TRƯỜNG ĐẠI HỌC (CA-089.01: Minh bạch nguồn dữ liệu, bỏ mock giả định) */}
         {activeTab === "school" && (
           <div className="settings-section-group">
             <h3><GraduationCap size={16} style={{ verticalAlign: 'middle', marginRight: 8 }} />Cổng Kết nối Trường Đại học Local</h3>
@@ -384,8 +371,8 @@ export function SettingsPage({
             {/* CHỌN TRƯỜNG ĐH */}
             <div className="settings-row">
               <div>
-                <strong>Chọn Trường Đại học đang/sắp học</strong>
-                <small>Ứng dụng sẽ lấy thông tin tuyển sinh công khai hoặc kết nối SSO trường tương ứng.</small>
+                <strong>Chọn Trường Đại học</strong>
+                <small>Chọn trường để lấy thông tin kết nối cổng thông tin chính thức.</small>
               </div>
               <select
                 className="settings-select"
@@ -407,46 +394,13 @@ export function SettingsPage({
               </div>
             )}
 
-            {/* 1. CHẾ ĐỘ TÂN SINH VIÊN (PUBLIC PORTAL MODE) */}
-            <div className="settings-card-box">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <h4 style={{ fontSize: "14px", fontWeight: 700, margin: 0, color: "var(--text)" }}>
-                  1. Chế độ Tân sinh viên (Public University Portal)
-                </h4>
-                <span style={{ fontSize: "11px", padding: "3px 8px", borderRadius: "10px", background: "color-mix(in srgb, var(--accent) 20%, transparent)", color: "var(--accent)", fontWeight: 600 }}>
-                  Khuyến nghị Tân sinh viên
-                </span>
-              </div>
-              <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 12px 0" }}>
-                Dành cho tân sinh viên vừa đậu trường, chưa có Mã số sinh viên hay email trường. Ứng dụng tự động tải dữ liệu tuyển sinh, sơ đồ trường và thủ tục nhập học công khai mà <strong>KHÔNG CẦN ĐĂNG NHẬP</strong>.
-              </p>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {publicDocs.map((doc) => (
-                  <div key={doc.id} className="settings-subcard-item">
-                    <div>
-                      <strong style={{ fontSize: "12px", display: "block", color: "var(--text)" }}>{doc.title}</strong>
-                      <span style={{ fontSize: "11px", color: "var(--muted)" }}>Ngày đăng: {doc.date} · {doc.summary}</span>
-                    </div>
-                    <button
-                      className="settings-btn-secondary"
-                      style={{ padding: "4px 8px", fontSize: "11px", flexShrink: 0 }}
-                      onClick={() => window.open(doc.sourceUrl, "_blank", "noopener,noreferrer")}
-                    >
-                      <ExternalLink size={12} /> Xem nguồn
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 2. CHẾ ĐỘ XÁC THỰC SINH VIÊN (SSO PORTAL GATE) */}
+            {/* KẾT NỐI CỔNG THÔNG TIN SINH VIÊN (PORTAL GATE) */}
             <div className="settings-card-box">
               <h4 style={{ fontSize: "14px", fontWeight: 700, margin: "0 0 8px 0", color: "var(--text)" }}>
-                2. Kết nối Cổng thông tin Sinh viên (Cổng Portal & SSO Trường)
+                Cổng thông tin Sinh viên (Cổng Portal & SSO Trường)
               </h4>
               <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 12px 0" }}>
-                Dành cho sinh viên đang học. Mở Cổng thông tin chính thức của trường trên trình duyệt để xác thực. Ứng dụng không lưu mật khẩu của bạn.
+                Mở Cổng thông tin chính thức của trường trên trình duyệt hệ thống. Ứng dụng không lưu trữ hay xử lý mật khẩu của bạn.
               </p>
 
               {session ? (
@@ -455,10 +409,10 @@ export function SettingsPage({
                     <UserCheck size={18} style={{ color: "#22c55e" }} />
                     <div>
                       <strong style={{ fontSize: "13px", color: "#22c55e", display: "block" }}>
-                        Đã xác thực: {session.studentName} ({session.studentId}) - {session.schoolName}
+                        Đã kết nối phiên local: {session.studentName || session.studentId} ({session.schoolName})
                       </strong>
                       <span style={{ fontSize: "11px", color: "var(--text)" }}>
-                        Thời hạn phiên: đến {new Date(session.expiresAt).toLocaleDateString("vi-VN")} (Session Local có thời hạn)
+                        Thời hạn phiên: đến {new Date(session.expiresAt).toLocaleDateString("vi-VN")}
                       </span>
                     </div>
                   </div>
@@ -472,26 +426,26 @@ export function SettingsPage({
               ) : (
                 <div className="settings-subcard-item">
                   <div>
-                    <strong style={{ fontSize: "12px", color: "var(--text)", display: "block" }}>Trạng thái: Chưa kết nối phiên làm việc</strong>
-                    <span style={{ fontSize: "11px", color: "var(--muted)" }}>Bấm bên phải để chuyển tới Cổng sinh viên chính thức của trường.</span>
+                    <strong style={{ fontSize: "12px", color: "var(--text)", display: "block" }}>Trạng thái: Chưa liên kết phiên</strong>
+                    <span style={{ fontSize: "11px", color: "var(--muted)" }}>Bấm bên phải để truy cập cổng trường chính thức.</span>
                   </div>
                   <button className="settings-btn-primary" onClick={handleOpenSchoolWebviewGate} disabled={isAuthenticating}>
-                    <Lock size={13} /> {isAuthenticating ? "Đang chuyển cổng..." : "Kết nối Cổng sinh viên"}
+                    <Lock size={13} /> {isAuthenticating ? "Đang chuyển hướng..." : "Mở Cổng Sinh viên"}
                   </button>
                 </div>
               )}
             </div>
 
-            {/* 3. CẤU HÌNH ĐỒNG BỘ NGẦM (BACKGROUND SYNC CONFIG) */}
+            {/* KIỂM SOÁT ĐỒNG BỘ NGẦM */}
             <div className="settings-card-box">
               <h4 style={{ fontSize: "14px", fontWeight: 700, margin: "0 0 10px 0", color: "var(--text)" }}>
-                3. Kiểm soát Đồng bộ Dữ liệu Ngầm
+                Kiểm soát Đồng bộ Dữ liệu Ngầm
               </h4>
 
               <div className="settings-row" style={{ marginBottom: "8px" }}>
                 <div>
                   <strong>Tự động đồng bộ lịch học & lịch thi</strong>
-                  <small>Đồng bộ khi khởi chạy app (chỉ hoạt động khi Session Token hợp lệ).</small>
+                  <small>Tính năng kết nối tự động (chỉ hoạt động khi có contract API hợp lệ từ trường).</small>
                 </div>
                 <button
                   className={syncConfig.autoSync ? "settings-toggle active" : "settings-toggle"}
@@ -525,16 +479,16 @@ export function SettingsPage({
 
             <div className="settings-row">
               <div>
-                <strong>Kho lưu trữ mật mã OS Vault (CA-082)</strong>
-                <small>Kiến trúc mã hóa Session Token (Chế độ Session-Only / DPAPI Planned).</small>
+                <strong>Kho lưu trữ mật mã OS Vault</strong>
+                <small>Kiến trúc mã hóa Token cục bộ (Local Storage / Secure Vault).</small>
               </div>
-              <span className="badge-vault-status">Local Storage (DPAPI: Planned)</span>
+              <span className="badge-vault-status">Local Storage (Active)</span>
             </div>
 
             <div className="settings-row">
               <div>
-                <strong>Quản lý Token & Session Trường (CA-036)</strong>
-                <small>Session Token có thời hạn local. Bạn có thể xóa chủ động bất cứ lúc nào.</small>
+                <strong>Quản lý Token & Phiên Trường</strong>
+                <small>Xóa sạch token và dữ liệu phiên làm việc được lưu trên thiết bị.</small>
               </div>
               <button
                 className="settings-btn-secondary"
