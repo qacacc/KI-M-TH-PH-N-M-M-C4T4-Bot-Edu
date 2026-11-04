@@ -179,6 +179,10 @@ export default function App() {
   const bootstrapRequestRef = useRef(createBootstrapRequest(initApp));
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
   const [bootstrapError, setBootstrapError] = useState(false);
+  /** Hiển thị thông báo chờ khi native layer mất >5 giây. */
+  const [bootstrapSlow, setBootstrapSlow] = useState(false);
+  /** Đảm bảo welcome message chỉ được đưa vào messages 1 lần duy nhất. */
+  const welcomeShownRef = useRef(false);
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() => {
     return localStorage.getItem("campus-assistant-sidebar-expanded") === "true";
   });
@@ -379,8 +383,10 @@ export default function App() {
 
   useEffect(() => {
     setBootstrapError(false);
+    setBootstrapSlow(false);
     let isCancelled = false;
     const deferredTimers: number[] = [];
+
     const defer = (task: () => void, delayMs: number) => {
       const timer = window.setTimeout(() => {
         if (!isCancelled) task();
@@ -388,12 +394,31 @@ export default function App() {
       deferredTimers.push(timer);
     };
 
+    // Khi retry: reset request để buộc gọi lại initApp.
+    if (bootstrapAttempt > 0) {
+      bootstrapRequestRef.current.reset();
+    }
+
+    // Slow-timer: nếu sau 5 giây chưa xong, hiển thị thông báo chờ.
+    const slowTimer = window.setTimeout(() => {
+      if (!isCancelled) setBootstrapSlow(true);
+    }, 5_000);
+
     bootstrapRequestRef.current.get()
       .then((state) => {
         if (isCancelled) return;
+        window.clearTimeout(slowTimer);
+        setBootstrapSlow(false);
         setBootstrap(state);
         hydrateSavedAppearance(state.theme, state.accentColor);
-        setMessages([welcomeMessage]);
+
+        // Chỉ set welcome message 1 lần duy nhất trong toàn bộ vòng đời.
+        // Tránh StrictMode render 2 lần gây duplicate hoặc reset hội thoại.
+        if (!welcomeShownRef.current) {
+          welcomeShownRef.current = true;
+          setMessages([welcomeMessage]);
+        }
+
         if (autoFocusChatEnabled && view === "chat") {
           defer(() => inputRef.current?.focus(), 0);
         }
@@ -425,14 +450,25 @@ export default function App() {
             });
         }, 1200);
       })
-      .catch(() => {
-        if (!isCancelled) {
-          setBootstrapError(true);
-        }
+      .catch((err: unknown) => {
+        if (isCancelled) return;
+        window.clearTimeout(slowTimer);
+        setBootstrapSlow(false);
+        const isTimeout = err instanceof Error && err.message === "BOOTSTRAP_TIMEOUT";
+        // TIMEOUT → vẫn set lỗi nhưng không clear promise (có thể retry)
+        // Các lỗi khác → set lỗi bình thường
+        setBootstrapError(true);
+        console.error(
+          isTimeout
+            ? "[Bootstrap] Native layer không phản hồi sau 12 giây."
+            : "[Bootstrap] Lỗi khởi tạo:",
+          err,
+        );
       });
 
     return () => {
       isCancelled = true;
+      window.clearTimeout(slowTimer);
       deferredTimers.forEach((timer) => window.clearTimeout(timer));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1472,14 +1508,25 @@ export default function App() {
       <section className="content">
         {!bootstrap && (
           <div className="bootstrap-status" role={bootstrapError ? "alert" : "status"}>
-            <span>{bootstrapError
-              ? ("__TAURI_INTERNALS__" in window
-                ? "Không khởi tạo được dữ liệu local. Dữ liệu đã lưu được giữ nguyên."
-                : "Bản xem trước trình duyệt chưa kết nối backend desktop.")
-              : "Đang khởi tạo dữ liệu local..."}</span>
-            {bootstrapError && <button type="button" onClick={() => setBootstrapAttempt((attempt) => attempt + 1)}>Thử lại</button>}
+            {bootstrapError ? (
+              <>
+                <span>{"__TAURI_INTERNALS__" in window
+                  ? "Không khởi tạo được dữ liệu local. Dữ liệu đã lưu được giữ nguyên."
+                  : "Bản xem trước trình duyệt chưa kết nối backend desktop."}
+                </span>
+                <button type="button" onClick={() => setBootstrapAttempt((attempt) => attempt + 1)}>Thử lại</button>
+              </>
+            ) : bootstrapSlow ? (
+              <>
+                <span className="bootstrap-spinner" aria-hidden="true" />
+                <span>Native layer đang khởi động, vui lòng chờ thêm...</span>
+              </>
+            ) : (
+              <span>Đang khởi tạo dữ liệu local...</span>
+            )}
           </div>
         )}
+
         {updateInfo?.updateAvailable && (
           <section className={updateInfo.required ? "update-banner required" : "update-banner"}>
             <div>

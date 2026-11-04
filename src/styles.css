@@ -10,6 +10,22 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* Spinner vòng xoay nhỏ cho trạng thái "native layer chậm" */
+@keyframes bootstrap-spin {
+  to { transform: rotate(360deg); }
+}
+.bootstrap-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: bootstrap-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+
 :root {
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "SFMono-Regular", "Cascadia Code", "Consolas", monospace;
