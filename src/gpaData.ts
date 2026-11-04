@@ -68,3 +68,39 @@ export function calculateGpaStats(subjects: GpaSubject[]) {
     numGpa4: Number(gpaScale4)
   };
 }
+
+export function saveGpaSubjects(subjects: GpaSubject[]) {
+  try {
+    localStorage.setItem(GPA_STORAGE_KEY, JSON.stringify(subjects));
+  } catch (e) {
+    console.error("Không thể lưu dữ liệu GPA", e);
+  }
+}
+
+export function loadGpaSubjects(): { data: GpaSubject[] | null; isCorrupted: boolean } {
+  try {
+    const rawV2 = localStorage.getItem(GPA_STORAGE_KEY);
+    if (rawV2) {
+      try {
+        return { data: parseGpaSubjects(rawV2), isCorrupted: false };
+      } catch {
+        return { data: null, isCorrupted: true }; 
+      }
+    }
+
+    const rawV1 = localStorage.getItem(GPA_LEGACY_STORAGE_KEY);
+    if (rawV1) {
+      try {
+        const parsed = parseGpaSubjects(rawV1);
+        saveGpaSubjects(parsed); 
+        return { data: parsed, isCorrupted: false };
+      } catch {
+        return { data: null, isCorrupted: true };
+      }
+    }
+
+    return { data: [], isCorrupted: false }; 
+  } catch {
+    return { data: null, isCorrupted: true };
+  }
+}
