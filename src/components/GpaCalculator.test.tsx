@@ -1,5 +1,4 @@
 /* @vitest-environment jsdom */
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { GPA_STORAGE_KEY } from "../gpaData";
@@ -9,20 +8,14 @@ const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
   return {
     getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => {
-      store[key] = String(value);
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
+    setItem: (key: string, value: string) => { store[key] = String(value); },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
   };
 })();
 vi.stubGlobal("localStorage", mockLocalStorage);
 
-describe("GpaCalculator UI Integration Tests (CA-088.02)", () => {
+describe("GpaCalculator UI Integration Tests (Task G03)", () => {
   afterEach(() => {
     cleanup();
   });
@@ -42,20 +35,28 @@ describe("GpaCalculator UI Integration Tests (CA-088.02)", () => {
     render(<GpaCalculator />);
     expect(screen.getByText("3.70")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /Thêm môn học/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Thêm môn/i }));
 
     expect(screen.getByText("3.70")).toBeTruthy();
     expect(screen.getAllByPlaceholderText("Nhập tên môn...")).toHaveLength(2);
   });
 
-  it("nhập điểm F thật sự được tính vào GPA", () => {
+  it("nhập điểm F thật sự được tính vào GPA sau khi lưu", () => {
     render(<GpaCalculator />);
-    fireEvent.click(screen.getByRole("button", { name: /Thêm môn học/i }));
+    
+    fireEvent.click(screen.getByRole("button", { name: /Thêm môn/i }));
+
+    const creditInput = screen.getAllByRole("spinbutton")[0];
+    fireEvent.change(creditInput, { target: { value: "3" } });
 
     const scoreInput = screen.getAllByRole("spinbutton")[1];
     fireEvent.change(scoreInput, { target: { value: "2" } });
 
     expect((screen.getByPlaceholderText("Tự động") as HTMLInputElement).value).toBe("F");
-    expect(screen.getAllByText("0.00")).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole("button", { name: /Lưu điểm/i }));
+
+    expect(screen.getByText("0.00")).toBeTruthy(); 
+    expect(screen.getByText("2.00")).toBeTruthy(); 
   });
 });

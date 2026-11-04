@@ -20,7 +20,7 @@ export function parseGpaSubjects(raw: string | null): GpaSubject[] {
   const value: unknown = JSON.parse(raw);
   if (!Array.isArray(value) || !value.every((item) => item && typeof item.id === "string" &&
     typeof item.name === "string" &&
-    (item.credits === "" || (Number.isFinite(item.credits) && item.credits > 0 && item.credits <= 10)) &&
+    (item.credits === "" || (Number.isFinite(item.credits) && item.credits >= 1 && item.credits <= 10)) &&
     typeof item.letterGrade === "string" &&
     (item.letterGrade === "" || Object.prototype.hasOwnProperty.call(GRADE_CONVERSION, item.letterGrade)) &&
     (item.score10 === "" || (Number.isFinite(item.score10) && item.score10 >= 0 && item.score10 <= 10)))) {
@@ -48,12 +48,11 @@ export function calculateGpaStats(subjects: GpaSubject[]) {
     totalPoints4 += (scale4 * credits);
     totalPoints10 += (score10 * credits);
   }
-
   if (totalCredits === 0) {
     return {
       totalCredits: 0,
-      gpaScale4: "0.00",
-      gpaScale10: "0.00",
+      gpaScale4: null,
+      gpaScale10: null,
       numGpa4: 0
     };
   }
@@ -67,4 +66,42 @@ export function calculateGpaStats(subjects: GpaSubject[]) {
     gpaScale10,
     numGpa4: Number(gpaScale4)
   };
+}
+
+export function saveGpaSubjects(subjects: GpaSubject[]): boolean {
+  try {
+    localStorage.setItem(GPA_STORAGE_KEY, JSON.stringify(subjects));
+    return true;
+  } catch (e) {
+    console.error("Không thể lưu dữ liệu GPA", e);
+    return false;
+  }
+}
+
+export function loadGpaSubjects(): { data: GpaSubject[] | null; isCorrupted: boolean } {
+  try {
+    const rawV2 = localStorage.getItem(GPA_STORAGE_KEY);
+    if (rawV2) {
+      try {
+        return { data: parseGpaSubjects(rawV2), isCorrupted: false };
+      } catch {
+        return { data: null, isCorrupted: true }; 
+      }
+    }
+
+    const rawV1 = localStorage.getItem(GPA_LEGACY_STORAGE_KEY);
+    if (rawV1) {
+      try {
+        const parsed = parseGpaSubjects(rawV1);
+        saveGpaSubjects(parsed); 
+        return { data: parsed, isCorrupted: false };
+      } catch {
+        return { data: null, isCorrupted: true };
+      }
+    }
+
+    return { data: [], isCorrupted: false }; 
+  } catch {
+    return { data: null, isCorrupted: true };
+  }
 }

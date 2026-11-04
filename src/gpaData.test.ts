@@ -1,6 +1,17 @@
-import { describe, it, expect } from 'vitest';
-import { calculateGpaStats, parseGpaSubjects } from './gpaData';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { calculateGpaStats, parseGpaSubjects, loadGpaSubjects, saveGpaSubjects, GPA_STORAGE_KEY, GPA_LEGACY_STORAGE_KEY } from './gpaData';
 import type { GpaSubject } from './components/GpaCalculator';
+
+const mockLocalStorage = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => { store[key] = String(value); },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+})();
+vi.stubGlobal("localStorage", mockLocalStorage);
 
 describe('GPA Calculation - CA-088.02 - Edge Cases', () => {
   it('không tụt GPA khi thêm hàng mới chưa nhập điểm', () => {
@@ -30,8 +41,8 @@ describe('GPA Calculation - CA-088.02 - Edge Cases', () => {
     expect(result.gpaScale4).toBe('4.00');
   });
 
-  it('trả về 0.00 khi bảng điểm trống', () => {
-    expect(calculateGpaStats([]).gpaScale4).toBe('0.00');
+  it('trả về null khi bảng điểm trống để tránh báo GPA giả', () => {
+    expect(calculateGpaStats([]).gpaScale4).toBeNull();
   });
 
   it('không tính grade không thuộc allowlist vào tổng GPA', () => {
@@ -39,7 +50,7 @@ describe('GPA Calculation - CA-088.02 - Edge Cases', () => {
       { id: '1', name: 'Dữ liệu lỗi', credits: 3, letterGrade: 'constructor', score10: 10 }
     ]);
     expect(result.totalCredits).toBe(0);
-    expect(result.gpaScale4).toBe('0.00');
+    expect(result.gpaScale4).toBeNull();
   });
 });
 
@@ -103,5 +114,35 @@ describe('parseGpaSubjects - Validation & Security', () => {
   it.each(['constructor', 'toString', '__proto__'])('từ chối letterGrade kế thừa: %s', (letterGrade) => {
     const invalidGrade = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade, score10: 8 }]);
     expect(() => parseGpaSubjects(invalidGrade)).toThrow('Dữ liệu điểm đã lưu không hợp lệ.');
+  });
+});
+
+describe('GPA Persistence & Migration', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('lưu và nạp dữ liệu v2 thành công mà không báo lỗi hỏng', () => {
+    const mockData: GpaSubject[] = [{ id: '1', name: 'Toán', credits: 3, letterGrade: 'A', score10: 8 }];
+    saveGpaSubjects(mockData);
+    const result = loadGpaSubjects();
+    expect(result.isCorrupted).toBe(false);
+    expect(result.data?.[0].name).toBe('Toán');
+  });
+
+  it('tự động migrate dữ liệu từ v1 sang v2', () => {
+    const mockV1 = JSON.stringify([{ id: '2', name: 'Lý', credits: 2, letterGrade: 'B', score10: 7 }]);
+    localStorage.setItem(GPA_LEGACY_STORAGE_KEY, mockV1);
+    
+    const result = loadGpaSubjects();
+    expect(result.isCorrupted).toBe(false);
+    expect(result.data?.[0].name).toBe('Lý');
+    expect(localStorage.getItem(GPA_STORAGE_KEY)).not.toBeNull(); 
+  });
+
+  it('bắt lỗi và cờ isCorrupted khi dữ liệu bị hỏng (Corrupt Data)', () => {
+    localStorage.setItem(GPA_STORAGE_KEY, 'invalid json data structure');
+    const result = loadGpaSubjects();
+    expect(result.isCorrupted).toBe(true);
   });
 });
