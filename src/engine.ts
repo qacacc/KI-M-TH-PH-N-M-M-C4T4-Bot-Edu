@@ -1,6 +1,12 @@
-import type { ConversationState, Subject } from "./types";
+import type { ConversationState, ExamRecord, ScheduleRecord, Subject } from "./types";
 
 export type DataSensitivity = "public" | "private" | "local";
+
+// Bộ lọc thời gian tương đối theo timezone Asia/Ho_Chi_Minh
+export type TimeFilter =
+  | { kind: "today"; weekday: number; isoDate: string }
+  | { kind: "tomorrow"; weekday: number; isoDate: string }
+  | null;
 
 export type IntentResult =
   | {
@@ -10,9 +16,10 @@ export type IntentResult =
       semester: number | null;
     }
   | { intent: "NEEDS_SUBJECT"; semester: number | null }
+  | { intent: "AMBIGUOUS_SUBJECT"; candidates: string[]; semester: number | null }
   | { intent: "FIND_ANNOUNCEMENTS" }
-  | { intent: "FIND_SCHEDULE"; semester: number | null }
-  | { intent: "FIND_EXAMS"; semester: number | null }
+  | { intent: "FIND_SCHEDULE"; semester: number | null; timeFilter: TimeFilter }
+  | { intent: "FIND_EXAMS"; semester: number | null; timeFilter: TimeFilter }
   | { intent: "PUBLIC_ADMISSIONS_INFO"; birthYear: number | null }
   | { intent: "UNKNOWN" };
 
@@ -200,7 +207,62 @@ export function buildAdmissionsAnswer(input: string): string | null {
   ].join("\n");
 }
 
-export function detectIntent(input: string, subjects: Subject[]): IntentResult {
+/**
+ * Lấy weekday (2=Thứ 2...7=Thứ 7, 8=Chủ nhật theo quy ước ScheduleRecord)
+ * và ngày ISO cho "hôm nay" hoặc "ngày mai" theo timezone Asia/Ho_Chi_Minh (+07:00),
+ * độc lập hoàn toàn với múi giờ của máy chủ chạy code.
+ */
+export function extractTimeFilter(input: string, now?: Date): TimeFilter {
+  const normalized = normalizeVietnamese(input);
+
+  const isToday =
+    normalized.includes("hom nay") ||
+    normalized.includes("hoc hom nay") ||
+    normalized.includes("lich hom nay");
+
+  const isTomorrow =
+    normalized.includes("ngay mai") ||
+    normalized.includes("hoc ngay mai") ||
+    normalized.includes("lich ngay mai");
+
+  if (!isToday && !isTomorrow) return null;
+
+  // Xác định ngày theo timezone Asia/Ho_Chi_Minh
+  const base = now ?? new Date();
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const todayParts = formatter.formatToParts(base);
+  const todayYear = Number(todayParts.find((p) => p.type === "year")?.value);
+  const todayMonth = Number(todayParts.find((p) => p.type === "month")?.value);
+  const todayDay = Number(todayParts.find((p) => p.type === "day")?.value);
+
+  const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+
+  if (isToday) {
+    const todayISO = `${todayYear}-${pad2(todayMonth)}-${pad2(todayDay)}`;
+    // Tính weekday qua UTC để tránh bị lệch múi giờ trên máy chủ khác UTC+7
+    const todayUtc = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay));
+    const jsDay = todayUtc.getUTCDay(); // 0=CN, 1=T2, ... 6=T7
+    const weekday = jsDay === 0 ? 8 : jsDay + 1; // Quy ước ScheduleRecord: 2..8
+    return { kind: "today", weekday, isoDate: todayISO };
+  }
+
+  // Ngày mai: cộng 1 ngày trên UTC để xử lý chuẩn xác chuyển tháng/năm
+  const tomorrowUtc = new Date(Date.UTC(todayYear, todayMonth - 1, todayDay + 1));
+  const tYear = tomorrowUtc.getUTCFullYear();
+  const tMonth = tomorrowUtc.getUTCMonth() + 1;
+  const tDay = tomorrowUtc.getUTCDate();
+  const tomorrowISO = `${tYear}-${pad2(tMonth)}-${pad2(tDay)}`;
+  const tJsDay = tomorrowUtc.getUTCDay();
+  const tomorrowWeekday = tJsDay === 0 ? 8 : tJsDay + 1;
+  return { kind: "tomorrow", weekday: tomorrowWeekday, isoDate: tomorrowISO };
+}
+
+export function detectIntent(input: string, subjects: Subject[], now?: Date): IntentResult {
   const normalized = normalizeVietnamese(input);
   const semester = extractSemester(input);
 
@@ -229,20 +291,32 @@ export function detectIntent(input: string, subjects: Subject[]): IntentResult {
     return { intent: "FIND_ANNOUNCEMENTS" };
   }
 
-  if (
+  const isScheduleQuery =
     normalized.includes("lich hoc") ||
     normalized.includes("thoi khoa bieu") ||
     normalized.includes("tkb") ||
     normalized.includes("hoc hom nay") ||
     normalized.includes("het mon") ||
     normalized.includes("xong mon") ||
-    normalized.includes("buoi hoc")
-  ) {
-    return { intent: "FIND_SCHEDULE", semester };
+    normalized.includes("buoi hoc") ||
+    normalized.includes("hom nay hoc") ||
+    normalized.includes("ngay mai hoc") ||
+    // "lịch hôm nay" / "lịch ngày mai" mà không có từ thi
+    (normalized.includes("lich hom nay") && !/\bthi\b/.test(normalized)) ||
+    (normalized.includes("lich ngay mai") && !/\bthi\b/.test(normalized));
+
+  if (isScheduleQuery) {
+    return { intent: "FIND_SCHEDULE", semester, timeFilter: extractTimeFilter(input, now) };
   }
 
-  if (normalized.includes("lich thi") || normalized.includes("thi cu") || normalized.includes("ngay thi")) {
-    return { intent: "FIND_EXAMS", semester };
+  const isExamQuery =
+    normalized.includes("lich thi") ||
+    normalized.includes("thi cu") ||
+    normalized.includes("ngay thi") ||
+    (/\bthi\b/.test(normalized) && (normalized.includes("hom nay") || normalized.includes("ngay mai")));
+
+  if (isExamQuery) {
+    return { intent: "FIND_EXAMS", semester, timeFilter: extractTimeFilter(input, now) };
   }
 
   const wantsDocuments =
@@ -257,26 +331,96 @@ export function detectIntent(input: string, subjects: Subject[]): IntentResult {
 
   if (!wantsDocuments) return { intent: "UNKNOWN" };
 
-  const matchedSubject = findSubjectInText(input, subjects);
+  // Sử dụng longest-match và phát hiện ambiguous
+  const subjectMatch = findSubjectMatchInText(input, subjects);
 
-  if (!matchedSubject) return { intent: "NEEDS_SUBJECT", semester };
+  if (subjectMatch.kind === "none") return { intent: "NEEDS_SUBJECT", semester };
+
+  if (subjectMatch.kind === "ambiguous") {
+    return {
+      intent: "AMBIGUOUS_SUBJECT",
+      candidates: subjectMatch.candidates.map((s) => s.name),
+      semester,
+    };
+  }
 
   return {
     intent: "FIND_DOCUMENTS",
-    subjectId: matchedSubject.id,
-    subjectName: matchedSubject.name,
+    subjectId: subjectMatch.subject.id,
+    subjectName: subjectMatch.subject.name,
     semester,
   };
 }
 
-export function findSubjectInText(input: string, subjects: Subject[]): Subject | null {
-  const normalized = normalizeVietnamese(input);
-  const matchedSubject = subjects.find((item) => {
-    const names = [item.name, ...item.aliases].map(normalizeVietnamese);
-    return names.some((name) => normalized.includes(name));
-  });
+/**
+ * Kết quả nhận diện môn học: null = không khớp, Subject = khớp chính xác,
+ * { ambiguous: Subject[] } = nhiều môn cùng mức độ khớp.
+ */
+export type SubjectMatchResult =
+  | { kind: "match"; subject: Subject }
+  | { kind: "ambiguous"; candidates: Subject[] }
+  | { kind: "none" };
 
-  return matchedSubject ?? null;
+/**
+ * Tìm môn học khớp trong câu, ưu tiên tên dài nhất.
+ * Khi hai môn có cùng độ dài khớp dài nhất => trả về ambiguous.
+ * Đảm bảo ranh giới từ: tên môn phải không bị nhúng giữa ký tự \p{L}\p{N}.
+ */
+export function findSubjectMatchInText(input: string, subjects: Subject[]): SubjectMatchResult {
+  const normalized = normalizeVietnamese(input);
+
+  type Candidate = { subject: Subject; matchLength: number };
+  const candidates: Candidate[] = [];
+
+  for (const subject of subjects) {
+    const names = [subject.name, ...subject.aliases].map(normalizeVietnamese);
+    // Chọn tên/alias dài nhất thực sự xuất hiện trong câu
+    let bestLen = 0;
+    for (const name of names) {
+      if (name.length === 0) continue;
+      // Tìm tất cả các lần xuất hiện cho đến khi gặp ranh giới từ hợp lệ
+      let startIdx = 0;
+      while (startIdx < normalized.length) {
+        const idx = normalized.indexOf(name, startIdx);
+        if (idx === -1) break;
+        const before = idx > 0 ? normalized[idx - 1] : " ";
+        const after = idx + name.length < normalized.length ? normalized[idx + name.length] : " ";
+        // Cho phép ranh giới: khoảng trắng, đầu chuỗi, cuối chuỗi, hoặc ký tự không phải chữ/số
+        const validBefore = /[\s/.,\-]/.test(before) || idx === 0;
+        const validAfter = /[\s/.,\-]/.test(after) || idx + name.length === normalized.length;
+        if (validBefore && validAfter) {
+          if (name.length > bestLen) {
+            bestLen = name.length;
+          }
+          break;
+        }
+        startIdx = idx + 1;
+      }
+    }
+    if (bestLen > 0) {
+      candidates.push({ subject, matchLength: bestLen });
+    }
+  }
+
+  if (candidates.length === 0) return { kind: "none" };
+
+  // Sắp xếp theo độ dài giảm dần
+  candidates.sort((a, b) => b.matchLength - a.matchLength);
+  const best = candidates[0].matchLength;
+  const topMatches = candidates.filter((c) => c.matchLength === best);
+
+  if (topMatches.length === 1) return { kind: "match", subject: topMatches[0].subject };
+  return { kind: "ambiguous", candidates: topMatches.map((c) => c.subject) };
+}
+
+/**
+ * Wrapper tương thích ngược: trả về Subject | null (không phân biệt ambiguous).
+ * Dùng cho context WAITING_FOR_SUBJECT khi người dùng chưa làm rõ.
+ */
+export function findSubjectInText(input: string, subjects: Subject[]): Subject | null {
+  const result = findSubjectMatchInText(input, subjects);
+  if (result.kind === "match") return result.subject;
+  return null;
 }
 
 export function createFindDocumentsState(intent: Extract<IntentResult, { intent: "FIND_DOCUMENTS" }>): ConversationState {

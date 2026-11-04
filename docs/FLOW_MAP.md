@@ -106,10 +106,11 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
    - Bước 4.1: Nếu đang trong conversation flow active, ưu tiên xử lý state hiện tại.
    - Bước 4.2: Phân tích structured intent bằng detectIntent(value, activeSubjects)
      --> NẾU INTENT == "FIND_DOCUMENTS" -> Khởi tạo luồng tìm tài liệu.
+      --> NẾU INTENT == "AMBIGUOUS_SUBJECT" -> Danh sách môn tương tự; chuyển state `WAITING_FOR_SUBJECT`, yêu cầu người dùng làm rõ môn.
      --> NẾU INTENT == "NEEDS_SUBJECT" -> Chuyển state `WAITING_FOR_SUBJECT`, hỏi user nêu/chọn môn; không tự fallback sang môn đầu tiên.
      --> NẾU INTENT == "FIND_ANNOUNCEMENTS" -> Hiển thị Thông báo.
-     --> NẾU INTENT == "FIND_SCHEDULE" -> Hiển thị Lịch học.
-     --> NẾU INTENT == "FIND_EXAMS" -> Hiển thị Lịch thi.
+     --> NẾU INTENT == "FIND_SCHEDULE" -> Hiển thị Lịch học (hỗ trợ lọc thời gian tương đối hôm nay/ngày mai qua `timeFilter`).
+     --> NẾU INTENT == "FIND_EXAMS" -> Hiển thị Lịch thi (hỗ trợ lọc thời gian tương đối hôm nay/ngày mai qua `timeFilter`).
      --> NẾU INTENT == "PUBLIC_ADMISSIONS_INFO" -> Tra cứu tuyển sinh công khai.
          (CA-093.01) Rust crawl tối đa 12 URL trong hạn chót 20s, mỗi URL thử tối đa 3 lần;
          trả status success/partial/no_match/error + failedUrls; UI hiện nút Thử lại khi error/partial/lỗi IPC.
