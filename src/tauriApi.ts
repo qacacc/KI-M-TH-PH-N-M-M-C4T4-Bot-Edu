@@ -303,3 +303,27 @@ export function restoreTrashItem(trashId: string): Promise<string> {
 export function emptyTrashBin(): Promise<number> {
   return tauriInvoke("empty_trash_bin");
 }
+
+// CA-087.03: CHAT ARCHIVE MANAGEMENT
+export interface ArchivedChatSession {
+  id: string;
+  title: string;
+  archivedAt: string;
+  messageCount: number;
+}
+
+export function getArchivedChats(): Promise<ArchivedChatSession[]> {
+  return tauriInvoke("get_archived_chats");
+}
+
+export function archiveChat(chatId: string): Promise<void> {
+  return tauriInvoke("archive_chat", { chat_id: chatId, chatId });
+}
+
+export function unarchiveChat(chatId: string): Promise<void> {
+  return tauriInvoke("unarchive_chat", { chat_id: chatId, chatId });
+}
+
+export function deleteChatSession(chatId: string): Promise<void> {
+  return tauriInvoke("delete_chat_session", { chat_id: chatId, chatId });
+}
