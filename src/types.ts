@@ -186,3 +186,22 @@ export type PublicSearchResponse = {
 };
 
 export type PublicSearchStatus = "success" | "partial" | "no_match" | "error";
+
+// CA-089.02: DATA STATE & PROVENANCE TYPES
+
+export type DataStateStatus = 'NOT_CONNECTED' | 'LOADING' | 'EMPTY' | 'ERROR';
+
+export interface DataProvenance {
+  source: string;        
+  account: string;       
+  scope: string;         
+  fetchedAt: string;     
+}
+
+export interface AcademicQueryResult<T> {
+  status: DataStateStatus;
+  data: T | null;
+  provenance: DataProvenance | null;
+  error?: string;
+  isStale?: boolean;     
+}
