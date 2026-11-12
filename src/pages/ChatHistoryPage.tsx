@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   History,
@@ -9,10 +9,13 @@ import {
   Pin,
   PinOff,
   Archive,
+  RotateCcw,
   Edit2,
   Check,
   X,
   ShieldCheck,
+  AlertCircle,
+  ArchiveRestore,
 } from "lucide-react";
 
 export type ChatSession = {
@@ -36,28 +39,82 @@ type Props = {
   onNavigateToSettings?: () => void;
 };
 
-export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, onNavigateToSettings }) => {
+export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat }) => {
   const [historyEnabled, setHistoryEnabled] = useState<boolean>(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState<string>("");
+  
+  // Modal State & Error handling
   const [deleteModal, setDeleteModal] = useState<DeleteModalState>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string>("");
+
+  // Refs cho Accessibility (Focus Trap & Focus Restoration)
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const lastFocusedElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     loadState();
   }, []);
 
+  // BẪY TIÊU ĐIỂM (FOCUS TRAP) & PHÍM ESC CHO MODAL XÓA
   useEffect(() => {
+    if (!deleteModal) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && deleteModal) {
-        setDeleteModal(null);
+      // 1. Phím Esc đóng modal
+      if (e.key === "Escape") {
+        closeDeleteModal();
+        return;
+      }
+
+      // 2. Bẫy phím Tab và Shift+Tab bên trong modal
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    // Tự động focus vào nút đầu tiên khi mở modal
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length > 0) {
+          focusableElements[0].focus();
+        }
+      }
+    }, 50);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      clearTimeout(timer);
+    };
   }, [deleteModal]);
 
   const loadState = async () => {
@@ -124,45 +181,61 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
     }
   };
 
+  // CA-087.03: Khôi phục / Lưu trữ phiên chat
   const handleToggleArchive = async (id: string, currentArchived: boolean) => {
     try {
       await invoke("toggle_archive_chat_session", { id, archived: !currentArchived });
       setActiveMenuId(null);
       loadState();
     } catch (err) {
-      console.error("Lỗi lưu trữ phiên:", err);
+      console.error("Lỗi chuyển trạng thái lưu trữ:", err);
     }
   };
 
-  const handleDeleteSessionClick = (session: ChatSession) => {
-    setDeleteModal({
-      type: "single",
-      sessionId: session.id,
-      sessionTitle: session.title,
-    });
+  // Mở modal xóa và ghi nhớ nút bấm kích hoạt
+  const openDeleteModal = (modalState: DeleteModalState, e: React.MouseEvent<HTMLElement>) => {
+    lastFocusedElementRef.current = e.currentTarget;
+    setDeleteModal(modalState);
+    setDeleteError("");
     setActiveMenuId(null);
   };
 
-  const handleClearAllClick = () => {
-    setDeleteModal({
-      type: "all",
-      sessionTitle: "toàn bộ lịch sử trò chuyện",
-    });
+  // Đóng modal và TRẢ TIÊU ĐIỂM về nút gọi ban đầu
+  const closeDeleteModal = () => {
+    setDeleteModal(null);
+    setDeleteError("");
+    setIsDeleting(false);
+    setTimeout(() => {
+      if (lastFocusedElementRef.current) {
+        lastFocusedElementRef.current.focus();
+      }
+    }, 0);
   };
 
+  // Xử lý Xóa phiên chat (Nếu lỗi backend thì giữ nguyên Modal & báo lỗi)
   const handleConfirmDelete = async () => {
     if (!deleteModal) return;
+    setIsDeleting(true);
+    setDeleteError("");
+
     try {
       if (deleteModal.type === "single" && deleteModal.sessionId) {
         await invoke("delete_chat_session", { id: deleteModal.sessionId });
       } else if (deleteModal.type === "all") {
         await invoke("clear_all_chat_sessions");
       }
-    } catch (err) {
-      console.error("Lỗi xóa phiên:", err);
-    } finally {
-      setDeleteModal(null);
+      closeDeleteModal();
       loadState();
+    } catch (err: unknown) {
+      console.error("Lỗi từ backend khi xóa phiên:", err);
+      const errorMessage =
+        typeof err === "string"
+          ? err
+          : (err as Error)?.message || "Backend từ chối thao tác xóa. Vui lòng thử lại sau.";
+      // CA-087.03: Hiển thị lỗi, GIỮ NGUYÊN modal
+      setDeleteError(errorMessage);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -181,26 +254,27 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
     }
   };
 
-  const filtered = sessions.filter(
+  // Phân loại danh sách theo Tab Active / Archived
+  const activeSessions = sessions.filter(
     (s) => !s.archived && s.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const archivedSessions = sessions.filter(
+    (s) => s.archived && s.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const displayedSessions = activeTab === "active" ? activeSessions : archivedSessions;
 
   const now = new Date();
-  const isToday = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toDateString() === now.toDateString();
-  };
-
+  const isToday = (dateStr: string) => new Date(dateStr).toDateString() === now.toDateString();
   const isThisWeek = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 3600 * 24));
+    const diffDays = Math.floor((now.getTime() - new Date(dateStr).getTime()) / (1000 * 3600 * 24));
     return diffDays >= 1 && diffDays <= 7;
   };
 
-  const pinnedGroup = filtered.filter((s) => s.pinned);
-  const todayGroup = filtered.filter((s) => !s.pinned && isToday(s.updatedAt));
-  const weekGroup = filtered.filter((s) => !s.pinned && !isToday(s.updatedAt) && isThisWeek(s.updatedAt));
-  const olderGroup = filtered.filter(
+  const pinnedGroup = displayedSessions.filter((s) => s.pinned);
+  const todayGroup = displayedSessions.filter((s) => !s.pinned && isToday(s.updatedAt));
+  const weekGroup = displayedSessions.filter((s) => !s.pinned && !isToday(s.updatedAt) && isThisWeek(s.updatedAt));
+  const olderGroup = displayedSessions.filter(
     (s) => !s.pinned && !isToday(s.updatedAt) && !isThisWeek(s.updatedAt)
   );
 
@@ -287,15 +361,29 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
                   <Edit2 size={14} />
                   Đổi tên
                 </button>
-                <button onClick={() => handleTogglePin(session.id, session.pinned)}>
-                  {session.pinned ? <PinOff size={14} /> : <Pin size={14} />}
-                  {session.pinned ? "Bỏ ghim" : "Ghim đoạn chat"}
-                </button>
+
+                {!session.archived && (
+                  <button onClick={() => handleTogglePin(session.id, session.pinned)}>
+                    {session.pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                    {session.pinned ? "Bỏ ghim" : "Ghim đoạn chat"}
+                  </button>
+                )}
+
+                {/* NÚT UNARCHIVE / ARCHIVE */}
                 <button onClick={() => handleToggleArchive(session.id, session.archived)}>
-                  <Archive size={14} />
-                  Lưu trữ
+                  {session.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+                  {session.archived ? "Khôi phục chat" : "Lưu trữ"}
                 </button>
-                <button className="danger-menu-item" onClick={() => handleDeleteSessionClick(session)}>
+
+                <button
+                  className="danger-menu-item"
+                  onClick={(e) =>
+                    openDeleteModal(
+                      { type: "single", sessionId: session.id, sessionTitle: session.title },
+                      e
+                    )
+                  }
+                >
                   <Trash size={14} />
                   Xóa
                 </button>
@@ -305,7 +393,13 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
 
           <div className="card-footer-row">
             <span className="card-time">{formatTime(session.updatedAt)}</span>
-            <span className="nav-badge local-badge">Local</span>
+            {session.archived ? (
+              <span className="nav-badge archived-badge" style={{ background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)" }}>
+                Đã lưu trữ
+              </span>
+            ) : (
+              <span className="nav-badge local-badge">Local</span>
+            )}
           </div>
         </div>
       </div>
@@ -324,6 +418,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
             <Plus size={16} />
             Cuộc trò chuyện mới
           </button>
+
           <div className="history-search-box">
             <Search size={15} />
             <input
@@ -333,13 +428,68 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="settings-btn-danger" onClick={handleClearAllClick}>
+
+          <button
+            className="settings-btn-danger"
+            onClick={(e) =>
+              openDeleteModal(
+                { type: "all", sessionTitle: "toàn bộ lịch sử trò chuyện" },
+                e
+              )
+            }
+          >
             <Trash size={16} />
-            Xóa dữ liệu...
+            Xóa toàn bộ...
           </button>
         </div>
       </header>
 
+      {/* THANH CHUYỂN TAB CÁC PHIÊN CHAT (ACTIVE / ARCHIVED) */}
+      <div className="history-tab-bar" style={{ display: "flex", gap: "8px", margin: "16px 0 20px 0", borderBottom: "1px solid var(--border)", paddingBottom: "8px" }}>
+        <button
+          className={activeTab === "active" ? "history-tab-btn active" : "history-tab-btn"}
+          onClick={() => setActiveTab("active")}
+          style={{
+            padding: "6px 14px",
+            borderRadius: "6px",
+            border: "none",
+            background: activeTab === "active" ? "var(--accent)" : "transparent",
+            color: activeTab === "active" ? "#fff" : "var(--muted)",
+            fontWeight: 600,
+            fontSize: "13px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px"
+          }}
+        >
+          <History size={14} />
+          Cuộc trò chuyện ({sessions.filter((s) => !s.archived).length})
+        </button>
+
+        <button
+          className={activeTab === "archived" ? "history-tab-btn active" : "history-tab-btn"}
+          onClick={() => setActiveTab("archived")}
+          style={{
+            padding: "6px 14px",
+            borderRadius: "6px",
+            border: "none",
+            background: activeTab === "archived" ? "var(--accent)" : "transparent",
+            color: activeTab === "archived" ? "#fff" : "var(--muted)",
+            fontWeight: 600,
+            fontSize: "13px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px"
+          }}
+        >
+          <Archive size={14} />
+          Đã lưu trữ ({sessions.filter((s) => s.archived).length})
+        </button>
+      </div>
+
+      {/* DANH SÁCH THEO NHÓM THỜI GIAN */}
       <div className="history-groups-list">
         {pinnedGroup.length > 0 && (
           <section className="history-group-section">
@@ -369,42 +519,81 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
           </section>
         )}
 
-        {filtered.length === 0 && (
-          <div className="no-sessions-found">
-            Không tìm thấy phiên trò chuyện nào phù hợp.
+        {displayedSessions.length === 0 && (
+          <div className="no-sessions-found" style={{ padding: "32px", textAlign: "center", color: "var(--muted)" }}>
+            {activeTab === "archived"
+              ? "Không có cuộc trò chuyện nào trong mục Lưu trữ."
+              : "Không tìm thấy phiên trò chuyện nào phù hợp."}
           </div>
         )}
       </div>
 
+      {/* MODAL XÁC NHẬN XÓA (FOCUS TRAP & BẮT LỖI BACKEND) */}
       {deleteModal && (
-        <div className="history-modal-overlay" onClick={() => setDeleteModal(null)}>
+        <div className="history-modal-overlay" onClick={closeDeleteModal}>
           <div
+            ref={modalRef}
             className="history-modal-card"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-modal-title"
+            tabIndex={-1}
           >
             <h3 id="delete-modal-title" className="history-modal-title">
               {deleteModal.type === "single" ? "Xóa đoạn chat?" : "Xóa toàn bộ lịch sử?"}
             </h3>
+
             <p className="history-modal-desc">
               {deleteModal.type === "single"
                 ? "Đoạn chat này sẽ bị xóa khỏi lịch sử local trên thiết bị này."
                 : "Tất cả đoạn chat đã lưu local sẽ bị xóa khỏi thiết bị này."}
             </p>
+
             {deleteModal.type === "single" && deleteModal.sessionTitle && (
               <p className="history-modal-target">
                 <strong>"{deleteModal.sessionTitle}"</strong>
               </p>
             )}
+
             <p className="history-modal-subtext">Hành động này không thể hoàn tác.</p>
+
+            {/* HIỂN THỊ THÔNG BÁO LỖI TỪ BACKEND NẾU TỪ CHỐI XÓA */}
+            {deleteError && (
+              <div
+                className="history-modal-error"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  margin: "12px 0",
+                  padding: "10px 12px",
+                  borderRadius: "6px",
+                  background: "color-mix(in srgb, #ef4444 15%, transparent)",
+                  color: "#ef4444",
+                  fontSize: "13px",
+                  border: "1px solid color-mix(in srgb, #ef4444 30%, transparent)",
+                }}
+              >
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <span>{deleteError}</span>
+              </div>
+            )}
+
             <div className="history-modal-actions">
-              <button className="modal-btn-cancel" onClick={() => setDeleteModal(null)} autoFocus>
+              <button
+                className="modal-btn-cancel"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+              >
                 Hủy
               </button>
-              <button className="modal-btn-delete" onClick={handleConfirmDelete}>
-                Xóa
+              <button
+                className="modal-btn-delete"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Đang xóa..." : "Xóa vĩnh viễn"}
               </button>
             </div>
           </div>
