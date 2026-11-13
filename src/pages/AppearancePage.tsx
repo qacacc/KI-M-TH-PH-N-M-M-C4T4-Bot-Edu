@@ -1,5 +1,6 @@
 import React, { ChangeEvent, useRef, useState, useEffect } from "react";
 import { Image, Palette, Type, Download, Upload, Trash2, Plus, ArrowLeft, RefreshCw, LayoutGrid, Eye, CheckCircle2, Copy, Sparkles, CalendarDays, FolderOpen, Database, BadgeCheck, Send, MessageSquare, BookOpen, Bell, Pencil, Sun, Moon, AlertCircle } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import { accentOptions, densityOptions, fontOptions } from "../appearanceOptions";
 import { darkAppearance, getDefaultAppearanceForTheme, lightAppearance, type AppearanceSettings, contrastRatio, getReadableTextColor, isPartialHexColor } from "../hooks/useAppearanceDraft";
 import { getCustomPresets, saveCustomPreset, deleteCustomPreset } from "../appearance/presetStore";
@@ -272,15 +273,43 @@ export function AppearancePage({
     );
   }
 
+  // CA-095.02: Trình quản lý tham chiếu ảnh nền (Reference Tracking)
   function handleDeleteCustomPreset(id: string, event: React.MouseEvent) {
     event.stopPropagation();
     const preset = customPresets.find(p => p.id === id);
+    if (!preset) return;
+
     openConfirmModal(
       "Xóa Preset cá nhân",
-      `Bạn có chắc chắn muốn xóa preset "${preset?.label ?? "này"}"?`,
+      `Bạn có chắc chắn muốn xóa preset "${preset.label ?? "này"}"?`,
       "Xóa ngay",
-      () => {
+      async () => {
+        const bgUrl = preset.appearance.backgroundImage;
         const nextPresets = customPresets.filter((p) => p.id !== id);
+
+        // Kiểm tra xem background của preset này có phải là file local từ Tauri không
+        if (bgUrl && bgUrl.startsWith("themes/")) {
+          // Kiểm tra chéo: Ảnh này có đang được preset khác dùng không?
+          const isUsedByOtherPresets = nextPresets.some(p => p.appearance.backgroundImage === bgUrl);
+          // Kiểm tra chéo: Giao diện hiện tại có đang dùng không?
+          const isUsedByCurrent = appearance.backgroundImage === bgUrl;
+          
+          if (!isUsedByOtherPresets && !isUsedByCurrent) {
+            // Tách themeId và filename từ chuỗi "themes/my-theme/bg_170000.png"
+            const parts = bgUrl.split("/"); 
+            if (parts.length >= 3) {
+              const themeId = parts[1];
+              const filename = parts[parts.length - 1];
+              try {
+                // Chỉ gọi lệnh xóa vật lý khi số reference count = 0
+                await invoke("delete_theme_background", { themeId, filename });
+              } catch (err) {
+                console.warn("Không thể dọn dẹp ảnh nền mồ côi:", err);
+              }
+            }
+          }
+        }
+
         setCustomPresets(nextPresets);
         localStorage.setItem("campus-assistant-custom-presets", JSON.stringify(nextPresets));
       }
