@@ -137,12 +137,6 @@ type UserMessageSource =
 const appVersion = "1.0.1";
 const defaultStartViews: View[] = ["chat", "schedule", "files", "school", "appearance"];
 
-const welcomeMessage: ChatMessage = {
-  id: "welcome",
-  role: "assistant",
-  content: "Chào bạn. v1.0.1 tập trung chat-first, tùy biến giao diện và các luồng local đã có.",
-};
-
 function readDefaultStartView(): View {
   const stored = localStorage.getItem("ca-settings-default-view") as View | null;
   return stored && defaultStartViews.includes(stored) ? stored : "chat";
@@ -160,7 +154,11 @@ function newId() {
 
 export default function App() {
   const [bootstrap, setBootstrap] = useState<BootstrapState | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
+  const [messages, setMessages] = useState<ChatMessage[]>([{
+    id: "welcome",
+    role: "assistant",
+    content: "Chào bạn. v1.0.1 tập trung chat-first, tùy biến giao diện và các luồng local đã có.",
+  }]);
   const [input, setInput] = useState("");
   const [view, setView] = useState<View>(() => readDefaultStartView());
   const [settingsBackView, setSettingsBackView] = useState<View>(() => readDefaultStartView());
@@ -178,20 +176,17 @@ export default function App() {
   const [isBusy, setIsBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
-  // Ref theo dõi trạng thái composition IME (nhập tiếng Việt)
-  // Không dùng useState để tránh re-render không cần thiết
   const isComposingRef = useRef(false);
   const backgroundInputRef = useRef<HTMLInputElement | null>(null);
   const bootstrapRequestRef = useRef(createBootstrapRequest(initApp));
   const [bootstrapAttempt, setBootstrapAttempt] = useState(0);
   const [bootstrapError, setBootstrapError] = useState(false);
-  /** Hiển thị thông báo chờ khi native layer mất >5 giây. */
   const [bootstrapSlow, setBootstrapSlow] = useState(false);
-  /** Đảm bảo welcome message chỉ được đưa vào messages 1 lần duy nhất. */
   const welcomeShownRef = useRef(false);
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() => {
     return localStorage.getItem("campus-assistant-sidebar-expanded") === "true";
   });
+  
   const toggleSidebarExpanded = () => {
     setSidebarExpanded(prev => {
       const next = !prev;
@@ -221,7 +216,7 @@ export default function App() {
     if (!commandSearchQuery.trim()) return list;
     const q = commandSearchQuery.toLowerCase();
     return list.filter(item => item.title.toLowerCase().includes(q) || item.detail.toLowerCase().includes(q));
-  }, [commandSearchQuery]); // view không ảnh hưởng nội dung list
+  }, [commandSearchQuery]);
 
   useEffect(() => {
     const refreshSchoolProfile = () => setSchoolProfile(readSchoolProfile());
@@ -317,7 +312,6 @@ export default function App() {
 
     function handleDragLeave(e: DragEvent) {
       e.preventDefault();
-      // Nhận diện khi trỏ chuột thực sự rời khỏi màn hình app
       if (e.clientX === 0 && e.clientY === 0) {
         setIsDraggingFile(false);
       }
@@ -400,12 +394,10 @@ export default function App() {
       deferredTimers.push(timer);
     };
 
-    // Khi retry: reset request để buộc gọi lại initApp.
     if (bootstrapAttempt > 0) {
       bootstrapRequestRef.current.reset();
     }
 
-    // Slow-timer: nếu sau 5 giây chưa xong, hiển thị thông báo chờ.
     const slowTimer = window.setTimeout(() => {
       if (!isCancelled) setBootstrapSlow(true);
     }, 5_000);
@@ -418,11 +410,9 @@ export default function App() {
         setBootstrap(state);
         hydrateSavedAppearance(state.theme, state.accentColor);
 
-        // Chỉ set welcome message 1 lần duy nhất trong toàn bộ vòng đời.
-        // Tránh StrictMode render 2 lần gây duplicate hoặc reset hội thoại.
         if (!welcomeShownRef.current) {
           welcomeShownRef.current = true;
-          setMessages([welcomeMessage]);
+          // Welcome message is pre-populated in useState instead.
         }
 
         if (autoFocusChatEnabled && view === "chat") {
@@ -461,8 +451,6 @@ export default function App() {
         window.clearTimeout(slowTimer);
         setBootstrapSlow(false);
         const isTimeout = err instanceof Error && err.message === "BOOTSTRAP_TIMEOUT";
-        // TIMEOUT → vẫn set lỗi nhưng không clear promise (có thể retry)
-        // Các lỗi khác → set lỗi bình thường
         setBootstrapError(true);
         console.error(
           isTimeout
@@ -478,7 +466,7 @@ export default function App() {
       deferredTimers.forEach((timer) => window.clearTimeout(timer));
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bootstrapAttempt]); // Setup mới đăng ký lại vào cùng yêu cầu, retry sau lỗi.
+  }, [bootstrapAttempt]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
@@ -596,11 +584,19 @@ export default function App() {
         }));
         setMessages(chatMsgs);
       } else {
-        setMessages([welcomeMessage]);
+        setMessages([{
+          id: "welcome",
+          role: "assistant",
+          content: "Chào bạn. v1.0.1 tập trung chat-first, tùy biến giao diện và các luồng local đã có.",
+        }]);
       }
     } catch (err) {
       console.error("Lỗi đọc tin nhắn phiên:", err);
-      setMessages([welcomeMessage]);
+      setMessages([{
+        id: "welcome",
+        role: "assistant",
+        content: "Chào bạn. v1.0.1 tập trung chat-first, tùy biến giao diện và các luồng local đã có.",
+      }]);
     }
     setView("chat");
   }
@@ -657,8 +653,6 @@ export default function App() {
 
   async function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
-      // Chặn gửi tin khi đang trong quá trình composition IME (nhập tiếng Việt)
-      // isComposing = true có nghĩa người dùng đang chọn từ gợi ý của bộ nhập tiếng Việt
       if (event.nativeEvent.isComposing || isComposingRef.current) {
         return;
       }
@@ -807,7 +801,6 @@ export default function App() {
         return;
       }
       case "AMBIGUOUS_SUBJECT": {
-        // Nhiều môn cùng mức độ khớp — yêu cầu người dùng chọn rõ hơn
         const list = intent.candidates.map((name, i) => `${i + 1}. ${name}`).join("\n");
         appendAssistant(`Tui tìm thấy nhiều môn có tên tương tự:\n${list}\nBạn muốn tìm tài liệu môn nào? Vui lòng nhập đủ tên môn để tôi xác nhận.`);
         setConversation({
@@ -956,7 +949,6 @@ export default function App() {
         shouldOfferPublicSearchRetry(response) ? { retryQuery: query } : {},
       );
     } catch (err) {
-      // CA-093.01: lỗi IPC/native cũng là lỗi, không hiển thị như danh sách rỗng; cho phép Thử lại
       appendAssistant(
         [
           `${PUBLIC_SEARCH_OFFLINE_MESSAGE} của ${school.shortName}.`,
@@ -1149,7 +1141,24 @@ export default function App() {
         const absolutePath = bootstrap.paths.appLocalData + "/" + relativePath;
         finalBg = convertFileSrc(absolutePath);
       } else if (!finalBg && appearance.backgroundImage) {
-        await deleteThemeBackground("current");
+        // CA-095.02: Bổ sung Reference Tracking trước khi xóa
+        const bgUrl = appearance.backgroundImage;
+        let isUsedByPreset = false;
+        try {
+          const savedPresets = localStorage.getItem("campus-assistant-custom-presets");
+          if (savedPresets) {
+            const customPresets = JSON.parse(savedPresets);
+            // Kiểm tra xem có preset nào đang tham chiếu đến ảnh này không
+            isUsedByPreset = customPresets.some((p: any) => p.appearance.backgroundImage === bgUrl);
+          }
+        } catch (e) {
+          console.warn("Không thể đọc presets để kiểm tra tham chiếu ảnh", e);
+        }
+
+        // Chỉ xóa vật lý khi KHÔNG có preset nào đang dùng ảnh này nữa
+        if (!isUsedByPreset) {
+          await deleteThemeBackground("current");
+        }
       }
       const finalAppearance = { ...draftAppearance, backgroundImage: finalBg };
       updateAppearance({ backgroundImage: finalBg });
@@ -1179,7 +1188,11 @@ export default function App() {
       setActiveSessionId("default");
     }
 
-    setMessages([welcomeMessage]);
+    setMessages([{
+      id: "welcome",
+      role: "assistant",
+      content: "Chào bạn. v1.0.1 tập trung chat-first, tùy biến giao diện và các luồng local đã có.",
+    }]);
     window.setTimeout(() => inputRef.current?.focus(), 0);
   }
 
@@ -1996,7 +2009,6 @@ export default function App() {
       </div>
     )}
 
-    {/* COMMAND PALETTE QUICK SEARCH MODAL */}
     {commandPaletteOpen && (
       <div className="glass-modal-backdrop" onClick={() => setCommandPaletteOpen(false)}>
         <div className="command-palette-card" onClick={(e) => e.stopPropagation()}>
@@ -2048,7 +2060,6 @@ export default function App() {
       </div>
     )}
 
-    {/* CUSTOM GLASS CONFIRM / ALERT MODAL */}
     {modalConfig.isOpen && (
       <div className="glass-modal-backdrop" onClick={modalConfig.onCancel}>
         <div className="glass-modal-card" onClick={(e) => e.stopPropagation()}>
