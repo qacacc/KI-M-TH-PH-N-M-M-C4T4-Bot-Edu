@@ -197,11 +197,9 @@ export function sanitizeAppearanceSettings(value: Partial<AppearanceSettings> = 
     glowEffect: typeof value.glowEffect === "boolean" ? value.glowEffect : fallback.glowEffect,
     glowIntensity: readNumber(value.glowIntensity, fallback.glowIntensity ?? 0.4, 0, 1),
     panelBlur: readNumber(value.panelBlur, fallback.panelBlur, 0, 24),
-    // Màu cột tùy chỉnh
     colLeftBg: typeof value.colLeftBg === "string" && (value.colLeftBg === "" || isHexColor(value.colLeftBg)) ? value.colLeftBg : (fallback.colLeftBg ?? ""),
     colMidBg: typeof value.colMidBg === "string" && (value.colMidBg === "" || isHexColor(value.colMidBg)) ? value.colMidBg : (fallback.colMidBg ?? ""),
     colRightBg: typeof value.colRightBg === "string" && (value.colRightBg === "" || isHexColor(value.colRightBg)) ? value.colRightBg : (fallback.colRightBg ?? ""),
-    // Các trường mới hỗ trợ Theme Studio
     overlayType: readOverlayType(value.overlayType ?? fallback.overlayType),
     overlayIntensity: readNumber(value.overlayIntensity, fallback.overlayIntensity ?? 0.55, 0, 0.8),
     pageMode: readPageMode(value.pageMode ?? fallback.pageMode),
@@ -222,11 +220,12 @@ export function loadAppearanceSettingsFromStorage(storage: AppearanceStorage | u
   }
 }
 
-export function saveAppearanceSettingsToStorage(storage: AppearanceStorage | undefined, appearance: AppearanceSettings) {
+export function saveAppearanceSettingsToStorage(storage: AppearanceStorage | undefined, appearance: AppearanceSettings): boolean {
   try {
     storage?.setItem(storageKey, JSON.stringify(appearance));
+    return true;
   } catch {
-    // localStorage có thể bị chặn; giao diện vẫn áp dụng trong phiên hiện tại.
+    return false;
   }
 }
 
@@ -252,6 +251,7 @@ function applyAppearanceToDocument(theme: ThemeMode, accentColor: string, appear
   document.documentElement.style.setProperty("--glow-intensity", String(appearance.glowIntensity));
   document.documentElement.style.setProperty("--accent", accentColor);
   document.documentElement.style.setProperty("--accent-contrast", getReadableTextColor(accentColor));
+  
   if (appearance.autoBg) {
     document.documentElement.style.removeProperty("--bg");
   } else {
@@ -273,6 +273,7 @@ function applyAppearanceToDocument(theme: ThemeMode, accentColor: string, appear
     document.documentElement.style.setProperty("--text", appearance.textColor);
     document.documentElement.style.setProperty("--muted", appearance.mutedColor);
   }
+
   document.documentElement.style.setProperty("--panel-blur", `${appearance.panelBlur}px`);
   document.documentElement.style.setProperty("--font-scale", String(appearance.fontScale));
   document.documentElement.style.setProperty("--app-font", appearance.fontFamily);
@@ -283,7 +284,6 @@ function applyAppearanceToDocument(theme: ThemeMode, accentColor: string, appear
   document.documentElement.style.setProperty("--user-bg-opacity", String(appearance.backgroundOpacity));
   document.documentElement.style.setProperty("--user-bg-blur", `${appearance.backgroundBlur}px`);
 
-  // Tính toán cường độ lớp phủ dựa trên overlayType mới
   const darkOverlay = appearance.overlayType === "dark" ? appearance.overlayIntensity : 0;
   const lightOverlay = appearance.overlayType === "light" ? appearance.overlayIntensity : 0;
   const accentTint = appearance.overlayType === "accent" ? appearance.overlayIntensity : 0;
@@ -297,7 +297,6 @@ function applyAppearanceToDocument(theme: ThemeMode, accentColor: string, appear
   document.documentElement.dataset.pageMode = appearance.pageMode;
   document.documentElement.dataset.safeArea = appearance.safeArea;
 
-  // Áp dụng màu cột tùy chỉnh (empty = xóa về mặc định)
   if (appearance.colLeftBg) {
     document.documentElement.style.setProperty("--col-left-bg", appearance.colLeftBg);
   } else {
@@ -319,26 +318,31 @@ export function useAppearanceDraft(isReadyForContrastGuard: boolean) {
   const [theme, setTheme] = useState<ThemeMode>("dark");
   const [accentColor, setAccentColor] = useState(systemDefaultAccent);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() => loadAppearanceSettingsFromStorage(getBrowserStorage()));
+  
   const [draftTheme, setDraftTheme] = useState<ThemeMode>("dark");
   const [draftAccentColor, setDraftAccentColor] = useState(systemDefaultAccent);
   const [draftAppearance, setDraftAppearance] = useState<AppearanceSettings>(() => loadAppearanceSettingsFromStorage(getBrowserStorage()));
+  
+  const [saveError, setSaveError] = useState<string | null>(null);
   const contrastGuardRef = useRef(false);
 
+  // CA-095.01: Áp dụng LIVE PREVIEW từ bản nháp (draft) lên giao diện
   useEffect(() => {
-    applyAppearanceToDocument(theme, accentColor, appearance);
-    saveAppearanceSettingsToStorage(getBrowserStorage(), appearance);
-  }, [theme, accentColor, appearance]);
+    applyAppearanceToDocument(draftTheme, draftAccentColor, draftAppearance);
+  }, [draftTheme, draftAccentColor, draftAppearance]);
 
+  // Đồng bộ draft ban đầu khi dữ liệu khởi tạo từ storage hoặc props
   useEffect(() => {
     setDraftTheme(theme);
     setDraftAccentColor(accentColor);
     setDraftAppearance(appearance);
   }, [theme, accentColor, appearance]);
 
+  // Điều chỉnh tự động khi đổi theme Sáng/Tối
   useEffect(() => {
-    setAppearance((current) => {
-      const palette = getDefaultAppearanceForTheme(theme);
-      const oppositePalette = getDefaultAppearanceForTheme(theme === "light" ? "dark" : "light");
+    setDraftAppearance((current) => {
+      const palette = getDefaultAppearanceForTheme(draftTheme);
+      const oppositePalette = getDefaultAppearanceForTheme(draftTheme === "light" ? "dark" : "light");
       const next = { ...current };
       let changed = false;
 
@@ -362,16 +366,17 @@ export function useAppearanceDraft(isReadyForContrastGuard: boolean) {
 
       return changed ? next : current;
     });
-  }, [theme]);
+  }, [draftTheme]);
 
+  // Bảo vệ độ tương phản (Contrast Guard)
   useEffect(() => {
     if (!isReadyForContrastGuard || contrastGuardRef.current) return;
     contrastGuardRef.current = true;
 
-    if (contrastRatio(appearance.backgroundColor, appearance.textColor) >= 3.8) return;
+    if (contrastRatio(draftAppearance.backgroundColor, draftAppearance.textColor) >= 3.8) return;
 
-    const palette = theme === "light" ? lightAppearance : darkAppearance;
-    setAppearance((current) => ({
+    const palette = draftTheme === "light" ? lightAppearance : darkAppearance;
+    setDraftAppearance((current) => ({
       ...current,
       backgroundColor: palette.backgroundColor,
       panelColor: palette.panelColor,
@@ -379,7 +384,7 @@ export function useAppearanceDraft(isReadyForContrastGuard: boolean) {
       textColor: palette.textColor,
       mutedColor: palette.mutedColor,
     }));
-  }, [appearance.backgroundColor, appearance.textColor, isReadyForContrastGuard, theme]);
+  }, [draftAppearance.backgroundColor, draftAppearance.textColor, isReadyForContrastGuard, draftTheme]);
 
   const appearanceDraftIsValid = useMemo(
     () =>
@@ -468,28 +473,46 @@ export function useAppearanceDraft(isReadyForContrastGuard: boolean) {
     setDraftAccentColor(systemDefaultAccent);
   }, [draftTheme]);
 
+  // CA-095.01: Hủy các thay đổi nháp và quay lại bản ghi chính thức
   const discardAppearanceChanges = useCallback(() => {
     setDraftTheme(theme);
     setDraftAccentColor(accentColor);
     setDraftAppearance(appearance);
+    setSaveError(null);
   }, [accentColor, appearance, theme]);
 
-  const applyAppearanceChanges = useCallback((nextAppearanceOverride?: AppearanceSettings) => {
+  // CA-095.01: Áp dụng vĩnh viễn vào Storage và Tauri IPC (xử lý lỗi hiển thị rõ ràng)
+  const applyAppearanceChanges = useCallback(async (nextAppearanceOverride?: AppearanceSettings) => {
     if (!appearanceDraftIsValid) return;
+    setSaveError(null);
 
     const nextAppearance = nextAppearanceOverride ?? draftAppearance;
-    setTheme(draftTheme);
-    setAccentColor(draftAccentColor);
-    setAppearance(nextAppearance);
-    setDraftAppearance(nextAppearance);
-    void saveSetting("theme", draftTheme).catch(() => undefined);
-    void saveSetting("accentColor", draftAccentColor).catch(() => undefined);
+    
+    try {
+      const storageSuccess = saveAppearanceSettingsToStorage(getBrowserStorage(), nextAppearance);
+      if (!storageSuccess) {
+        setSaveError("Không thể lưu cấu hình vào bộ nhớ trình duyệt (LocalStorage bị khóa hoặc hết dung lượng).");
+      }
+
+      await Promise.all([
+        saveSetting("theme", draftTheme),
+        saveSetting("accentColor", draftAccentColor)
+      ]);
+
+      setTheme(draftTheme);
+      setAccentColor(draftAccentColor);
+      setAppearance(nextAppearance);
+    } catch (err) {
+      console.error("Lỗi khi lưu theme qua IPC/Storage:", err);
+      setSaveError("Đã xảy ra lỗi khi lưu cấu hình giao diện. Vui lòng thử lại.");
+    }
   }, [appearanceDraftIsValid, draftAccentColor, draftAppearance, draftTheme]);
 
   const applyAppearanceImmediately = useCallback((nextAppearance: Partial<AppearanceSettings>) => {
     setAppearance((current) => {
       const merged = sanitizeAppearanceSettings({ ...current, ...nextAppearance }, current);
       setDraftAppearance(merged);
+      saveAppearanceSettingsToStorage(getBrowserStorage(), merged);
       return merged;
     });
   }, []);
@@ -503,6 +526,7 @@ export function useAppearanceDraft(isReadyForContrastGuard: boolean) {
     draftAppearance,
     appearanceDraftIsValid,
     hasAppearanceChanges,
+    saveError,
     hydrateSavedAppearance,
     updateTheme,
     updateAccent,

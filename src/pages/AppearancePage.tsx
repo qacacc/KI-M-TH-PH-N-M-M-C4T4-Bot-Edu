@@ -1,10 +1,11 @@
 import React, { ChangeEvent, useRef, useState, useEffect } from "react";
-import { Image, Palette, Type, Download, Upload, Trash2, Plus, ArrowLeft, RefreshCw, LayoutGrid, Eye, CheckCircle2, Copy, Sparkles, CalendarDays, FolderOpen, Database, BadgeCheck, Send, MessageSquare, BookOpen, Bell, Pencil, Sun, Moon } from "lucide-react";
+import { Image, Palette, Type, Download, Upload, Trash2, Plus, ArrowLeft, RefreshCw, LayoutGrid, Eye, CheckCircle2, Copy, Sparkles, CalendarDays, FolderOpen, Database, BadgeCheck, Send, MessageSquare, BookOpen, Bell, Pencil, Sun, Moon, AlertCircle } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import { accentOptions, densityOptions, fontOptions } from "../appearanceOptions";
 import { darkAppearance, getDefaultAppearanceForTheme, lightAppearance, type AppearanceSettings, contrastRatio, getReadableTextColor, isPartialHexColor } from "../hooks/useAppearanceDraft";
 import { getCustomPresets, saveCustomPreset, deleteCustomPreset } from "../appearance/presetStore";
 
-// Định nghĩa helper phân tích bảng màu từ ảnh (Canvas local)
+// Helper phân tích bảng màu từ ảnh (Canvas local)
 function extractColorsFromImage(dataUrl: string, callback: (colors: string[]) => void) {
   const img = new window.Image();
   img.onload = () => {
@@ -73,6 +74,7 @@ export function AppearancePage({
   theme,
   hasChanges,
   canApply,
+  saveError,
   onAppearanceChange,
   onAccentChange,
   onThemeChange,
@@ -85,6 +87,7 @@ export function AppearancePage({
   theme: "dark" | "light";
   hasChanges: boolean;
   canApply: boolean;
+  saveError?: string | null;
   onAppearanceChange: (nextAppearance: Partial<AppearanceSettings>) => void;
   onAccentChange: (nextAccent: string) => void;
   onThemeChange: (nextTheme: "dark" | "light") => void;
@@ -195,7 +198,7 @@ export function AppearancePage({
     }
   }, [proposedColors, theme, appearance.autoBg, appearance.autoPanel, appearance.autoText]);
 
-  // Quản lý Presets cá nhân với Custom Glass Modal
+  // Quản lý Presets cá nhân
   function handleSaveCustomPreset() {
     openPromptModal(
       "Lưu Preset cá nhân",
@@ -270,15 +273,43 @@ export function AppearancePage({
     );
   }
 
+  // CA-095.02: Trình quản lý tham chiếu ảnh nền (Reference Tracking)
   function handleDeleteCustomPreset(id: string, event: React.MouseEvent) {
     event.stopPropagation();
     const preset = customPresets.find(p => p.id === id);
+    if (!preset) return;
+
     openConfirmModal(
       "Xóa Preset cá nhân",
-      `Bạn có chắc chắn muốn xóa preset "${preset?.label ?? "này"}"?`,
+      `Bạn có chắc chắn muốn xóa preset "${preset.label ?? "này"}"?`,
       "Xóa ngay",
-      () => {
+      async () => {
+        const bgUrl = preset.appearance.backgroundImage;
         const nextPresets = customPresets.filter((p) => p.id !== id);
+
+        // Kiểm tra xem background của preset này có phải là file local từ Tauri không
+        if (bgUrl && bgUrl.startsWith("themes/")) {
+          // Kiểm tra chéo: Ảnh này có đang được preset khác dùng không?
+          const isUsedByOtherPresets = nextPresets.some(p => p.appearance.backgroundImage === bgUrl);
+          // Kiểm tra chéo: Giao diện hiện tại có đang dùng không?
+          const isUsedByCurrent = appearance.backgroundImage === bgUrl;
+          
+          if (!isUsedByOtherPresets && !isUsedByCurrent) {
+            // Tách themeId và filename từ chuỗi "themes/my-theme/bg_170000.png"
+            const parts = bgUrl.split("/"); 
+            if (parts.length >= 3) {
+              const themeId = parts[1];
+              const filename = parts[parts.length - 1];
+              try {
+                // Chỉ gọi lệnh xóa vật lý khi số reference count = 0
+                await invoke("delete_theme_background", { themeId, filename });
+              } catch (err) {
+                console.warn("Không thể dọn dẹp ảnh nền mồ côi:", err);
+              }
+            }
+          }
+        }
+
         setCustomPresets(nextPresets);
         localStorage.setItem("campus-assistant-custom-presets", JSON.stringify(nextPresets));
       }
@@ -364,7 +395,6 @@ export function AppearancePage({
     });
   }
 
-  // Tùy chọn hiển thị
   const colorRows: Array<{ key: keyof Pick<AppearanceSettings, "backgroundColor" | "panelColor" | "textColor" | "mutedColor">; label: string; autoKey: "autoBg" | "autoPanel" | "autoText" }> = [
     { key: "backgroundColor", label: "Nền ứng dụng", autoKey: "autoBg" },
     { key: "panelColor", label: "Panel / Card", autoKey: "autoPanel" },
@@ -510,7 +540,6 @@ export function AppearancePage({
     setAccentPickerOpen(false);
   }
 
-  // Mini Sandbox Style để Preview thời gian thực
   const previewStyle = {
     "--accent": accentColor,
     "--accent-contrast": getReadableTextColor(accentColor),
@@ -582,7 +611,7 @@ export function AppearancePage({
     <div className="page-card appearance-page">
       <div className="page-card-header">
         <div>
-          <h2><Palette size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} />Giao diện & Chủ đề</h2>
+          <h2><Palette size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} />Giao diện &amp; Chủ đề</h2>
           <p>Chỉnh trong bản nháp trước. Bấm <strong>Áp dụng</strong> để lưu thiết lập local.</p>
         </div>
         <div className="appearance-header-actions">
@@ -601,6 +630,14 @@ export function AppearancePage({
           <button className="primary" onClick={onApply} disabled={!hasChanges || !canApply} style={{ fontWeight: 700 }}>Áp dụng</button>
         </div>
       </div>
+
+      {/* CA-095.01: Banner hiển thị sự cố lưu IPC/Storage */}
+      {saveError && (
+        <div className="warning-box theme-save-error-box" role="alert" style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+          <AlertCircle size={16} style={{ color: "#ef4444", flexShrink: 0 }} />
+          <span>{saveError}</span>
+        </div>
+      )}
 
       {/* CUSTOM IDE GLASS MODAL DIALOG */}
       {modalConfig?.isOpen && (
@@ -649,7 +686,6 @@ export function AppearancePage({
           </div>
         </div>
       )}
-
 
       {/* BỘ CHỌN PRESET HỆ THỐNG / CÁ NHÂN */}
       <div className="preset-section-container">
@@ -796,7 +832,6 @@ export function AppearancePage({
 
             {/* MINI REAL APP SURFACE */}
             <section className="preview-surface" style={{ gridColumn: '2', background: 'transparent', border: 'none', gap: 8, display: 'flex', flexDirection: 'column' }}>
-              {/* Mini App Topbar */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
                 <div>
                   <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: appearance.textColor }}>
@@ -811,12 +846,10 @@ export function AppearancePage({
 
               {previewTab === "chat" && (
                 <>
-                  {/* Real Welcome Card Replica */}
                   <div className="preview-card" style={{ ...previewPanelStyle, padding: '8px 10px', borderRadius: 8 }}>
                     <b style={{ fontSize: 11.5, color: appearance.textColor }}>Chào bạn. v1.0.1 tập trung chat-first, tùy biến giao diện và các luồng local đã có.</b>
                   </div>
                   
-                  {/* Real Quick Chips Grid Replica */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                     <div style={{ ...previewPanelStyle, padding: '6px 8px', borderRadius: 6, fontSize: 10 }}>
                       <strong style={{ display: 'flex', alignItems: 'center', gap: 4, color: appearance.textColor }}><BookOpen size={11} />Tìm tài liệu mẫu</strong>
@@ -832,7 +865,6 @@ export function AppearancePage({
                     </div>
                   </div>
 
-                  {/* Real Chat Bubbles Replica */}
                   <div className="preview-chat-row assistant" style={{ ...previewPanelStyle, padding: '6px 10px', borderRadius: 8, maxWidth: '85%' }}>
                     <p style={{ margin: 0, fontSize: 10.5 }}>Chào bạn! Tôi sẵn sàng hỗ trợ tra cứu tài liệu học tập local.</p>
                   </div>
@@ -840,7 +872,6 @@ export function AppearancePage({
                     <p style={{ margin: 0, fontSize: 10.5, color: '#ffffff', fontWeight: 500 }}>Tìm tài liệu môn Lập trình mạng học kỳ 1</p>
                   </div>
 
-                  {/* Real Bottom Composer Replica */}
                   <div className="preview-input" style={{ ...previewPanelStyle, marginTop: 'auto', padding: '6px 8px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ color: appearance.mutedColor, fontSize: 10, flex: 1 }}>Nhập yêu cầu, ví dụ: tìm tài liệu lập trình mạng...</span>
                     <button style={{ background: accentColor, color: "#fff", border: 'none', width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', padding: 0 }}>
@@ -1239,7 +1270,7 @@ export function AppearancePage({
 
               {/* Vị trí & Điểm trọng tâm */}
               <div style={{ marginTop: 6 }}>
-                <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>Điểm trọng tâm & Vùng an toàn</span>
+                <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>Điểm trọng tâm &amp; Vùng an toàn</span>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'start', marginTop: 4 }}>
                   <div className="focus-point-picker">
                     <img src={appearance.backgroundImage} className="focus-point-image" alt="Background preview" />
@@ -1366,7 +1397,7 @@ export function AppearancePage({
   );
 }
 
-/* ===== BgDropZone: vùng kéo thả ảnh nền kiểu Campus ===== */
+/* ===== BgDropZone ===== */
 function BgDropZone({
   imageUrl,
   onFileChange,

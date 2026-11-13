@@ -1,5 +1,6 @@
 use base64::Engine;
 use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub(crate) fn is_valid_image(data: &[u8], ext: &str) -> bool {
     if data.len() < 4 {
@@ -52,9 +53,14 @@ pub(crate) fn save_theme_background(
     let themes_dir = roots.app_local_data.join("themes").join(&theme_id);
     fs::create_dir_all(&themes_dir).map_err(|e| format!("Không tạo được thư mục theme: {}", e))?;
 
-    let final_filename = format!("bg.{}", ext_lower);
+    // CA-095.02: Sinh Asset ID độc lập (dùng timestamp) để tránh ghi đè ảnh cũ của các preset khác
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+    let final_filename = format!("bg_{}.{}", timestamp, ext_lower);
     let final_path = themes_dir.join(&final_filename);
-    let tmp_path = themes_dir.join("bg.tmp");
+    let tmp_path = themes_dir.join(format!("bg_tmp_{}.tmp", timestamp));
 
     let write_res = (|| {
         use std::io::Write;
@@ -72,20 +78,11 @@ pub(crate) fn save_theme_background(
     fs::rename(&tmp_path, &final_path)
         .map_err(|e| format!("Lỗi đổi tên file (atomic write): {}", e))?;
 
-    for other_ext in &["png", "jpg", "jpeg", "webp"] {
-        if *other_ext != ext_lower {
-            let old_file = themes_dir.join(format!("bg.{}", other_ext));
-            if old_file.exists() {
-                let _ = fs::remove_file(old_file);
-            }
-        }
-    }
-
     Ok(format!("themes/{}/{}", theme_id, final_filename))
 }
 
 #[tauri::command]
-pub(crate) fn delete_theme_background(theme_id: String) -> Result<(), String> {
+pub(crate) fn delete_theme_background(theme_id: String, filename: String) -> Result<(), String> {
     if theme_id.is_empty()
         || !theme_id
             .chars()
@@ -94,21 +91,25 @@ pub(crate) fn delete_theme_background(theme_id: String) -> Result<(), String> {
         return Err("Theme ID không hợp lệ.".to_string());
     }
 
+    // Xác thực tên file, ngăn chặn Path Traversal
+    if filename.is_empty() || filename.contains('/') || filename.contains('\\') || filename.contains("..") {
+        return Err("Tên file không hợp lệ.".to_string());
+    }
+
     let roots = crate::paths::resolve_roots()?;
     let themes_dir = roots.app_local_data.join("themes").join(&theme_id);
-    if themes_dir.exists() {
-        for ext in &["png", "jpg", "jpeg", "webp"] {
-            let file_path = themes_dir.join(format!("bg.{}", ext));
-            if file_path.exists() {
-                fs::remove_file(&file_path)
-                    .map_err(|e| format!("Không xóa được file background cũ: {}", e))?;
-            }
-        }
-        if let Ok(entries) = fs::read_dir(&themes_dir) {
-            if entries.count() == 0 {
-                let _ = fs::remove_dir(&themes_dir);
-            }
+    let file_path = themes_dir.join(&filename);
+
+    if file_path.exists() {
+        fs::remove_file(&file_path)
+            .map_err(|e| format!("Không xóa được file background: {}", e))?;
+    }
+    
+    if let Ok(entries) = fs::read_dir(&themes_dir) {
+        if entries.count() == 0 {
+            let _ = fs::remove_dir(&themes_dir);
         }
     }
+    
     Ok(())
 }
