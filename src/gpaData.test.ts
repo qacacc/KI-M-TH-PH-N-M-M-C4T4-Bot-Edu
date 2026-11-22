@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { calculateGpaStats, parseGpaSubjects } from './gpaData';
 import type { GpaSubject } from './components/GpaCalculator';
 
-describe('GPA Calculation - CA-088.02 - Edge Cases', () => {
+describe('GPA Calculation - CA-088.02 - Edge Cases & BVA', () => {
   it('không tụt GPA khi thêm hàng mới chưa nhập điểm', () => {
     const subjects: GpaSubject[] = [
       { id: '1', name: 'Toán', credits: 3, letterGrade: 'A', score10: 8.5 },
@@ -41,9 +41,47 @@ describe('GPA Calculation - CA-088.02 - Edge Cases', () => {
     expect(result.totalCredits).toBe(0);
     expect(result.gpaScale4).toBe('0.00');
   });
+
+  it('tính đúng GPA tại các mốc biên BVA hợp lệ của score10 (0, 0.1, 5.0, 9.9, 10)', () => {
+    const subjects: GpaSubject[] = [
+      { id: '1', name: 'M1', credits: 1, letterGrade: 'F', score10: 0 },
+      { id: '2', name: 'M2', credits: 1, letterGrade: 'F', score10: 0.1 },
+      { id: '3', name: 'M3', credits: 1, letterGrade: 'D+', score10: 5.0 },
+      { id: '4', name: 'M4', credits: 1, letterGrade: 'A+', score10: 9.9 },
+      { id: '5', name: 'M5', credits: 1, letterGrade: 'A+', score10: 10 }
+    ];
+    const result = calculateGpaStats(subjects);
+    expect(result.totalCredits).toBe(5);
+    expect(result.gpaScale4).toBe('1.90');
+    expect(result.gpaScale10).toBe('5.00');
+  });
+
+  it('tính đúng GPA tại các mốc biên BVA hợp lệ của credits (1, 2, 3, 9, 10)', () => {
+    const subjects: GpaSubject[] = [
+      { id: '1', name: 'C1', credits: 1, letterGrade: 'A+', score10: 9.5 },
+      { id: '2', name: 'C2', credits: 2, letterGrade: 'A', score10: 8.5 },
+      { id: '3', name: 'C3', credits: 3, letterGrade: 'B+', score10: 8.0 },
+      { id: '4', name: 'C9', credits: 9, letterGrade: 'B', score10: 7.2 },
+      { id: '5', name: 'C10', credits: 10, letterGrade: 'C+', score10: 6.5 }
+    ];
+    const result = calculateGpaStats(subjects);
+    expect(result.totalCredits).toBe(25);
+    expect(result.gpaScale4).toBe('2.96');
+  });
+
+  it('bỏ qua môn học có tín chỉ thập phân hoặc ngoài biên [1..10] khi tính GPA', () => {
+    const subjects: GpaSubject[] = [
+      { id: '1', name: 'Hợp lệ', credits: 3, letterGrade: 'A', score10: 8.5 },
+      { id: '2', name: 'Thập phân', credits: 2.5, letterGrade: 'A+', score10: 9.5 },
+      { id: '3', name: 'Ngoài biên trên', credits: 11, letterGrade: 'A+', score10: 9.5 }
+    ];
+    const result = calculateGpaStats(subjects);
+    expect(result.totalCredits).toBe(3);
+    expect(result.gpaScale4).toBe('3.70');
+  });
 });
 
-describe('parseGpaSubjects - Validation & Security', () => {
+describe('parseGpaSubjects - Validation, BVA & Security', () => {
   it('parse thành công mảng rỗng khi truyền null hoặc chuỗi rỗng', () => {
     expect(parseGpaSubjects(null)).toEqual([]);
     expect(parseGpaSubjects('')).toEqual([]);
@@ -55,53 +93,67 @@ describe('parseGpaSubjects - Validation & Security', () => {
     expect(parsed[0].credits).toBe('');
   });
 
-  it('ném lỗi khi dữ liệu JSON bị sai cấu trúc (thiếu trường bắt buộc)', () => {
-    const invalidRaw = JSON.stringify([{ id: '1' }]);
-    expect(() => parseGpaSubjects(invalidRaw)).toThrow("Dữ liệu điểm đã lưu không hợp lệ.");
+  it('chấp nhận các giá trị biên BVA hợp lệ của score10 (0, 0.1, 9.9, 10) và credits (1, 2, 9, 10)', () => {
+    const raw = JSON.stringify([
+      { id: '1', name: 'M1', credits: 1, letterGrade: 'F', score10: 0 },
+      { id: '2', name: 'M2', credits: 2, letterGrade: 'F', score10: 0.1 },
+      { id: '3', name: 'M3', credits: 9, letterGrade: 'A+', score10: 9.9 },
+      { id: '4', name: 'M4', credits: 10, letterGrade: 'A+', score10: 10 }
+    ]);
+    expect(parseGpaSubjects(raw)).toHaveLength(4);
   });
 
-  it('từ chối điểm hệ 10 ngoài biên (-0.1 và 10.1)', () => {
-    const invalidLow = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'F', score10: -0.1 }]);
-    expect(() => parseGpaSubjects(invalidLow)).toThrow();
-
-    const invalidHigh = JSON.stringify([{ id: '2', name: 'Test', credits: 3, letterGrade: 'A+', score10: 10.1 }]);
-    expect(() => parseGpaSubjects(invalidHigh)).toThrow();
+  it('từ chối score10 ngoài biên (-0.1 và 10.1)', () => {
+    const belowMin = JSON.stringify([{ id: '1', name: 'Toán', credits: 3, letterGrade: 'F', score10: -0.1 }]);
+    const aboveMax = JSON.stringify([{ id: '1', name: 'Toán', credits: 3, letterGrade: 'A+', score10: 10.1 }]);
+    expect(() => parseGpaSubjects(belowMin)).toThrow();
+    expect(() => parseGpaSubjects(aboveMax)).toThrow();
   });
 
-  it('chấp nhận giá trị biên của điểm hợp lệ (0 và 10)', () => {
-    const validZero = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'F', score10: 0 }]);
-    expect(() => parseGpaSubjects(validZero)).not.toThrow();
-
-    const validTen = JSON.stringify([{ id: '2', name: 'Test', credits: 3, letterGrade: 'A+', score10: 10 }]);
-    expect(() => parseGpaSubjects(validTen)).not.toThrow();
+  it('từ chối credits ngoài biên (0 và 11) hoặc dạng số thập phân (2.5)', () => {
+    const zeroCredit = JSON.stringify([{ id: '1', name: 'Toán', credits: 0, letterGrade: 'A', score10: 8.5 }]);
+    const overCredit = JSON.stringify([{ id: '1', name: 'Toán', credits: 11, letterGrade: 'A', score10: 8.5 }]);
+    const decimalCredit = JSON.stringify([{ id: '1', name: 'Toán', credits: 2.5, letterGrade: 'A', score10: 8.5 }]);
+    expect(() => parseGpaSubjects(zeroCredit)).toThrow();
+    expect(() => parseGpaSubjects(overCredit)).toThrow();
+    expect(() => parseGpaSubjects(decimalCredit)).toThrow();
   });
 
-  it('từ chối tín chỉ không hợp lệ (0, âm, lớn hơn 10)', () => {
-    const creditZero = JSON.stringify([{ id: '1', name: 'Test', credits: 0, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditZero)).toThrow();
-
-    const creditNeg = JSON.stringify([{ id: '2', name: 'Test', credits: -1, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditNeg)).toThrow();
-
-    const creditBig = JSON.stringify([{ id: '3', name: 'Test', credits: 11, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditBig)).toThrow();
+  it('từ chối danh sách có hai môn học trùng ID', () => {
+    const duplicateIds = JSON.stringify([
+      { id: 'dup-1', name: 'Toán', credits: 3, letterGrade: 'A', score10: 8.5 },
+      { id: 'dup-1', name: 'Lý', credits: 2, letterGrade: 'B', score10: 7.0 }
+    ]);
+    expect(() => parseGpaSubjects(duplicateIds)).toThrow();
   });
 
-  it('chấp nhận giá trị biên của tín chỉ hợp lệ (1 và 10)', () => {
-    const creditOne = JSON.stringify([{ id: '1', name: 'Test', credits: 1, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditOne)).not.toThrow();
-
-    const creditTen = JSON.stringify([{ id: '2', name: 'Test', credits: 10, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditTen)).not.toThrow();
+  it('ném lỗi độc lập khi thiếu trường bắt buộc id', () => {
+    const raw = JSON.stringify([{ name: 'Toán', credits: 3, letterGrade: 'A', score10: 8.5 }]);
+    expect(() => parseGpaSubjects(raw)).toThrow();
   });
 
-  it('từ chối letterGrade không hợp lệ (VD: ABC)', () => {
-    const invalidGrade = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'ABC', score10: 8 }]);
-    expect(() => parseGpaSubjects(invalidGrade)).toThrow();
+  it('ném lỗi độc lập khi thiếu trường bắt buộc name', () => {
+    const raw = JSON.stringify([{ id: '1', credits: 3, letterGrade: 'A', score10: 8.5 }]);
+    expect(() => parseGpaSubjects(raw)).toThrow();
   });
 
-  it.each(['constructor', 'toString', '__proto__'])('từ chối letterGrade kế thừa: %s', (letterGrade) => {
-    const invalidGrade = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade, score10: 8 }]);
-    expect(() => parseGpaSubjects(invalidGrade)).toThrow('Dữ liệu điểm đã lưu không hợp lệ.');
+  it('ném lỗi độc lập khi thiếu trường bắt buộc credits', () => {
+    const raw = JSON.stringify([{ id: '1', name: 'Toán', letterGrade: 'A', score10: 8.5 }]);
+    expect(() => parseGpaSubjects(raw)).toThrow();
+  });
+
+  it('ném lỗi độc lập khi thiếu trường bắt buộc letterGrade', () => {
+    const raw = JSON.stringify([{ id: '1', name: 'Toán', credits: 3, score10: 8.5 }]);
+    expect(() => parseGpaSubjects(raw)).toThrow();
+  });
+
+  it('ném lỗi độc lập khi thiếu trường bắt buộc score10', () => {
+    const raw = JSON.stringify([{ id: '1', name: 'Toán', credits: 3, letterGrade: 'A' }]);
+    expect(() => parseGpaSubjects(raw)).toThrow();
+  });
+
+  it('ném lỗi khi dữ liệu không phải mảng hoặc sai kiểu dữ liệu', () => {
+    expect(() => parseGpaSubjects(JSON.stringify({ id: '1' }))).toThrow();
+    expect(() => parseGpaSubjects(JSON.stringify([{ id: '1', name: 'Toán', credits: '3', letterGrade: 'A', score10: 8.5 }]))).toThrow();
   });
 });

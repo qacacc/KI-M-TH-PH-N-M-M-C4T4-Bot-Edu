@@ -1,242 +1,95 @@
-# Báo cáo Kiểm thử Chức năng Tính & Lưu trữ GPA (Task CA-088.02)
+# Báo cáo Kiểm thử Chức năng Tính & Xác thực Dữ liệu GPA (Task CA-088.02)
 
-- **Dự án:** Campus Assistant (`KI-M-TH-PH-N-M-M-C4T4-Bot-Edu`)
-- **Mã Task:** `CA-088.02` — *GPA không tính hàng đang nhập*
-- **Nhánh Git (Branch):** `feat/tram/ca-088-02-gpa-calculation-fix`
-- **Người thực hiện:** Nguyễn Thị Ngọc Trâm (`TV05`)
-- **Người duyệt (Reviewer):** Võ Anh Sơn (`TV07`)
-- **Phạm vi kiểm thử:** Hàm `calculateGpaStats` và `parseGpaSubjects` (`src/gpaData.ts`), tích hợp trên giao diện `src/components/GpaCalculator.tsx`
-- **Công cụ kiểm thử tự động:** Vitest v4.1.12 (TypeScript)
+> **Trạng thái nghiệm thu (`DOC-001`):**
+> * **Subtask `CA-088.02` (Logic tính GPA & Xác thực đầu vào):** **`CONFIRMED`** *(Automated Unit & Integration Tests — 22/22 tests PASS)*
+> * **Task cha `CA-088` (Hoàn thiện toàn bộ luồng lưu/phục hồi dữ liệu cũ & UI thủ công trên bản cài đặt):** **`PLANNED`** *(Task cha vẫn giữ trạng thái `Proposed` / `In Progress` cho tới khi hoàn tất luồng phục hồi legacy v1 và duyệt PR #26)*
 
----
-
-## Quy ước đặt Tag bao phủ
-
-- **Lớp tương đương hợp lệ:**
-  - `V1`: Điểm hệ 10 (`score10`) hợp lệ
-  - `V2`: Số tín chỉ (`credits`) hợp lệ
-  - `V3`: Điểm chữ (`letterGrade`) hợp lệ
-  - `V4`: Cấu trúc mảng JSON `GpaSubject[]` hợp lệ
-- **Lớp tương đương không hợp lệ:**
-  - `X1`: `score10 < 0`
-  - `X2`: `score10 > 10`
-  - `X3`: `credits < 1`
-  - `X4`: `credits > 10`
-  - `X5`: `letterGrade` không thuộc danh sách cho phép (allowlist)
-  - `X6`: `letterGrade` là khóa kế thừa `Object.prototype` (`constructor`, `toString`, `__proto__`)
-  - `X7`: Chuỗi JSON sai cấu trúc hoặc thiếu trường bắt buộc
-- **Giá trị biên & trạng thái nghiệp vụ:**
-  - `B1–B5`: Các điểm biên của `score10` (`min`, `min+`, `nominal`, `max-`, `max`)
-  - `B6–B10`: Các điểm biên của `credits` (`min`, `min+`, `nominal`, `max-`, `max`)
-  - `B11`: Tập dữ liệu đầu vào rỗng (`[]`, `null`, `''`)
-  - `B12`: Hàng mới thêm chưa nhập dữ liệu (`credits: ''`, `letterGrade: ''`, `score10: ''`)
-  - `B13`: Biên cực trị thang điểm 4.0 (toàn điểm `F` = `0.00`; toàn điểm `A+` = `4.00`)
+* **Dự án:** Campus Assistant Local (`KI-M-TH-PH-N-M-M-C4T4-Bot-Edu`)
+* **Mã Task:** `CA-088.02` — *GPA không tính hàng đang nhập & xác thực dữ liệu bảng điểm*
+* **Nhánh Git (Branch):** `feat/tram/ca-088-02-gpa-calculation-fix`
+* **Người thực hiện:** Nguyễn Thị Ngọc Trâm (`TV05`)
+* **Quy chuẩn áp dụng:** `docs/INVARIANTS.md` (`DOC-001`, `AI-006`, `AI-008`, `DATA-001`)
 
 ---
 
-## Câu 1. Xác định lớp tương đương (Equivalence Partitioning - EP)
+## 1. Phạm vi & Quy tắc Nghiệp vụ Được Kiểm chứng (`CONFIRMED`)
 
-| Biến / Dữ liệu đầu vào | Lớp hợp lệ | Tag | Lớp không hợp lệ | Tag |
-|---|---|---|---|---|
-| Điểm hệ 10 (`score10`) | $0 \leq score10 \leq 10$ (số thực) hoặc `''` (hàng chưa nhập) | V1 | (a) $score10 < 0$<br>(b) $score10 > 10$ | X1<br>X2 |
-| Số tín chỉ (`credits`) | $1 \leq credits \leq 10$ (số nguyên) hoặc `''` (hàng chưa nhập) | V2 | (a) $credits < 1$ (gồm `0` và số âm)<br>(b) $credits > 10$ | X3<br>X4 |
-| Điểm chữ (`letterGrade`) | Thuộc allowlist (`A+`, `A`, `B+`, `B`, `C+`, `C`, `D+`, `D`, `F`) hoặc `''` | V3 | (a) Chuỗi không thuộc allowlist (VD: `'ABC'`)<br>(b) Khóa kế thừa prototype (`'constructor'`, `'toString'`, `'__proto__'`) | X5<br>X6 |
-| Cấu trúc bảng điểm (`raw` / `subjects`) | Mảng JSON `GpaSubject[]` đủ các trường (`id`, `name`, `credits`, `letterGrade`, `score10`), hoặc `null`, `''`, `[]` | V4 | Chuỗi JSON sai cấu trúc hoặc thiếu trường bắt buộc (VD: `[{"id":"1"}]`) | X7 |
+1. **Bỏ qua hàng chưa hoàn tất (`src/gpaData.ts:45-64` — `CONFIRMED`):** Các môn học mới thêm có `credits === ""`, `letterGrade === ""` hoặc `score10 === ""` không được cộng vào `totalCredits`, không kéo tụt `gpaScale4` hay `gpaScale10`.
+2. **Ràng buộc số tín chỉ nguyên `[1..10]` (`src/gpaData.ts:29-31, 49-51` — `CONFIRMED`):** Số tín chỉ hợp lệ khi lưu trữ và tính toán phải là **số nguyên** trong đoạn `[1, 10]` (`Number.isInteger`). Số tín chỉ thập phân (ví dụ `2.5`) hoặc ngoài khoảng (`0`, `11`) đều bị từ chối khi parse và bị loại khi tính GPA.
+3. **Tính duy nhất của `id` môn học (`src/gpaData.ts:22, 27, 40` — `CONFIRMED`):** `parseGpaSubjects` kiểm tra `seenIds` để từ chối mảng JSON chứa hai môn học trùng `id`, ngăn lỗi sửa/xóa nhầm hàng trên giao diện React.
+4. **Ràng buộc điểm thang 10 và điểm chữ (`src/gpaData.ts:32-37` — `CONFIRMED`):** `score10` hợp lệ thuộc đoạn thực `[0.0, 10.0]` (hoặc `""`); `letterGrade` phải nằm trong allowlist `GRADE_CONVERSION` (`A+`, `A`, `B+`, `B`, `C+`, `C`, `D+`, `D`, `F`) hoặc `""`.
 
 ---
 
-## Câu 2. Phân tích giá trị biên (Boundary Value Analysis - BVA)
+## 2. Thiết kế Kịch bản Kiểm thử Hộp đen (EP & Standard BVA)
 
-Áp dụng **Standard BVA** cho hai biến định lượng đầu vào (`score10` và `credits`):
+### 2.1. Phân hoạch lớp tương đương (EP)
 
-| Biến đầu vào | min- | min | min+ | nominal | max- | max | max+ | Tag biên |
+| Biến / Điều kiện | Lớp hợp lệ (Valid) | Lớp không hợp lệ (Invalid) |
+|---|---|---|
+| **ID môn học (`id`)** | **V1:** Chuỗi không rỗng, duy nhất trong danh sách | **X1:** Thiếu `id`, `id` rỗng hoặc trùng `id` giữa 2 hàng |
+| **Tên môn học (`name`)** | **V2:** Kiểu `string` (cho phép rỗng khi mới thêm hàng) | **X2:** Thiếu trường `name` hoặc sai kiểu dữ liệu |
+| **Số tín chỉ (`credits`)** | **V3:** Số nguyên `1 <= credits <= 10` hoặc `""` | **X3:** Thiếu trường, `<= 0`, `> 10`, số thập phân (`2.5`) hoặc chuỗi |
+| **Điểm thang 10 (`score10`)** | **V4:** Số thực `0.0 <= score10 <= 10.0` hoặc `""` | **X4:** Thiếu trường, `< 0`, `> 10`, `NaN`/`Infinity` hoặc chuỗi |
+| **Điểm chữ (`letterGrade`)** | **V5:** Thuộc `GRADE_CONVERSION` hoặc `""` | **X5:** Thiếu trường hoặc giá trị ngoài allowlist (`"constructor"`) |
+
+### 2.2. Phân tích giá trị biên chuẩn (Standard BVA)
+
+| Biến đầu vào | `min-` | `min` | `min+` | `nominal` | `max-` | `max` | `max+` | Tag biên |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| Điểm hệ 10 (`score10`) | -0.1 | 0 | 0.1 | 8.5 | 9.9 | 10 | 10.1 | B1, B2, B3, B4, B5 *(ngoài biên: X1, X2)* |
-| Số tín chỉ (`credits`) | 0 *(và -1)* | 1 | 2 | 3 | 9 | 10 | 11 | B6, B7, B8, B9, B10 *(ngoài biên: X3, X4)* |
+| **`score10`** | `-0.1` *(X4)* | `0` *(B1)* | `0.1` *(B2)* | `5.0` *(B3)* | `9.9` *(B4)* | `10` *(B5)* | `10.1` *(X4)* | `B1`..`B5`, `X4` |
+| **`credits`** | `0` *(X3)* | `1` *(B6)* | `2` *(B7)* | `3` *(B8)* | `9` *(B9)* | `10` *(B10)* | `11` *(X3)* | `B6`..`B10`, `X3` |
 
-**Các biên trạng thái đặc biệt của chức năng tính GPA:**
-- `B11`: Bảng điểm rỗng (`[]`, `null`, `''`) $\rightarrow$ Trả về `[]` hoặc `gpaScale4 = '0.00'`.
-- `B12`: Hàng mới thêm chưa nhập dữ liệu (`''`) $\rightarrow$ Bỏ qua khi tính tổng tín chỉ và GPA, không kéo tụt điểm trung bình.
-- `B13`: Cực trị thang điểm 4.0 $\rightarrow$ Toàn điểm `F` trả về `0.00`; toàn điểm `A+` trả về `4.00`.
+* **Biên trạng thái đặc biệt:**
+  * `B11`: Danh sách rỗng (`[]`, `null`, `""`) $\rightarrow$ `parseGpaSubjects` trả về `[]`, `calculateGpaStats` trả về `gpaScale4 = "0.00"`.
+  * `B12`: Hàng mới thêm chưa nhập dữ liệu (`credits: "", letterGrade: "", score10: ""`) $\rightarrow$ Bỏ qua khi tính tổng tín chỉ và GPA.
+  * `B13`: Cực trị thang 4.0 $\rightarrow$ Toàn điểm `F` trả về `"0.00"`; toàn điểm `A+` trả về `"4.00"`.
 
 ---
 
-## Câu 3. Thiết kế test case
+## 3. Ma trận Truy vết & Kết quả Thực thi Kiểm thử Tự động (`CONFIRMED`)
 
-Bảng tổng hợp **16 test case** ánh xạ trực tiếp với bộ kiểm thử tự động trong `src/gpaData.test.ts` (tuân thủ nguyên tắc *single fault* đối với các test case không hợp lệ):
+### 3.1. Bộ Unit Test Logic (`src/gpaData.test.ts` — 20/20 PASS)
 
-| STT | Tên test case | Hàm kiểm thử & Dữ liệu đầu vào (Input) | Kết quả mong đợi (Expected Result) | Tag được bao phủ |
+| STT | Tên Test Case trong `src/gpaData.test.ts` | Hàm kiểm thử | Tag bao phủ | Kết quả & Phân loại (`DOC-001`) |
 |---:|---|---|---|---|
-| 1 | Không tụt GPA khi thêm hàng mới chưa nhập điểm | `calculateGpaStats`:<br>- Hàng 1: `credits=3, letterGrade='A', score10=8.5`<br>- Hàng 2: `credits='', letterGrade='', score10=''` | **Hợp lệ:** Hàng 2 bị bỏ qua; `totalCredits = 3`, `gpaScale4 = '3.70'` | V1, V2, V3, V4, B3, B8, B12 |
-| 2 | Tính đúng GPA thấp nhất (toàn điểm F) | `calculateGpaStats`:<br>- Hàng 1: `credits=3, letterGrade='F', score10=2.0`<br>- Hàng 2: `credits=2, letterGrade='F', score10=1.0` | **Hợp lệ:** `gpaScale4 = '0.00'` | V1, V2, V3, V4, B7, B8, B13 |
-| 3 | Tính đúng GPA cao nhất (toàn điểm A+) | `calculateGpaStats`:<br>- Hàng 1: `credits=3, letterGrade='A+', score10=10.0` | **Hợp lệ:** `gpaScale4 = '4.00'` | V1, V2, V3, V4, B5, B8, B13 |
-| 4 | Trả về `0.00` khi bảng điểm trống | `calculateGpaStats([])` | **Hợp lệ:** `gpaScale4 = '0.00'` | V4, B11 |
-| 5 | Không tính `letterGrade` ngoài allowlist vào tổng GPA | `calculateGpaStats`:<br>- `credits=3, letterGrade='constructor', score10=10` | **Không hợp lệ (bỏ qua dòng lỗi):** `totalCredits = 0`, `gpaScale4 = '0.00'` | X6 |
-| 6 | Parse thành công mảng rỗng khi truyền `null` hoặc `''` | `parseGpaSubjects(null)` và `parseGpaSubjects('')` | **Hợp lệ:** Trả về mảng rỗng `[]` | V4, B11 |
-| 7 | Parse thành công JSON hợp lệ chứa giá trị rỗng | `parseGpaSubjects('[{"id":"1","name":"Test","credits":"","letterGrade":"","score10":""}]')` | **Hợp lệ:** Parse thành công, `parsed[0].credits === ''` | V1, V2, V3, V4, B12 |
-| 8 | Ném lỗi khi JSON sai cấu trúc (thiếu trường bắt buộc) | `parseGpaSubjects('[{"id":"1"}]')` | **Không hợp lệ:** Ném lỗi `"Dữ liệu điểm đã lưu không hợp lệ."` | X7 |
-| 9 | Từ chối điểm hệ 10 ngoài biên dưới (`min-`) | `parseGpaSubjects`: `score10=-0.1, credits=3, letterGrade='F'` | **Không hợp lệ:** Ném lỗi do `score10 < 0` | X1 |
-| 10 | Từ chối điểm hệ 10 ngoài biên trên (`max+`) | `parseGpaSubjects`: `score10=10.1, credits=3, letterGrade='A+'` | **Không hợp lệ:** Ném lỗi do `score10 > 10` | X2 |
-| 11 | Chấp nhận giá trị biên của điểm hợp lệ (`min` và `max`) | `parseGpaSubjects`:<br>- Case A: `score10=0, credits=3, letterGrade='F'`<br>- Case B: `score10=10, credits=3, letterGrade='A+'` | **Hợp lệ:** Không ném lỗi ở cả hai biên `0` và `10` | V1, V2, V3, V4, B1, B5, B8 |
-| 12 | Từ chối tín chỉ ngoài biên dưới (`min-`) | `parseGpaSubjects`:<br>- Case A: `credits=0, score10=8, letterGrade='A'`<br>- Case B: `credits=-1, score10=8, letterGrade='A'` | **Không hợp lệ:** Ném lỗi do `credits < 1` | X3 |
-| 13 | Từ chối tín chỉ ngoài biên trên (`max+`) | `parseGpaSubjects`: `credits=11, score10=8, letterGrade='A'` | **Không hợp lệ:** Ném lỗi do `credits > 10` | X4 |
-| 14 | Chấp nhận giá trị biên của tín chỉ hợp lệ (`min` và `max`) | `parseGpaSubjects`:<br>- Case A: `credits=1, score10=8, letterGrade='A'`<br>- Case B: `credits=10, score10=8, letterGrade='A'` | **Hợp lệ:** Không ném lỗi ở cả hai biên `1` và `10` | V1, V2, V3, V4, B6, B10 |
-| 15 | Từ chối `letterGrade` không hợp lệ | `parseGpaSubjects`: `letterGrade='ABC', credits=3, score10=8` | **Không hợp lệ:** Ném lỗi do `letterGrade` không thuộc allowlist | X5 |
-| 16 | Từ chối `letterGrade` kế thừa prototype | `parseGpaSubjects`: `letterGrade` $\in$ `{'constructor', 'toString', '__proto__'}`, `credits=3, score10=8` | **Không hợp lệ:** Ném lỗi `"Dữ liệu điểm đã lưu không hợp lệ."` | X6 |
+| 1 | `không tụt GPA khi thêm hàng mới chưa nhập điểm` | `calculateGpaStats` | `V1..V5, B8, B12` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 2 | `tính đúng GPA thấp nhất (toàn điểm F)` | `calculateGpaStats` | `V1..V5, B7, B8, B13` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 3 | `tính đúng GPA cao nhất (toàn điểm A+)` | `calculateGpaStats` | `V1..V5, B5, B8, B13` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 4 | `trả về 0.00 khi bảng điểm trống` | `calculateGpaStats` | `B11` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 5 | `không tính grade không thuộc allowlist vào tổng GPA` | `calculateGpaStats` | `X5` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 6 | `tính đúng GPA tại các mốc biên BVA hợp lệ của score10 (0, 0.1, 5.0, 9.9, 10)` | `calculateGpaStats` | `B1, B2, B3, B4, B5, B6` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 7 | `tính đúng GPA tại các mốc biên BVA hợp lệ của credits (1, 2, 3, 9, 10)` | `calculateGpaStats` | `B6, B7, B8, B9, B10` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 8 | `bỏ qua môn học có tín chỉ thập phân hoặc ngoài biên [1..10] khi tính GPA` | `calculateGpaStats` | `X3` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 9 | `parse thành công mảng rỗng khi truyền null hoặc chuỗi rỗng` | `parseGpaSubjects` | `B11` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 10 | `parse thành công dữ liệu JSON hợp lệ có chứa giá trị rỗng` | `parseGpaSubjects` | `V1..V5, B12` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 11 | `chấp nhận các giá trị biên BVA hợp lệ của score10 (0, 0.1, 9.9, 10) và credits (1, 2, 9, 10)` | `parseGpaSubjects` | `B1, B2, B4, B5, B6, B7, B9, B10` | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 12 | `từ chối score10 ngoài biên (-0.1 và 10.1)` | `parseGpaSubjects` | `X4` (`min-`, `max+`) | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 13 | `từ chối credits ngoài biên (0 và 11) hoặc dạng số thập phân (2.5)` | `parseGpaSubjects` | `X3` (`min-`, `max+`, decimal) | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 14 | `từ chối danh sách có hai môn học trùng ID` | `parseGpaSubjects` | `X1` (Duplicate ID) | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 15 | `ném lỗi độc lập khi thiếu trường bắt buộc id` | `parseGpaSubjects` | `X1` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 16 | `ném lỗi độc lập khi thiếu trường bắt buộc name` | `parseGpaSubjects` | `X2` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 17 | `ném lỗi độc lập khi thiếu trường bắt buộc credits` | `parseGpaSubjects` | `X3` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 18 | `ném lỗi độc lập khi thiếu trường bắt buộc letterGrade` | `parseGpaSubjects` | `X5` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 19 | `ném lỗi độc lập khi thiếu trường bắt buộc score10` | `parseGpaSubjects` | `X4` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
+| 20 | `ném lỗi khi dữ liệu không phải mảng hoặc sai kiểu dữ liệu` | `parseGpaSubjects` | `X1, X3` | **PASS** — **`CONFIRMED`** *(Vitest)* |
 
-**Kiểm tra bao phủ:** Bộ 16 test case trên đã bao phủ **100% lớp tương đương** (`V1–V4`, `X1–X7`) và **toàn bộ các giá trị biên `min`, `max`, `min-`, `max+`** của điểm hệ 10 và số tín chỉ (`B1, B5, B6, B10`), cùng các biên trạng thái nghiệp vụ (`B11, B12, B13`), không còn tag nào bị bỏ sót.
+### 3.2. Bộ UI Integration Test (`src/components/GpaCalculator.test.tsx` — 2/2 PASS — `AUTOMATED`)
+
+| STT | Tên Test Case trong `src/components/GpaCalculator.test.tsx` | Kết quả & Phân loại (`DOC-001` / `AI-008`) |
+|---:|---|---|
+| 1 | `thêm hàng Pending không làm tụt GPA` | **PASS** — **`CONFIRMED`** *(Automated jsdom test — `AI-008`)* |
+| 2 | `nhập điểm F thật sự được tính vào GPA` | **PASS** — **`CONFIRMED`** *(Automated jsdom test — `AI-008`)* |
 
 ---
 
-## Câu 4. Triển khai kiểm thử tự động & Kết quả thực thi
+## 4. Lệnh Kiểm chứng & Bằng chứng Thực thi (`AI-006`)
 
-### 1. Mã nguồn kiểm thử tự động (`src/gpaData.test.ts`)
-
-```typescript
-import { describe, it, expect } from 'vitest';
-import { calculateGpaStats, parseGpaSubjects } from './gpaData';
-import type { GpaSubject } from './components/GpaCalculator';
-
-describe('GPA Calculation - CA-088.02 - Edge Cases', () => {
-  it('không tụt GPA khi thêm hàng mới chưa nhập điểm', () => {
-    const subjects: GpaSubject[] = [
-      { id: '1', name: 'Toán', credits: 3, letterGrade: 'A', score10: 8.5 },
-      { id: '2', name: 'Môn trống', credits: '', letterGrade: '', score10: '' }
-    ];
-    const result = calculateGpaStats(subjects);
-    expect(result.totalCredits).toBe(3);
-    expect(result.gpaScale4).toBe('3.70');
-  });
-
-  it('tính đúng GPA thấp nhất (toàn điểm F)', () => {
-    const subjects: GpaSubject[] = [
-      { id: '1', name: 'Lý', credits: 3, letterGrade: 'F', score10: 2.0 },
-      { id: '2', name: 'Hóa', credits: 2, letterGrade: 'F', score10: 1.0 }
-    ];
-    const result = calculateGpaStats(subjects);
-    expect(result.gpaScale4).toBe('0.00');
-  });
-
-  it('tính đúng GPA cao nhất (toàn điểm A+)', () => {
-    const subjects: GpaSubject[] = [
-      { id: '1', name: 'Lý', credits: 3, letterGrade: 'A+', score10: 10.0 }
-    ];
-    const result = calculateGpaStats(subjects);
-    expect(result.gpaScale4).toBe('4.00');
-  });
-
-  it('trả về 0.00 khi bảng điểm trống', () => {
-    expect(calculateGpaStats([]).gpaScale4).toBe('0.00');
-  });
-
-  it('không tính grade không thuộc allowlist vào tổng GPA', () => {
-    const result = calculateGpaStats([
-      { id: '1', name: 'Dữ liệu lỗi', credits: 3, letterGrade: 'constructor', score10: 10 }
-    ]);
-    expect(result.totalCredits).toBe(0);
-    expect(result.gpaScale4).toBe('0.00');
-  });
-});
-
-describe('parseGpaSubjects - Validation & Security', () => {
-  it('parse thành công mảng rỗng khi truyền null hoặc chuỗi rỗng', () => {
-    expect(parseGpaSubjects(null)).toEqual([]);
-    expect(parseGpaSubjects('')).toEqual([]);
-  });
-
-  it('parse thành công dữ liệu JSON hợp lệ có chứa giá trị rỗng', () => {
-    const raw = JSON.stringify([{ id: '1', name: 'Test', credits: '', letterGrade: '', score10: '' }]);
-    const parsed = parseGpaSubjects(raw);
-    expect(parsed[0].credits).toBe('');
-  });
-
-  it('ném lỗi khi dữ liệu JSON bị sai cấu trúc (thiếu trường bắt buộc)', () => {
-    const invalidRaw = JSON.stringify([{ id: '1' }]);
-    expect(() => parseGpaSubjects(invalidRaw)).toThrow("Dữ liệu điểm đã lưu không hợp lệ.");
-  });
-
-  it('từ chối điểm hệ 10 ngoài biên (-0.1 và 10.1)', () => {
-    const invalidLow = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'F', score10: -0.1 }]);
-    expect(() => parseGpaSubjects(invalidLow)).toThrow();
-
-    const invalidHigh = JSON.stringify([{ id: '2', name: 'Test', credits: 3, letterGrade: 'A+', score10: 10.1 }]);
-    expect(() => parseGpaSubjects(invalidHigh)).toThrow();
-  });
-
-  it('chấp nhận giá trị biên của điểm hợp lệ (0 và 10)', () => {
-    const validZero = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'F', score10: 0 }]);
-    expect(() => parseGpaSubjects(validZero)).not.toThrow();
-
-    const validTen = JSON.stringify([{ id: '2', name: 'Test', credits: 3, letterGrade: 'A+', score10: 10 }]);
-    expect(() => parseGpaSubjects(validTen)).not.toThrow();
-  });
-
-  it('từ chối tín chỉ không hợp lệ (0, âm, lớn hơn 10)', () => {
-    const creditZero = JSON.stringify([{ id: '1', name: 'Test', credits: 0, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditZero)).toThrow();
-
-    const creditNeg = JSON.stringify([{ id: '2', name: 'Test', credits: -1, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditNeg)).toThrow();
-
-    const creditBig = JSON.stringify([{ id: '3', name: 'Test', credits: 11, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditBig)).toThrow();
-  });
-
-  it('chấp nhận giá trị biên của tín chỉ hợp lệ (1 và 10)', () => {
-    const creditOne = JSON.stringify([{ id: '1', name: 'Test', credits: 1, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditOne)).not.toThrow();
-
-    const creditTen = JSON.stringify([{ id: '2', name: 'Test', credits: 10, letterGrade: 'A', score10: 8 }]);
-    expect(() => parseGpaSubjects(creditTen)).not.toThrow();
-  });
-
-  it('từ chối letterGrade không hợp lệ (VD: ABC)', () => {
-    const invalidGrade = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade: 'ABC', score10: 8 }]);
-    expect(() => parseGpaSubjects(invalidGrade)).toThrow();
-  });
-
-  it.each(['constructor', 'toString', '__proto__'])('từ chối letterGrade kế thừa: %s', (letterGrade) => {
-    const invalidGrade = JSON.stringify([{ id: '1', name: 'Test', credits: 3, letterGrade, score10: 8 }]);
-    expect(() => parseGpaSubjects(invalidGrade)).toThrow('Dữ liệu điểm đã lưu không hợp lệ.');
-  });
-});
-```
-
-### 2. Kết quả chạy kiểm thử thực tế (Vitest)
-
-- **Lệnh chạy riêng bộ test CA-088.02 (`npx vitest run src/gpaData.test.ts`):**
-
-```text
- RUN  v4.1.12 C:/Users/ASUS/KI-M-TH-PH-N-M-M-C4T4-Bot-Edu
-
- ✓ src/gpaData.test.ts (16 tests) 7ms
-   ✓ GPA Calculation - CA-088.02 - Edge Cases (5)
-     ✓ không tụt GPA khi thêm hàng mới chưa nhập điểm 2ms
-     ✓ tính đúng GPA thấp nhất (toàn điểm F) 0ms
-     ✓ tính đúng GPA cao nhất (toàn điểm A+) 0ms
-     ✓ trả về 0.00 khi bảng điểm trống 0ms
-     ✓ không tính grade không thuộc allowlist vào tổng GPA 0ms
-   ✓ parseGpaSubjects - Validation & Security (11)
-     ✓ parse thành công mảng rỗng khi truyền null hoặc chuỗi rỗng 1ms
-     ✓ parse thành công dữ liệu JSON hợp lệ có chứa giá trị rỗng 0ms
-     ✓ ném lỗi khi dữ liệu JSON bị sai cấu trúc (thiếu trường bắt buộc) 1ms
-     ✓ từ chối điểm hệ 10 ngoài biên (-0.1 và 10.1) 0ms
-     ✓ chấp nhận giá trị biên của điểm hợp lệ (0 và 10) 0ms
-     ✓ từ chối tín chỉ không hợp lệ (0, âm, lớn hơn 10) 0ms
-     ✓ chấp nhận giá trị biên của tín chỉ hợp lệ (1 và 10) 0ms
-     ✓ từ chối letterGrade không hợp lệ (VD: ABC) 0ms
-     ✓ từ chối letterGrade kế thừa: constructor 0ms
-     ✓ từ chối letterGrade kế thừa: toString 0ms
-     ✓ từ chối letterGrade kế thừa: __proto__ 0ms
-
- Test Files  1 passed (1)
-      Tests  16 passed (16)
-```
-
-- **Lệnh chạy kiểm thử hồi quy toàn dự án (`npx vitest run`):**
-
-```text
- Test Files  14 passed (14)
-      Tests  116 passed (116)
-   Duration  2.58s
-```
+* **Lệnh thực thi:** `npx vitest run src/gpaData.test.ts src/components/GpaCalculator.test.tsx` và `npm run check:all`
+* **Kết quả kiểm thử GPA (`CONFIRMED`):**
+  * `src/gpaData.test.ts`: **20 passed (20)**
+  * `src/components/GpaCalculator.test.tsx`: **2 passed (2)**
+* **Kết quả kiểm thử toàn cục (`CONFIRMED` — `npm run check:all`):**
+  * `vitest run`: **14 test files passed (14) | 120 tests passed (120)**
+  * `test:layout`, `check:postman`, `tsc && vite build`, `cargo check`, `cargo test` (61 passed), `npm audit` (0 vulnerabilities): **PASS**.
+* **Giới hạn phạm vi (`PLANNED`):** Luồng phục hồi bảng điểm legacy (`ca_gpa_calculator_data_v1`) và kiểm thử trực quan thủ công trên ứng dụng desktop đóng gói vẫn thuộc phạm vi mở rộng của task cha `CA-088` (`Proposed`).

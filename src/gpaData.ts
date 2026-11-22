@@ -18,15 +18,35 @@ export const GRADE_CONVERSION: Record<string, { scale4: number; defaultScore10: 
 export function parseGpaSubjects(raw: string | null): GpaSubject[] {
   if (!raw) return [];
   const value: unknown = JSON.parse(raw);
-  if (!Array.isArray(value) || !value.every((item) => item && typeof item.id === "string" &&
-    typeof item.name === "string" &&
-    (item.credits === "" || (Number.isFinite(item.credits) && item.credits > 0 && item.credits <= 10)) &&
-    typeof item.letterGrade === "string" &&
-    (item.letterGrade === "" || Object.prototype.hasOwnProperty.call(GRADE_CONVERSION, item.letterGrade)) &&
-    (item.score10 === "" || (Number.isFinite(item.score10) && item.score10 >= 0 && item.score10 <= 10)))) {
+  if (!Array.isArray(value)) {
     throw new Error("Dữ liệu điểm đã lưu không hợp lệ.");
   }
-  return value;
+
+  const seenIds = new Set<string>();
+  for (const item of value) {
+    if (!item || typeof item !== "object") {
+      throw new Error("Dữ liệu điểm đã lưu không hợp lệ.");
+    }
+    const entry = item as Record<string, unknown>;
+    const validId = typeof entry.id === "string" && entry.id.trim().length > 0 && !seenIds.has(entry.id);
+    const validName = typeof entry.name === "string";
+    const validCredits =
+      entry.credits === "" ||
+      (typeof entry.credits === "number" && Number.isInteger(entry.credits) && entry.credits >= 1 && entry.credits <= 10);
+    const validLetter =
+      typeof entry.letterGrade === "string" &&
+      (entry.letterGrade === "" || Object.prototype.hasOwnProperty.call(GRADE_CONVERSION, entry.letterGrade));
+    const validScore10 =
+      entry.score10 === "" ||
+      (typeof entry.score10 === "number" && Number.isFinite(entry.score10) && entry.score10 >= 0 && entry.score10 <= 10);
+
+    if (!validId || !validName || !validCredits || !validLetter || !validScore10) {
+      throw new Error("Dữ liệu điểm đã lưu không hợp lệ.");
+    }
+    seenIds.add(entry.id as string);
+  }
+
+  return value as GpaSubject[];
 }
 
 export function calculateGpaStats(subjects: GpaSubject[]) {
@@ -35,18 +55,30 @@ export function calculateGpaStats(subjects: GpaSubject[]) {
   let totalPoints10 = 0;
 
   for (const s of subjects) {
-    if (s.credits === "" || Number(s.credits) <= 0 || s.letterGrade === "" || s.score10 === "" ||
-      !Object.prototype.hasOwnProperty.call(GRADE_CONVERSION, s.letterGrade)) {
+    if (
+      s.credits === "" ||
+      typeof s.credits !== "number" ||
+      !Number.isInteger(s.credits) ||
+      s.credits < 1 ||
+      s.credits > 10 ||
+      s.letterGrade === "" ||
+      s.score10 === "" ||
+      typeof s.score10 !== "number" ||
+      !Number.isFinite(s.score10) ||
+      s.score10 < 0 ||
+      s.score10 > 10 ||
+      !Object.prototype.hasOwnProperty.call(GRADE_CONVERSION, s.letterGrade)
+    ) {
       continue;
     }
 
-    const credits = Number(s.credits);
+    const credits = s.credits;
     const scale4 = GRADE_CONVERSION[s.letterGrade]?.scale4 ?? 0;
-    const score10 = Number(s.score10);
+    const score10 = s.score10;
 
     totalCredits += credits;
-    totalPoints4 += (scale4 * credits);
-    totalPoints10 += (score10 * credits);
+    totalPoints4 += scale4 * credits;
+    totalPoints10 += score10 * credits;
   }
 
   if (totalCredits === 0) {
@@ -54,7 +86,7 @@ export function calculateGpaStats(subjects: GpaSubject[]) {
       totalCredits: 0,
       gpaScale4: "0.00",
       gpaScale10: "0.00",
-      numGpa4: 0
+      numGpa4: 0,
     };
   }
 
@@ -65,6 +97,6 @@ export function calculateGpaStats(subjects: GpaSubject[]) {
     totalCredits,
     gpaScale4,
     gpaScale10,
-    numGpa4: Number(gpaScale4)
+    numGpa4: Number(gpaScale4),
   };
 }
