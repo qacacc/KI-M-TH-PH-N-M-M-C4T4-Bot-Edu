@@ -35,6 +35,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 ## Active task
 
+- CA-069: logo UTH UI và Windows executable icon; master/ICO đã được cập nhật, còn xác minh build/runtime/taskbar. `npm run check:all` hiện bị chặn độc lập tại Postman secret/PII guard; không sửa Postman trong scope này.
 - CA-084: release checklist local-only đang được sửa và đối chiếu; còn `npm run check:all`, native smoke, installer/review và đồng bộ Jira.
 - CA-090.01: migration SQLite/reset an toàn đã triển khai; giữ In Progress, không sửa trong scope CA-084; còn manual native/UI verification, PR/review và đồng bộ Jira.
 - CA-093.01: tìm kiếm công khai phân biệt lỗi/không thấy, hạn chót 20s, retry tối đa 2 lần, nút Thử lại đã triển khai; giữ In Progress, còn manual native ngắt mạng và PR/review.
