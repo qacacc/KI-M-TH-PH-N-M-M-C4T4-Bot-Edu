@@ -386,6 +386,25 @@ const MIN_REQUEST_BUDGET: Duration = Duration::from_millis(200);
 // 1 lần gọi đầu + tối đa 2 lần thử lại
 const MAX_FETCH_ATTEMPTS: usize = 3;
 
+fn is_html_content_type(value: &str) -> bool {
+    let mime = value.split(';').next().unwrap_or_default().trim();
+    mime.eq_ignore_ascii_case("text/html") || mime.eq_ignore_ascii_case("application/xhtml+xml")
+}
+
+fn read_bounded_utf8(reader: impl Read, max_bytes: u64) -> Result<String, String> {
+    // Đọc dư một byte để phân biệt body đúng giới hạn với body bị cắt cụt.
+    let mut bytes = Vec::new();
+    reader
+        .take(max_bytes.saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(|_| "Khong doc duoc noi dung HTML cong khai.".to_string())?;
+    if bytes.len() as u64 > max_bytes {
+        return Err("Noi dung HTML cong khai vuot qua gioi han 2 MiB.".to_string());
+    }
+    String::from_utf8(bytes)
+        .map_err(|_| "Nguon cong khai khong tra ve HTML UTF-8 hop le.".to_string())
+}
+
 fn fetch_public_page(url: &str, timeout: Duration) -> Result<String, String> {
     if !url.starts_with("https://") {
         return Err("Chi cho phep tra cuu nguon cong khai HTTPS.".to_string());
@@ -393,25 +412,38 @@ fn fetch_public_page(url: &str, timeout: Duration) -> Result<String, String> {
 
     let timeout = timeout.min(PER_REQUEST_TIMEOUT);
     let config = ureq::Agent::config_builder()
+        // Không tự theo redirect; mỗi URL đã được allowlist phải được kiểm soát riêng.
+        .max_redirects(0)
         .timeout_global(Some(timeout))
         .timeout_connect(Some(timeout.min(Duration::from_secs(3))))
         .timeout_recv_response(Some(timeout.min(Duration::from_secs(5))))
         .build();
     let agent = ureq::Agent::new_with_config(config);
 
-    let resp = agent
+    fetch_public_page_with_agent(url, &agent)
+}
+
+fn fetch_public_page_with_agent(url: &str, agent: &ureq::Agent) -> Result<String, String> {
+    let response = agent
         .get(url)
         .header("User-Agent", "CampusAssistantLocal/1.0.1 public-search")
         .call()
         .map_err(|_| format!("Khong doc duoc nguon cong khai: {}", url))?;
 
-    let mut reader = resp.into_body().into_reader().take(MAX_RESPONSE_BYTES);
-    let mut html = String::new();
-    reader
-        .read_to_string(&mut html)
-        .map_err(|_| format!("Nguon cong khai khong tra ve HTML hop le: {}", url))?;
+    if !response.status().is_success() {
+        return Err(format!("Nguon cong khai tra ve HTTP {}.", response.status()));
+    }
 
-    Ok(html)
+    let content_type = response
+        .headers()
+        .get("content-type")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default();
+    if !is_html_content_type(content_type) {
+        return Err("Nguon cong khai khong tra ve HTML/XHTML.".to_string());
+    }
+
+    read_bounded_utf8(response.into_body().into_reader(), MAX_RESPONSE_BYTES)
 }
 
 enum FetchOutcome {
@@ -564,6 +596,9 @@ pub(crate) async fn search_public_school_info(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::{Cursor, Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
 
     const TEST_SOURCE: PublicSchoolSource = PublicSchoolSource {
         id: "test",
@@ -572,6 +607,67 @@ mod tests {
     };
 
     const TEST_DEADLINE: Duration = Duration::from_secs(5);
+
+    #[test]
+    fn html_content_type_accepts_html_and_xhtml_with_charset_only() {
+        assert!(is_html_content_type("text/html; charset=utf-8"));
+        assert!(is_html_content_type("APPLICATION/XHTML+XML"));
+        assert!(!is_html_content_type("application/json"));
+        assert!(!is_html_content_type("text/plain"));
+        assert!(!is_html_content_type(""));
+    }
+
+    #[test]
+    fn response_body_limit_accepts_max_minus_one_and_exact_max_but_rejects_max_plus_one() {
+        const MAX: u64 = 4;
+        assert_eq!(read_bounded_utf8(Cursor::new(b"abc"), MAX).unwrap(), "abc");
+        assert_eq!(read_bounded_utf8(Cursor::new(b"abcd"), MAX).unwrap(), "abcd");
+        assert!(read_bounded_utf8(Cursor::new(b"abcde"), MAX).is_err());
+    }
+
+    #[test]
+    fn configured_response_limit_accepts_max_minus_one_and_max_but_rejects_max_plus_one() {
+        let below = vec![b'a'; MAX_RESPONSE_BYTES as usize - 1];
+        let exact = vec![b'a'; MAX_RESPONSE_BYTES as usize];
+        let above = vec![b'a'; MAX_RESPONSE_BYTES as usize + 1];
+        assert!(read_bounded_utf8(Cursor::new(below), MAX_RESPONSE_BYTES).is_ok());
+        assert!(read_bounded_utf8(Cursor::new(exact), MAX_RESPONSE_BYTES).is_ok());
+        assert!(read_bounded_utf8(Cursor::new(above), MAX_RESPONSE_BYTES).is_err());
+    }
+
+    #[test]
+    fn response_body_rejects_invalid_utf8() {
+        assert!(read_bounded_utf8(Cursor::new([0xff, 0xfe]), 4).is_err());
+    }
+
+    #[test]
+    fn fetch_rejects_redirect_without_connecting_to_destination() {
+        let destination = TcpListener::bind("127.0.0.1:0").unwrap();
+        destination.set_nonblocking(true).unwrap();
+        let destination_url = format!("http://{}/other", destination.local_addr().unwrap());
+
+        let source = TcpListener::bind("127.0.0.1:0").unwrap();
+        let source_url = format!("http://{}/start", source.local_addr().unwrap());
+        let response = format!(
+            "HTTP/1.1 302 Found\r\nLocation: {}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+            destination_url
+        );
+        let server = thread::spawn(move || {
+            let (mut stream, _) = source.accept().unwrap();
+            let mut request = [0_u8; 1024];
+            let _ = stream.read(&mut request);
+            stream.write_all(response.as_bytes()).unwrap();
+        });
+
+        let config = ureq::Agent::config_builder()
+            .max_redirects(0)
+            .timeout_global(Some(Duration::from_secs(2)))
+            .build();
+        let agent = ureq::Agent::new_with_config(config);
+        assert!(fetch_public_page_with_agent(&source_url, &agent).is_err());
+        server.join().unwrap();
+        assert!(destination.accept().is_err());
+    }
 
     #[test]
     fn strip_html_to_text_keeps_public_content() {

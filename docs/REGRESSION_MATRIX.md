@@ -61,7 +61,7 @@ Ma trận kiểm thử hồi quy quy định duy nhất danh sách các bộ tes
 | `src-tauri/src/connectors/sync_service.rs` | Partial Sync Fail-Safe | **`CONFIRMED`** | `cargo test connectors::sync_service` | Schedule & Exam cache retention on error |
 | `src-tauri/src/connectors/uth.rs` | UTH Current Parser | **`EXPERIMENTAL`** | `cargo test connectors::uth` | UTH Login WebView, Developer Sync modal |
 | `src-tauri/src/connectors/uth.rs` | Verified Portal Fixture Parser| **`PLANNED`** | Tracking Task: `CA-067 + CA-068` | Check fixtures with PII redaction |
-| `src-tauri/src/public_search.rs` | Outbound Native PII Sanitizer | **`CONFIRMED`** | `cargo test public_search` | Admissions search in chatbox |
+| `src-tauri/src/public_search.rs` | Public search: error states, redirect/MIME/2 MiB/UTF-8 boundary and outbound PII sanitizer | **`AUTOMATED / PARTIAL`** | `cargo test --manifest-path src-tauri/Cargo.toml public_search` | Admissions search in desktop; offline/retry UI and cancellation remain manual/planned. Postman N/A (Tauri IPC, not HTTP REST). |
 | `src-tauri/capabilities/default.json` + `src-tauri/src/connectors/connector_engine.rs` | Remote WebView Capability Isolation | **`STATIC / PARTIAL`** | `npm run check:all` | Login window uses `uth-login` external WebView + navigation allowlist; still needs manual IPC isolation verification |
 | `src-tauri/src/lib.rs` | Command Registry & Health | **`CONFIRMED`** | `cargo test tests::health_report` | Tauri desktop command invoke |
 | `src-tauri/Cargo.toml` | Cargo Build & Dependencies | **`CONFIRMED`** | `cargo check` | Cargo compilation & crate audit |

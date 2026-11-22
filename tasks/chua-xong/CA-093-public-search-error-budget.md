@@ -63,6 +63,43 @@ Phạm vi CA-093.01: phân biệt lỗi/không thấy, hạn chót tổng, retry
 - MANUAL VISUAL CHECK: CHƯA CHẠY. Cần ngắt mạng trong app desktop, hỏi tuyển sinh, xác nhận thông báo lỗi + nút Thử lại và spinner kết thúc trong khoảng 20s.
 - Giới hạn: nút Thử lại không được khôi phục khi mở lại phiên cũ từ lịch sử (lịch sử chỉ lưu nội dung text).
 
+## Phạm vi bổ sung CA-093.02 (2026-11-23)
+
+`CONFIRMED`: Fetcher hiện từ chối mọi HTTP redirect, chỉ nhận `text/html` hoặc `application/xhtml+xml`, đọc tối đa 2 MiB + 1 byte để phát hiện vượt ngưỡng, từ chối body vượt giới hạn và UTF-8 lỗi. Không thay đổi endpoint, payload IPC hay Postman collection.
+
+`PLANNED / NOT DONE`: Hủy tác vụ đang chạy từ UI chưa được triển khai; làm việc đó cần một contract hủy có kiểm soát qua IPC. Cache kết quả cũng chưa triển khai. Hai mục này vẫn mở và CA-093 chưa được đánh dấu Done.
+
+### Lớp tương đương
+
+| Biến/điều kiện | Hợp lệ | Không hợp lệ | Kiểm tra |
+| --- | --- | --- | --- |
+| MIME response | `text/html`, `application/xhtml+xml` (có/không charset) | Thiếu MIME, JSON, text/plain | Unit test `html_content_type_accepts_html_and_xhtml_with_charset_only` |
+| HTTP response | HTTP 2xx trực tiếp | Redirect/HTTP không thành công | Local HTTP fixture; redirect không được kết nối tới đích |
+| Nội dung | UTF-8 hợp lệ và không quá 2 MiB | UTF-8 sai hoặc vượt 2 MiB | Unit test byte-boundary và UTF-8 |
+
+### BVA
+
+| Tag | Biên dưới | Min | Min+ | Max- | Max | Max+ | Expected |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| B1 — response bytes | 0 | 1 | 2 | 2,097,151 | 2,097,152 | 2,097,153 | Chấp nhận đến đúng 2 MiB; từ chối 2 MiB + 1 |
+| B2 — redirect count | — | 0 | — | — | 0 | 1 | Không redirect được theo; mọi redirect bị từ chối |
+| B3 — MIME | — | HTML/XHTML | — | — | — | JSON/khuyết | Chấp nhận HTML/XHTML; từ chối loại khác |
+
+### Test case và bằng chứng
+
+| ID | Tình huống | Kết quả mong đợi | Loại |
+| --- | --- | --- | --- |
+| CA093-TC-01 | HTML/XHTML với charset | Hợp lệ | Rust unit |
+| CA093-TC-02 | JSON/text/plain/thiếu Content-Type | Bị từ chối | Rust unit |
+| CA093-TC-03 | Body 2 MiB − 1 byte và đúng 2 MiB | Đọc thành công | Rust unit BVA |
+| CA093-TC-04 | Body 2 MiB + 1 byte | Bị từ chối, không parse phần body bị cắt | Rust unit BVA |
+| CA093-TC-05 | Body UTF-8 lỗi | Bị từ chối an toàn | Rust unit |
+| CA093-TC-06 | HTTP 302 trỏ sang URL khác | Từ chối; server đích không nhận kết nối | Rust local HTTP fixture |
+
+**Postman:** `N/A` cho chức năng tìm kiếm này vì nó được gọi qua Tauri IPC, không phải REST API loopback. Không thêm endpoint giả hoặc đưa query người dùng vào Postman. Bộ Postman thuộc CA-080/CA-098.01 được giữ nguyên.
+
+**Lệnh đã chạy:** `cargo test --manifest-path src-tauri/Cargo.toml public_search` — PASS 16/16; `npm run test -- src/bootstrapRequest.test.ts` — PASS 6/6. `npm run check:all` vẫn FAIL ở `check:postman` trước build/Rust do Secret/PII guard; không sửa phần Postman này vì thuộc phạm vi nhóm.
+
 ## Rollback
 
 Commit nhỏ riêng cho task; không revert thay đổi user. Migration/data recovery phải có bản sao và thử trên DB fixture trước dữ liệu thật.
