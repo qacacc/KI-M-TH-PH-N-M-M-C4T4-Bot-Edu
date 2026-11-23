@@ -551,8 +551,13 @@ mod tests {
 
     #[test]
     fn api_token_config_yeu_cau_do_dai_va_ascii_khong_khoang_trang() {
-        assert!(validate_api_token("a".repeat(MIN_API_TOKEN_LENGTH)).is_ok());
+        // Kiểm tra đầy đủ các điểm sát hai biên [32, 256] mà không lưu token thật.
         assert!(validate_api_token("a".repeat(MIN_API_TOKEN_LENGTH - 1)).is_err());
+        assert!(validate_api_token("a".repeat(MIN_API_TOKEN_LENGTH)).is_ok());
+        assert!(validate_api_token("a".repeat(MIN_API_TOKEN_LENGTH + 1)).is_ok());
+        assert!(validate_api_token("a".repeat(64)).is_ok());
+        assert!(validate_api_token("a".repeat(MAX_API_TOKEN_LENGTH - 1)).is_ok());
+        assert!(validate_api_token("a".repeat(MAX_API_TOKEN_LENGTH)).is_ok());
         assert!(validate_api_token("a".repeat(MAX_API_TOKEN_LENGTH + 1)).is_err());
         assert!(validate_api_token(format!("{}é", "a".repeat(MIN_API_TOKEN_LENGTH))).is_err());
         assert!(validate_api_token(format!("{} ", "a".repeat(MIN_API_TOKEN_LENGTH))).is_err());
@@ -622,6 +627,23 @@ mod tests {
         })))
         .await;
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    #[tokio::test]
+    async fn schedule_student_code_bva_giu_ro_ranh_gioi_rong_va_chua_xac_minh() {
+        for length in [0, 1, 2, 10] {
+            let response = schedule(Ok(Query(AcademicQuery {
+                student_code: Some("S".repeat(length)),
+                ..AcademicQuery::default()
+            })))
+            .await;
+            let expected = if length == 0 {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::SERVICE_UNAVAILABLE
+            };
+            assert_eq!(response.status(), expected, "độ dài studentCode: {length}");
+        }
     }
 
     #[tokio::test]
