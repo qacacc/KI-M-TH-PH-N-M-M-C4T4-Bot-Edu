@@ -1,4 +1,4 @@
-use chrono::{Datelike, Duration, NaiveDate, Utc};
+use chrono::Utc;
 use rusqlite::{params, Connection};
 use std::fs;
 use std::sync::{Mutex, OnceLock};
@@ -112,38 +112,6 @@ fn migrate_to_v3(conn: &mut Connection) -> Result<(), String> {
     Ok(())
 }
 
-/// Tính ngày học (YYYY-MM-DD) cho các bản ghi lịch cũ chưa có class_date dựa trên fetched_at và weekday (2=Thứ Hai .. 8=Chủ Nhật).
-fn infer_legacy_class_date(fetched_at: &str, weekday: i64) -> String {
-    let date_prefix = fetched_at.get(0..10).unwrap_or("2026-01-01");
-    let base_date = NaiveDate::parse_from_str(date_prefix, "%Y-%m-%d")
-        .unwrap_or_else(|_| NaiveDate::from_ymd_opt(2026, 1, 5).unwrap());
-    let monday = base_date - Duration::days(i64::from(base_date.weekday().num_days_from_monday()));
-    let offset = (weekday - 2).clamp(0, 6);
-    (monday + Duration::days(offset)).format("%Y-%m-%d").to_string()
-}
-
-fn backfill_empty_schedule_class_dates(tx: &rusqlite::Transaction<'_>) -> Result<(), String> {
-    let rows_to_fix: Vec<(String, String, i64)> = {
-        let mut stmt = tx
-            .prepare("SELECT id, fetched_at, weekday FROM connector_schedules WHERE trim(class_date) = ''")
-            .map_err(|e| format!("Lỗi đọc lịch thiếu class_date: {}", e))?;
-        let mapped = stmt
-            .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
-            .map_err(|e| format!("Lỗi truy vấn lịch thiếu class_date: {}", e))?;
-        mapped.filter_map(Result::ok).collect()
-    };
-
-    for (id, fetched_at, weekday) in rows_to_fix {
-        let inferred_date = infer_legacy_class_date(&fetched_at, weekday);
-        tx.execute(
-            "UPDATE connector_schedules SET class_date = ?1 WHERE id = ?2",
-            params![inferred_date, id],
-        )
-        .map_err(|e| format!("Lỗi cập nhật class_date cho lịch đã migration: {}", e))?;
-    }
-    Ok(())
-}
-
 fn migrate_to_v4(conn: &mut Connection) -> Result<(), String> {
     let tx = conn.transaction().map_err(|e| format!("Lỗi tạo migration v4: {}", e))?;
     tx.execute_batch("CREATE TABLE IF NOT EXISTS connector_schedules (id TEXT NOT NULL PRIMARY KEY CHECK(length(trim(id)) > 0), student_code TEXT NOT NULL, subject_code TEXT NOT NULL, subject_name TEXT NOT NULL, weekday INTEGER NOT NULL, start_time TEXT NOT NULL, end_time TEXT NOT NULL, room TEXT, lecturer TEXT, source TEXT NOT NULL, source_record_id TEXT, fetched_at TEXT NOT NULL, sync_batch_id TEXT NOT NULL);")
@@ -157,7 +125,6 @@ fn migrate_to_v4(conn: &mut Connection) -> Result<(), String> {
         tx.execute("ALTER TABLE connector_schedules ADD COLUMN class_date TEXT NOT NULL DEFAULT ''", [])
             .map_err(|e| format!("Lỗi thêm ngày học: {}", e))?;
     }
-    backfill_empty_schedule_class_dates(&tx)?;
     tx.execute_batch("CREATE INDEX IF NOT EXISTS idx_connector_schedules_date ON connector_schedules(student_code, class_date); CREATE TABLE IF NOT EXISTS connector_schedule_weeks (student_code TEXT NOT NULL, week_start TEXT NOT NULL, fetched_at TEXT NOT NULL, sync_batch_id TEXT NOT NULL, PRIMARY KEY(student_code, week_start)); PRAGMA user_version = 4;")
         .map_err(|e| format!("Lỗi cập nhật schema v4: {}", e))?;
     tx.commit().map_err(|e| format!("Lỗi commit migration v4: {}", e))?;
@@ -199,7 +166,7 @@ fn migrate_to_v6(conn: &mut Connection) -> Result<(), String> {
     Ok(())
 }
 
-/// Kiểm tra chỉ đọc xem toàn bộ các bảng connector, cột class_date và student_notes đã đầy đủ chưa.
+/// Kiểm tra schema; ngày học trống của cache cũ là dữ liệu chưa xác minh, không phải lỗi schema.
 fn is_runtime_schema_complete(conn: &Connection) -> bool {
     let table_count: i64 = conn
         .query_row(
@@ -228,14 +195,7 @@ fn is_runtime_schema_complete(conn: &Connection) -> bool {
     if has_class_date == 0 {
         return false;
     }
-    let empty_dates: i64 = conn
-        .query_row(
-            "SELECT COUNT(*) FROM connector_schedules WHERE trim(class_date) = ''",
-            [],
-            |row| row.get(0),
-        )
-        .unwrap_or(0);
-    empty_dates == 0
+    true
 }
 
 /// Đảm bảo schema connector và student_notes tồn tại cả khi DB cũ đã ghi user_version nhưng thiếu bảng.
@@ -261,7 +221,6 @@ fn ensure_connector_runtime_schema(conn: &mut Connection) -> Result<(), String> 
         tx.execute("ALTER TABLE connector_schedules ADD COLUMN class_date TEXT NOT NULL DEFAULT ''", [])
             .map_err(|e| format!("Không thể bổ sung ngày lịch connector: {}", e))?;
     }
-    backfill_empty_schedule_class_dates(&tx)?;
     tx.execute_batch(
         "CREATE INDEX IF NOT EXISTS idx_connector_schedules_date ON connector_schedules(student_code, class_date);
          CREATE TABLE IF NOT EXISTS connector_schedule_weeks (student_code TEXT NOT NULL, week_start TEXT NOT NULL, fetched_at TEXT NOT NULL, sync_batch_id TEXT NOT NULL, PRIMARY KEY(student_code, week_start));
@@ -885,7 +844,8 @@ mod tests {
         let mut conn = Connection::open_in_memory().unwrap();
         conn.execute_batch(
             "CREATE TABLE connector_schedules (id TEXT PRIMARY KEY, student_code TEXT NOT NULL, subject_code TEXT NOT NULL, subject_name TEXT NOT NULL, weekday INTEGER NOT NULL, start_time TEXT NOT NULL, end_time TEXT NOT NULL, room TEXT, lecturer TEXT, source TEXT NOT NULL, source_record_id TEXT, fetched_at TEXT NOT NULL, sync_batch_id TEXT NOT NULL);
-             INSERT INTO connector_schedules (id, student_code, subject_code, subject_name, weekday, start_time, end_time, source, fetched_at, sync_batch_id) VALUES ('keep', 'S1', 'M1', 'Môn cũ', 2, '08:00', '09:00', 'uth-portal', '2026-01-05', 'old');
+             INSERT INTO connector_schedules (id, student_code, subject_code, subject_name, weekday, start_time, end_time, source, fetched_at, sync_batch_id) VALUES ('keep', 'S1', 'M1', 'Môn cũ', 2, '08:00', '09:00', 'uth-portal', '2026-02-20', 'old');
+             INSERT INTO connector_schedules (id, student_code, subject_code, subject_name, weekday, start_time, end_time, source, fetched_at, sync_batch_id) VALUES ('malformed', 'S1', 'M3', 'Môn thiếu mốc tuần', 3, '08:00', '09:00', 'uth-portal', 'not-a-date', 'old');
              PRAGMA user_version = 6;",
         ).unwrap();
 
@@ -897,7 +857,7 @@ mod tests {
         let sync_status_exists: i64 = conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='connector_sync_status'", [], |row| row.get(0)).unwrap();
         let notes_exists: i64 = conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='student_notes'", [], |row| row.get(0)).unwrap();
         let stored_subject: String = conn.query_row("SELECT subject_name FROM connector_schedules WHERE id='keep'", [], |row| row.get(0)).unwrap();
-        let backfilled_date: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='keep'", [], |row| row.get(0)).unwrap();
+        let legacy_date: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='keep'", [], |row| row.get(0)).unwrap();
         let has_date_column: i64 = conn.query_row("SELECT COUNT(*) FROM pragma_table_info('connector_schedules') WHERE name='class_date'", [], |row| row.get(0)).unwrap();
 
         assert_eq!(weeks_exists, 1);
@@ -906,8 +866,22 @@ mod tests {
         assert_eq!(sync_status_exists, 1);
         assert_eq!(notes_exists, 1);
         assert_eq!(stored_subject, "Môn cũ");
-        assert_eq!(backfilled_date, "2026-01-05");
+        assert_eq!(legacy_date, "");
         assert_eq!(has_date_column, 1);
+        assert!(is_runtime_schema_complete(&conn));
+
+        // Ngày có nguồn xác thực trước migration phải được giữ nguyên khi mở lại.
+        conn.execute(
+            "INSERT INTO connector_schedules (id, student_code, subject_code, subject_name, weekday, start_time, end_time, source, fetched_at, sync_batch_id, class_date) VALUES ('dated', 'S1', 'M2', 'Môn có ngày', 3, '08:00', '09:00', 'uth-portal', '2026-02-20', 'old', '2026-01-20')",
+            [],
+        ).unwrap();
+        ensure_db_schema(&mut conn).unwrap();
+        let dated: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='dated'", [], |row| row.get(0)).unwrap();
+        let still_unknown: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='keep'", [], |row| row.get(0)).unwrap();
+        let malformed_date: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='malformed'", [], |row| row.get(0)).unwrap();
+        assert_eq!(dated, "2026-01-20");
+        assert_eq!(still_unknown, "");
+        assert_eq!(malformed_date, "");
     }
 
     #[test]
@@ -941,6 +915,15 @@ mod tests {
             [],
         );
         assert!(blank_id_insert.is_err());
+
+        for id in ["N", "N2"] {
+            conn.execute(
+                "INSERT INTO student_notes (id, title, content, created_at, updated_at) VALUES (?1, 'T', 'C', '2026-01-01', '2026-01-01')",
+                [id],
+            ).unwrap();
+        }
+        let valid_notes: i64 = conn.query_row("SELECT COUNT(*) FROM student_notes", [], |row| row.get(0)).unwrap();
+        assert_eq!(valid_notes, 2);
     }
 
     #[test]
@@ -1025,7 +1008,7 @@ mod tests {
                 .unwrap();
         }
 
-        // Bước 1b: Chạy riêng chuỗi migrate_to_v2..v6 trước khi gọi open_db để xác minh chính các hàm migration tạo đủ bảng và backfill class_date
+        // Bước 1b: Chạy riêng chuỗi migrate_to_v2..v6; ngày học thiếu nguồn xác thực phải giữ trống.
         {
             let mut raw_conn = Connection::open(&roots.db_path).unwrap();
             migrate_to_v2(&mut raw_conn).unwrap();
@@ -1050,7 +1033,7 @@ mod tests {
                     |r| r.get(0),
                 )
                 .unwrap();
-            assert_eq!(migrated_class_date, "2026-01-06"); // Thứ Ba (weekday=3) của tuần 2026-01-05
+            assert_eq!(migrated_class_date, ""); // fetched_at là ngày tải, không chứng minh ngày học.
         }
 
         // Bước 2: Mở lại file DB tạm thông qua open_db(&roots) (cũng kiểm tra mở đồng thời không bị khóa)

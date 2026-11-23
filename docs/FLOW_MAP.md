@@ -9,6 +9,10 @@
 
 Manual native/UI verification và review Jira vẫn `PLANNED`; chưa mô tả task là Done.
 
+## CA-090 — Migration lịch cũ lên schema v6 (CURRENT trên nhánh migration)
+
+`open_db` đọc `PRAGMA user_version`, chạy migration theo transaction và sửa bảng/cột còn thiếu. Bản ghi `connector_schedules` cũ không có `class_date` được giữ nguyên với ngày chưa xác định (`''`); `fetched_at` chỉ là thời điểm tải, không được dùng để tạo ngày học. Bản ghi đã có `class_date` giữ nguyên qua lần mở tiếp theo. UI/connector thật vẫn bị cổng contract UTH chặn; native upgrade smoke còn `UNKNOWN`. Xem `docs/testing/CA-090-migration-v6.md`.
+
 ## CA-103 - Local REST API + Postman
 
 ### Runtime Status: `CONFIRMED / LOCAL LOOPBACK` (automated source/tests; manual HTTP smoke `UNKNOWN`)

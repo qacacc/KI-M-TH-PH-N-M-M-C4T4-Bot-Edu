@@ -8,6 +8,8 @@
 
 CA-083 (2026-10-09): mọi entry UTH auth/sync/đọc lịch -> ensure_uth_contract_verified -> Err trước IO. academicDataErrorMessage -> chat/useAcademicCache trả thông báo an toàn. Prototype command giữ tên/payload để tương thích nhưng không ghi DB. Dependencies HTTP/parser UTH đã gỡ; portal browser và SQLite/cache management không đổi.
 
+**CONFIRMED (migration v6 source/tests):** `open_db`/`open_db_schema_only` → `ensure_db_schema` → SQLite `connector_schedules`/`connector_schedule_weeks`/`connector_transcripts`/`student_notes`. `class_date` trống của lịch cũ là ngày chưa xác định; không phụ thuộc `fetched_at` để suy lịch. Test DB temp: `cargo test --manifest-path src-tauri/Cargo.toml db::tests`. Portal contract và native upgrade vẫn `UNKNOWN`; Postman N/A cho migration nội bộ.
+
 Tài liệu bản đồ phụ thuộc giữa các module, component, API, capability và file cấu hình trong hệ thống. 
 
 > ⚠️ **LƯU Ý:** Để xem danh sách các bộ test tự động và kịch bản kiểm thử bắt buộc tương ứng với từng file, hãy xem duy nhất tại **[`docs/REGRESSION_MATRIX.md`](REGRESSION_MATRIX.md)**.
