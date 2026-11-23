@@ -4,8 +4,8 @@ method: GET
 scripts:
   - type: afterResponse
     code: |-
-      pm.test("HTTP 503 khi contract UTH ch?a x?c minh", function () { pm.response.to.have.status(503); });
+      pm.test("HTTP 503 khi contract UTH chưa xác minh", function () { pm.response.to.have.status(503); });
       const body = pm.response.json();
-      pm.test("Kh?ng tr? d? li?u gi? v? ??ng m? l?i gate", function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql("CONNECTOR_UNAVAILABLE"); });
+      pm.test("Không trả dữ liệu giả và đóng mã lỗi gate", function () { pm.expect(body.success).to.eql(false); pm.expect(body.error.code).to.eql("CONNECTOR_UNAVAILABLE"); });
     language: text/javascript
 order: 7000

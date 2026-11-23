@@ -1,12 +1,12 @@
 ﻿# Báo cáo Kiểm tra Release Audit & Local REST API (Task CA-084)
 
-> **Trạng thái nghiệm thu CA-084:** **`IN PROGRESS` (Chưa hoàn tất điều kiện phê duyệt cuối cùng)**
-> **Tuyên bố phạm vi (`DOC-001`):** Báo cáo này **KHÔNG phải là bằng chứng nghiệm thu (Release Sign-off) cuối cùng** của Task CA-084. Các cổng **Kiểm thử nâng cấp dữ liệu (Upgrade DB Check)** và **Phê duyệt Pull Request (#27)** hiện vẫn ở trạng thái **`PENDING`**.
+> **Trạng thái nghiệm thu CA-084:** **`READY FOR SIGN-OFF` (Đã hoàn tất toàn bộ cổng kiểm tra kỹ thuật; chờ Reviewer duyệt PR #27)**
+> **Tuyên bố phạm vi (`DOC-001`):** Toàn bộ bằng chứng kiểm thử tự động, Postman Collection Runner, đóng gói cài đặt v1.0.1, Native Smoke Test và Kiểm thử nâng cấp dữ liệu (Upgrade DB Check) đã được xác minh (**`CONFIRMED`**). Cổng **Phê duyệt Pull Request (#27)** đang ở trạng thái **`PENDING`** chờ reviewer hợp nhất; hợp đồng đồng bộ UTH Portal thực tế giữ nguyên trạng thái **`UNKNOWN`** (khóa an toàn ở mã `503`).
 
-* **Dự án:** Campus Assistant Local (`127.0.0.1:47821`)
-* **Nhánh thực hiện:** `feat/tram/ca-084-release-audit-postman`
-* **Ngày cập nhật:** 23/11/2026
-* **Quy chuẩn áp dụng:** `docs/INVARIANTS.md` (`DOC-001`, `SEC-001`..`SEC-005`, `DATA-001`..`DATA-004`)
+- **Dự án:** Campus Assistant Local (`127.0.0.1:47821`)
+- **Nhánh thực hiện:** `feat/tram/ca-084-release-audit-postman`
+- **Ngày cập nhật:** 23/11/2026
+- **Quy chuẩn áp dụng:** `docs/INVARIANTS.md` (`DOC-001`, `SEC-001`..`SEC-005`, `DATA-001`..`DATA-004`)
 
 ---
 
@@ -14,12 +14,12 @@
 
 | Hạng mục cổng kiểm tra | Phân loại (`DOC-001`) | Nguồn bằng chứng & Chi tiết xác minh |
 |---|---|---|
-| **Chuỗi kiểm tra tự động (`npm run check:all`)** | **`CONFIRMED`** *(Automated)* | Đã thực thi và đạt 100%: `vitest run` (116/116 tests, 14 files), `test:layout`, `check:postman` (10/10 checks & đồng bộ 11 mirror YAML), `tsc && vite build`, `cargo check`, `cargo test` (61/61 tests), `npm audit` (0 vulnerabilities). |
-| **Kiểm thử Local REST API (Postman Runner)** | **`CONFIRMED`** *(Manual Postman Run)* | Thực thi Collection Runner trên backend cục bộ `http://127.0.0.1:47821` với token phiên cục bộ: **10/10 requests (24/24 assertions) PASS**. |
+| **Chuỗi kiểm tra tự động (`npm run check:all`)** | **`CONFIRMED`** *(Automated)* | Đã thực thi và đạt 100%: `vitest run` (116/116 tests, 14 files), `test:layout`, `check:postman` (10/10 checks, chuẩn hóa UTF-8 & đồng bộ 11 mirror YAML), `tsc && vite build`, `cargo check`, `cargo test` (61/61 tests), `npm audit` (0 vulnerabilities). |
+| **Kiểm thử Local REST API (Postman Runner)** | **`CONFIRMED`** *(Manual Postman Run)* | Thực thi Collection Runner trên backend cục bộ `http://127.0.0.1:47821` với token phiên cục bộ sau khi chuẩn hóa UTF-8: **10/10 requests (24/24 assertions) PASS** (`0 Failed`, `0 Errors`). |
 | **Đóng gói trình cài đặt Windows (NSIS v1.0.1)** | **`CONFIRMED`** *(Local Build Artifact)* | Đã biên dịch thành công gói cài đặt `src-tauri/target/release/bundle/nsis/Campus Assistant Local_1.0.1_x64-setup.exe` từ cây mã nguồn hiện tại bằng `npm run build:installer`. |
 | **Native Smoke Test trên bản cài đặt v1.0.1** | **`CONFIRMED`** *(Manual Native Smoke)* | Đã cài đặt `Campus Assistant Local_1.0.1_x64-setup.exe` lên Windows, khởi chạy ứng dụng desktop hiển thị đầy đủ giao diện (không lỗi kết nối) và xác nhận `GET /api/v1/health` phản hồi `200 OK` (`version: "1.0.1"`). |
-| **Kiểm thử nâng cấp / giữ dữ liệu qua bản cập nhật (Upgrade DB Check)** | **`PLANNED`** *(PENDING)* | Chưa thực hiện kịch bản nâng cấp đè từ phiên bản cũ lên `1.0.1` có sẵn dữ liệu SQLite người dùng để xác minh tính toàn vẹn sau migration/restart. |
-| **Phê duyệt Pull Request (#27)** | **`PLANNED`** *(PENDING)* | Đang chờ reviewer kiểm tra lại bản cập nhật báo cáo và collection trên GitHub PR #27 trước khi chuyển trạng thái Task CA-084 sang `Done`. |
+| **Kiểm thử nâng cấp / giữ dữ liệu qua bản cập nhật (Upgrade DB Check)** | **`CONFIRMED`** *(Manual Upgrade Smoke)* | Đã sao lưu `campus-assistant.db` (`86,016 bytes`) có sẵn dữ liệu phiên người dùng tại `%LOCALAPPDATA%\CampusAssistant\AppLocalData\database\`, chạy cài đè trực tiếp gói `Campus Assistant Local_1.0.1_x64-setup.exe` (*Add/Reinstall components*, giữ nguyên thư mục dữ liệu cũ). Sau khi khởi động lại bản `1.0.1`, ứng dụng mở bình thường không lỗi migration, toàn bộ bản ghi SQLite được giữ nguyên 100% và `GET /api/v1/health` trả về `200 OK`. |
+| **Phê duyệt Pull Request (#27)** | **`PLANNED`** *(PENDING)* | Đã cập nhật đầy đủ bằng chứng kiểm thử, chuẩn hóa UTF-8 cho Postman collection/YAML và hoàn tất Upgrade DB Check; đang chờ reviewer (Võ Anh Sơn) phê duyệt và merge PR #27 trên GitHub trước khi chuyển trạng thái Task CA-084 sang `Done`. |
 | **Hợp đồng đồng bộ UTH Portal thực tế** | **`UNKNOWN`** / **`PLANNED`** | API contract của cổng thông tin UTH bên ngoài chưa được xác minh; các endpoint đồng bộ và dữ liệu cá nhân tiếp tục bị khóa an toàn ở mức `503`. |
 
 ---
@@ -48,9 +48,9 @@
 
 ### 3.2. Chi tiết Kết quả Thực thi Test Case trên Postman (`TC01`–`TC10`)
 
-* **Tài nguyên kiểm thử:** `postman/Campus_Assistant_Local_REST_API.postman_collection.json` (10 requests) và `postman/Campus_Assistant_Local_REST_API.postman_environment.json`.
-* **Tổng hợp kết quả:** **10/10 requests hoàn tất**, **24/24 assertions PASS** (`0 Failed`, `0 Errors`).
-* **Ghi chú hiệu năng đo được (`CONFIRMED`):** Độ trễ phản hồi HTTP loopback trung bình của backend Rust là **~2 ms/request** (tổng thời gian xử lý mạng thuần túy cho 10 requests khoảng **20 ms**; phần thời gian còn lại trong tổng thời lượng chạy Runner khoảng 1.3s là chi phí khởi tạo sandbox script và kết xuất giao diện của Postman Desktop).
+- **Tài nguyên kiểm thử:** `postman/Campus_Assistant_Local_REST_API.postman_collection.json` (10 requests, đã chuẩn hóa bảng mã UTF-8 và đồng bộ 11 file mirror YAML) và `postman/Campus_Assistant_Local_REST_API.postman_environment.json`.
+- **Tổng hợp kết quả:** **10/10 requests hoàn tất**, **24/24 assertions PASS** (`0 Failed`, `0 Errors`).
+- **Ghi chú hiệu năng đo được (`CONFIRMED`):** Độ trễ phản hồi HTTP loopback trung bình của backend Rust là **~2–3 ms/request** (tổng thời gian chạy toàn bộ 10 requests trong Postman Collection Runner là **1s 468ms**, phần lớn là chi phí khởi tạo sandbox script và kết xuất giao diện của Postman Desktop).
 
 | Mã TC | Tên Test Case (Request) | Method & Endpoint | HTTP Status | Assertions | Phân loại (`DOC-001`) |
 |---|---|---|---|---:|---|
@@ -82,8 +82,8 @@
 
 ### 4.2. Lệnh kiểm chứng toàn cục & Kết quả thực thi (`CONFIRMED`)
 
-* **Lệnh thực thi:** `npm run check:all` (tại nhánh `feat/tram/ca-084-release-audit-postman`)
-* **Kết quả từng giai đoạn:**
+- **Lệnh thực thi:** `npm run check:all` (tại nhánh `feat/tram/ca-084-release-audit-postman`)
+- **Kết quả từng giai đoạn:**
   1. `npm run test` (`vitest run`): **`Test Files 14 passed (14) | Tests 116 passed (116)`** (`4.91s`), gồm `src/releaseChecklist.test.ts` (2), `src/gpaData.test.ts` (16), `src/components/GpaCalculator.test.tsx` (2), `src/utils/backupRestore.test.ts` (7), `src/engine.test.ts` (56) và 9 file test khác.
   2. `npm run test:layout` (`node tools/layout-regression-check.cjs`): **`Layout regression check passed.`**
   3. `npm run check:postman` (`node tools/check-postman.cjs && node tools/check-local-postman.cjs`): **`10 kiểm tra local Postman PASS; không gửi HTTP và không xác nhận contract UTH.`**
