@@ -35,9 +35,10 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 
 ## Active task
 
+- CA-069: logo UTH UI và Windows executable icon; master/ICO đã được cập nhật, còn xác minh build/runtime/taskbar. `npm run check:all` hiện bị chặn độc lập tại Postman secret/PII guard; không sửa Postman trong scope này.
 - CA-084: release checklist local-only đang được sửa và đối chiếu; còn `npm run check:all`, native smoke, installer/review và đồng bộ Jira.
 - CA-090.01: migration SQLite/reset an toàn đã triển khai; giữ In Progress, không sửa trong scope CA-084; còn manual native/UI verification, PR/review và đồng bộ Jira.
-- CA-093.01: tìm kiếm công khai phân biệt lỗi/không thấy, hạn chót 20s, retry tối đa 2 lần, nút Thử lại đã triển khai; giữ In Progress, còn manual native ngắt mạng và PR/review.
+- CA-093.02: fetcher tìm kiếm công khai từ chối redirect, kiểm MIME HTML/XHTML, body tối đa 2 MiB và UTF-8; Rust test boundary/redirect PASS. Giữ In Progress: hủy từ UI, cache và manual desktop còn mở.
 - CA-080 local REST/Postman vẫn chờ contract/fixture UTH thật; CA-086 dừng theo yêu cầu user; CA-081 Proposed.
 - CA-098.01: thiết kế contract và Bearer auth cho REST loopback Postman. CA-080 vẫn In Progress nhưng chờ evidence contract UTH riêng, không thuộc task implementation đang chạy; CA-086 dừng theo yêu cầu user, source chưa commit; CA-081 Proposed.
 - CA-080 local REST/Postman, bao gồm phần CA-098.01 về REST loopback/Bearer auth: latest automated `npm run check:all` PASS (84 Vitest, 10 Postman checks, 55 Rust, audit 0); vẫn chờ manual HTTP/two-instance smoke và contract/fixture UTH thật. CA-086 dừng theo yêu cầu user; CA-081 Proposed.
@@ -106,7 +107,7 @@ Mot task chi duoc chuyen sang `Done` khi tat ca dieu kien sau deu dat:
 | CA-090 | P1 | Sao lưu và reset đúng phạm vi, không mất dữ liệu | `tasks/chua-xong/CA-090-backup-reset-data-safety.md` | In Progress; CA-090.01 đã sửa migration/reset, backup round-trip vẫn chưa nghiệm thu. |
 | CA-091 | P1 | Thùng rác an toàn và một nguồn dữ liệu | `tasks/chua-xong/CA-091-trash-recovery-native-owner.md` | Proposed; chưa sửa runtime. |
 | CA-092 | P1 | Xuất lịch đúng múi giờ và phạm vi học kỳ | `tasks/chua-xong/CA-092-calendar-timezone-validity.md` | Proposed; chưa sửa runtime. |
-| CA-093 | P1 | Tìm kiếm công khai: lỗi, thời gian và nguồn tin | `tasks/chua-xong/CA-093-public-search-error-budget.md` | In Progress; CA-093.01 đã sửa error/partial/no_match, deadline, retry; redirect/content-type/cancel chưa làm. |
+| CA-093 | P1 | Tìm kiếm công khai: lỗi, thời gian và nguồn tin | `tasks/chua-xong/CA-093-public-search-error-budget.md` | In Progress; CA-093.02 kiểm redirect/MIME/2 MiB/UTF-8; hủy từ UI, cache và manual desktop chưa xong. |
 | CA-094 | P1 | Gia cố desktop IPC và filesystem boundary | `tasks/chua-xong/CA-094-desktop-ipc-hardening.md` | Proposed; chưa sửa runtime. |
 | CA-095 | P2 | Theme: persistence, draft và ownership ảnh nền | `tasks/chua-xong/CA-095-appearance-persistence-assets.md` | Proposed; chưa sửa runtime. |
 | CA-096 | P2 | Clean code tăng dần và test hành vi | `tasks/chua-xong/CA-096-incremental-clean-code-tests.md` | Proposed; chưa sửa runtime. |
