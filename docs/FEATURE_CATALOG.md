@@ -25,6 +25,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 | GPA_CALCULATOR | Recovery, draft F0 và persistence cần CA-088 |
 | SCHOOL_SETTINGS | Public mock/capability wording không đúng nguồn, CA-089 |
 | BACKUP_RESET | Active keys bị bỏ, reset phạm vi sai/fault handling, CA-090 |
+| SQLITE_MIGRATION_V6 | `CONFIRMED` trên nhánh migration: schema version 6, notes và bảng connector; ngày học cũ thiếu mốc ngày được giữ `UNKNOWN`, không suy từ `fetched_at`. Native upgrade/backup round-trip còn `PLANNED`, CA-090. |
 | PHYSICAL_TRASH / FILE_MANAGEMENT_AND_TRASH | Recovery và localStorage fallback sai owner, CA-091; không STABLE toàn diện |
 | CALENDAR_EXPORT | Timezone và recurrence chưa đúng, CA-092 |
 | PUBLIC_ADMISSIONS_SEARCH | CA-093.01 phân biệt error/partial/no_match, hạn chót 20s, retry <= 2; CA-093.02 chặn redirect, kiểm MIME/body UTF-8/2 MiB; hủy UI và cache còn PLANNED |

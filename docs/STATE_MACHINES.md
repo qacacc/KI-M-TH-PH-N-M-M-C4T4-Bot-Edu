@@ -8,6 +8,8 @@ CA-083 CURRENT (2026-10-09): contract_unverified là error riêng cho UTH; khôn
 
 CA-090.01 CURRENT (2026-10-19): migration SQLite giữ dữ liệu cũ; khởi động không có transition xóa lịch sử chat. Reset cấu hình sau confirm chỉ chuyển các key cấu hình về trạng thái mặc định; GPA/chat/profile không bị chuyển sang trạng thái xóa. Manual native/UI verification chưa chạy.
 
+CA-090 migration v6 CURRENT (source/tests): lịch cũ không có ngày thật giữ `class_date = ''`; mở DB và schema repair không chuyển giá trị này thành ngày suy đoán. Ngày đã lưu từ nguồn vẫn giữ nguyên. Đây chỉ là thuộc tính cache nội bộ, không bổ sung trạng thái auth/sync hay xác nhận Portal; native upgrade smoke còn `UNKNOWN`.
+
 Tài liệu định nghĩa chính thức các máy trạng thái (State Machines) trong ứng dụng. AI không được tự phát minh ra trạng thái mới ngoài danh sách này.
 
 ---
