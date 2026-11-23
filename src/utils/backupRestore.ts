@@ -16,6 +16,7 @@ const ALLOWLIST_KEYS = new Set([
   "ca-settings-dev-mode",
   "ca-appearance-settings",
   "ca_gpa_calculator_data_v1",
+  "ca_gpa_calculator_manual_v2",
 ]);
 
 const DANGEROUS_KEYS = new Set(["__proto__", "prototype", "constructor"]);

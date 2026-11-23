@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { GPA_STORAGE_KEY } from "../gpaData";
+import { GPA_STORAGE_KEY, GPA_LEGACY_STORAGE_KEY, type PortalGradeRecord } from "../gpaData";
 import { GpaCalculator } from "./GpaCalculator";
 
 const mockLocalStorage = (() => {
@@ -22,9 +22,10 @@ const mockLocalStorage = (() => {
 })();
 vi.stubGlobal("localStorage", mockLocalStorage);
 
-describe("GpaCalculator UI Integration Tests (CA-088.02)", () => {
+describe("GpaCalculator UI Integration Tests (Merged #9, #16, #26)", () => {
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   beforeEach(() => {
@@ -34,9 +35,7 @@ describe("GpaCalculator UI Integration Tests (CA-088.02)", () => {
   it("thêm hàng Pending không làm tụt GPA", () => {
     localStorage.setItem(
       GPA_STORAGE_KEY,
-      JSON.stringify([
-        { id: "existing", name: "Toán", credits: 3, letterGrade: "A", score10: 8.5 },
-      ]),
+      JSON.stringify([{ id: "existing", name: "Toán", credits: 3, letterGrade: "A", score10: 8.5 }]),
     );
 
     render(<GpaCalculator />);
@@ -52,10 +51,90 @@ describe("GpaCalculator UI Integration Tests (CA-088.02)", () => {
     render(<GpaCalculator />);
     fireEvent.click(screen.getByRole("button", { name: /Thêm môn học/i }));
 
-    const scoreInput = screen.getAllByRole("spinbutton")[1];
+    const creditInput = screen.getByLabelText("Số tín chỉ");
+    fireEvent.change(creditInput, { target: { value: "3" } });
+
+    const scoreInput = screen.getByLabelText("Điểm thang 10");
     fireEvent.change(scoreInput, { target: { value: "2" } });
 
     expect((screen.getByPlaceholderText("Tự động") as HTMLInputElement).value).toBe("F");
-    expect(screen.getAllByText("0.00")).toHaveLength(2);
+    expect(screen.getByText("0.00")).toBeTruthy();
+    expect(screen.getByText("2.00")).toBeTruthy();
+    expect(screen.getByText(/Yếu \/ Cảnh báo/i)).toBeTruthy();
+  });
+
+  it("chặn tín chỉ thập phân hoặc ngoài khoảng nguyên 1-10 trên UI", () => {
+    render(<GpaCalculator />);
+    fireEvent.click(screen.getByRole("button", { name: /Thêm môn học/i }));
+
+    const creditInput = screen.getByLabelText("Số tín chỉ") as HTMLInputElement;
+    fireEvent.change(creditInput, { target: { value: "2.5" } });
+
+    expect(creditInput.value).toBe("");
+    expect(screen.getByRole("alert").textContent).toContain("Số tín chỉ phải là số nguyên từ 1 đến 10.");
+
+    fireEvent.change(creditInput, { target: { value: "11" } });
+    expect(creditInput.value).toBe("");
+  });
+
+  it("không tự ghi v1 sang v2 lúc tải và chỉ phục hồi khi người dùng xác nhận", () => {
+    localStorage.setItem(
+      GPA_LEGACY_STORAGE_KEY,
+      JSON.stringify([{ id: "v1-1", name: "Cấu trúc dữ liệu", credits: 4, letterGrade: "A", score10: 8.5 }]),
+    );
+
+    render(<GpaCalculator />);
+
+    // Lúc mới tải: v2 chưa bị ghi đè
+    expect(localStorage.getItem(GPA_STORAGE_KEY)).toBeNull();
+    expect(screen.getByText(/Phát hiện dữ liệu điểm phiên bản cũ \(v1\)/i)).toBeTruthy();
+
+    // Người dùng hủy xác nhận -> v2 vẫn giữ nguyên null
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValueOnce(false);
+    fireEvent.click(screen.getByRole("button", { name: /Xác nhận phục hồi dữ liệu cũ \(v1\)/i }));
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem(GPA_STORAGE_KEY)).toBeNull();
+
+    // Người dùng đồng ý xác nhận -> v1 được phục hồi sang v2
+    confirmSpy.mockReturnValueOnce(true);
+    fireEvent.click(screen.getByRole("button", { name: /Xác nhận phục hồi dữ liệu cũ \(v1\)/i }));
+    expect(localStorage.getItem(GPA_STORAGE_KEY)).not.toBeNull();
+    expect(screen.getByText("3.70")).toBeTruthy();
+  });
+
+  it("bảo vệ dữ liệu v2 bị hỏng và cho phép đặt lại an toàn", () => {
+    localStorage.setItem(GPA_STORAGE_KEY, "{ corrupt-json");
+    render(<GpaCalculator />);
+
+    expect(screen.getByRole("alert").textContent).toContain("dữ liệu bị hỏng hoặc sai định dạng");
+
+    vi.spyOn(window, "confirm").mockReturnValueOnce(true);
+    fireEvent.click(screen.getByRole("button", { name: /Xóa dữ liệu hỏng & Bắt đầu lại/i }));
+    expect(localStorage.getItem(GPA_STORAGE_KEY)).toBe("[]");
+  });
+
+  it("tính đúng GPA chính thức từ bảng điểm Portal và cho phép nạp sang bảng ước tính", () => {
+    const portalGrades: PortalGradeRecord[] = [
+      {
+        id: "portal-1",
+        subjectCode: "SE104",
+        subjectName: "Nhập môn Công nghệ phần mềm",
+        credits: 4,
+        score10: 9.5,
+        letterGrade: "A+",
+        source: "uth-portal",
+        verified: true,
+      },
+    ];
+
+    render(<GpaCalculator portalGrades={portalGrades} schoolShortName="UTH" />);
+
+    expect(screen.getByText("4.00 / 4.00")).toBeTruthy();
+    vi.spyOn(window, "confirm").mockReturnValueOnce(true);
+    fireEvent.click(screen.getByRole("button", { name: /Nạp vào bảng ước tính/i }));
+
+    expect((screen.getByDisplayValue("Nhập môn Công nghệ phần mềm") as HTMLInputElement).value).toBe(
+      "Nhập môn Công nghệ phần mềm",
+    );
   });
 });

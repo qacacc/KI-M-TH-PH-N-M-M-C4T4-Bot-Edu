@@ -69,5 +69,35 @@ export function ExamsPage() {
 }
 
 export function GpaPage() {
-  return <div className="page-card"><div className="page-card-header"><div><h2>Ước tính GPA / CPA</h2><p>Điểm do bạn nhập và lưu trên thiết bị. Chưa đồng bộ bảng điểm từ trường; thang quy đổi hiện tại là tham khảo.</p></div></div><GpaCalculator /></div>;
+  const [portalError, setPortalError] = useState("");
+  const school = getSchoolOption(readSchoolProfile());
+
+  async function openPortal() {
+    try {
+      if (school.portalUrl) await openExternalUrl(school.portalUrl);
+    } catch {
+      setPortalError("Không mở được cổng thông tin trường. Vui lòng thử lại.");
+    }
+  }
+
+  return (
+    <div className="page-card">
+      <div className="page-card-header">
+        <div>
+          <h2>Ước tính GPA / CPA</h2>
+          <p>Kết hợp trạng thái bảng điểm từ Portal {school.shortName} và công cụ ước tính điểm nhập tay lưu trên thiết bị.</p>
+        </div>
+      </div>
+      {portalError && (
+        <p role="alert" className="warning-box">
+          {portalError}
+        </p>
+      )}
+      <GpaCalculator
+        schoolShortName={school.shortName}
+        portalUrl={school.portalUrl ?? undefined}
+        onOpenPortal={school.portalUrl ? () => void openPortal() : undefined}
+      />
+    </div>
+  );
 }
