@@ -1601,8 +1601,8 @@ export default function App() {
 
               {messages.length === 1 && !conversation && (
                 <div className="starter-grid">
-                  <button onClick={() => void submitText("tìm tài liệu", "starter")} disabled={isBusy}><BookOpen size={18} /><span><strong>Tìm tài liệu</strong><small>Hệ thống học tập của trường</small></span></button>
-                  <button onClick={() => setView("files")} disabled={isBusy}><FolderOpen size={18} /><span><strong>Tài liệu</strong><small>Tài liệu trường và tệp minh họa</small></span></button>
+                  <button className="starter-featured" onClick={() => void submitText("tìm tài liệu", "starter")} disabled={isBusy}><BookOpen size={18} /><span><strong>Tìm tài liệu</strong><small>Hệ thống học tập của trường</small></span></button>
+                  <button className="starter-featured" onClick={() => setView("files")} disabled={isBusy}><FolderOpen size={18} /><span><strong>Tài liệu</strong><small>Tài liệu trường và tệp minh họa</small></span></button>
                   <button onClick={() => void submitText("xem thông báo", "starter")} disabled={isBusy}><Bell size={18} /><span><strong>Xem thông báo</strong><small>Website trường</small></span></button>
                   <button onClick={() => void submitText("xem lịch học", "starter")} disabled={isBusy}><CalendarDays size={18} /><span><strong>Xem lịch học</strong><small>Cache tài khoản trường</small></span></button>
                   <button onClick={() => void submitText("xem lịch thi", "starter")} disabled={isBusy}><ClipboardList size={18} /><span><strong>Xem lịch thi</strong><small>Cache tài khoản trường</small></span></button>

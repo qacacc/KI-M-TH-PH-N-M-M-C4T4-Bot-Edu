@@ -157,6 +157,12 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 - **Known Gaps & Tracking**:
   - None | Decision: **`REMOVED_AS_DEAD_CODE`**
 
+## FEATURE: LOCAL_NAV_LAYOUT
+- **Status**: `CONFIRMED` source — lối tắt chat dùng bố cục responsive 4/2/1 cột; nhãn lối tắt và kết quả command palette xuống dòng; chưa native visual smoke.
+- **Owner**: `src/App.tsx`, `src/styles.css`
+- **Verification Scope**: `AUTOMATED` static CSS/JSX (`src/navigationLayout.test.js`), layout regression; `UNKNOWN` native visual.
+- **Test design**: `docs/testing/LOCAL_NAV_LAYOUT.md`.
+
 ---
 
 ## FEATURE: GPA_CALCULATOR
