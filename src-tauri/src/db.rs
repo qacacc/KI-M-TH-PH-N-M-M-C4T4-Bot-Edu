@@ -1148,6 +1148,18 @@ mod tests {
             [],
         );
         assert!(blank_id_insert.is_err());
+
+        for id in ["N", "N2"] {
+            conn.execute(
+                "INSERT INTO student_notes (id, title, content, created_at, updated_at) VALUES (?1, 'T', 'C', '2026-01-01', '2026-01-01')",
+                [id],
+            )
+            .unwrap();
+        }
+        let valid_notes: i64 = conn
+            .query_row("SELECT COUNT(*) FROM student_notes", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(valid_notes, 2);
     }
 
     #[test]
