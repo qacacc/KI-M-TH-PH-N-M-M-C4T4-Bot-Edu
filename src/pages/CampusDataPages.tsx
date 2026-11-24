@@ -85,7 +85,7 @@ export function GpaPage() {
       <div className="page-card-header">
         <div>
           <h2>Ước tính GPA / CPA</h2>
-          <p>Kết hợp trạng thái bảng điểm từ Portal {school.shortName} và công cụ ước tính điểm nhập tay lưu trên thiết bị.</p>
+          <p>Ước tính điểm nhập tay lưu trên thiết bị. Bảng điểm Portal {school.shortName} chưa được kết nối.</p>
         </div>
       </div>
       {portalError && (

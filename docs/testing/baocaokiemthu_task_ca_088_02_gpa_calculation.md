@@ -1,110 +1,54 @@
-# Báo cáo Kiểm thử Chức năng Tính, Phục hồi & Tích hợp Bảng điểm GPA (Task CA-088 / CA-088.02)
+# CA-088.02 — Kiểm thử GPA nhập tay và ranh giới Portal
 
-> **Trạng thái nghiệm thu (`DOC-001`):**
-> * **Hợp nhất PR #9, #16, #26 trên nhánh `feat/tram/ca-088-02-gpa-calculation-fix`:** **`CONFIRMED`** *(Automated Unit & UI Integration Tests — 30/30 tests PASS)*
-> * **Phê duyệt Pull Request (#26) & Đóng nhánh chồng lấn (#9, #16):** **`PLANNED`** *(Chờ reviewer duyệt PR #26; PR #9 và PR #16 được đóng sau khi hợp nhất)*
+## Thực tế, phạm vi, tác động
 
-- **Dự án:** Campus Assistant Local (`KI-M-TH-PH-N-M-M-C4T4-Bot-Edu`)
-- **Mã Task:** `CA-088` / `CA-088.02` — *Quy tắc tín chỉ nguyên 1–10, xác nhận phục hồi dữ liệu cũ v1→v2 và tích hợp luồng bảng điểm Portal*
-- **Nhánh Git (Branch):** `feat/tram/ca-088-02-gpa-calculation-fix` (Hợp nhất nội dung từ PR #9, #16, #26)
-- **Người thực hiện:** Nguyễn Thị Ngọc Trâm (`TV05`)
-- **Quy chuẩn áp dụng:** `docs/INVARIANTS.md` (`DOC-001`, `AI-006`, `AI-008`, `DATA-001`)
+- **CONFIRMED:** `GpaPage` chỉ tạo `GpaCalculator` với URL mở Portal (`src/pages/CampusDataPages.tsx:71,96`); không có IPC truyền bảng điểm Portal. Giá trị `verified: true` trong unit test là dữ liệu tổng hợp (`src/gpaData.test.ts:214`), không phải bằng chứng trường.
+- **CONFIRMED:** điểm nhập tay nằm trong `ca_gpa_calculator_manual_v2` trên thiết bị (`src/gpaData.ts:3,96`). Dữ liệu cũ `v1` chỉ được phục hồi sau xác nhận và ghi thành công (`src/components/GpaCalculator.tsx:118,143`); bản hỏng không bị ghi đè lúc tải (`src/gpaData.ts:96`).
+- **PLANNED:** đồng bộ điểm Portal, xác minh nguồn và GPA học kỳ/tích lũy chính thức. Phụ thuộc CA-080/081 và contract trường; CA-088 trong `tasks/TASK_INDEX.md` chưa Done.
+- **UNKNOWN:** thang quy đổi chính thức, fixture bảng điểm và kết quả Postman/native live. Không dùng phép quy đổi tham khảo cho GPA chính thức.
+- **Tác động:** chỉ UI và logic GPA local, tài liệu. Không đổi SQLite, WebView/session, API hay Postman collection.
 
----
+## Phân hoạch lớp tương đương (EP)
 
-## 1. Phạm vi Hợp nhất & Quy tắc Nghiệp vụ Được Kiểm chứng (`CONFIRMED`)
+| Biến | Lớp hợp lệ | Tag | Lớp không hợp lệ | Tag |
+| --- | --- | --- | --- | --- |
+| `credits` | `""` (nháp) hoặc số nguyên 1–10 | V1 | 0, 11, 2.5, chuỗi/sai kiểu | X1 |
+| `score10` | `""` (nháp) hoặc số hữu hạn 0–10 | V2 | -0.1, 10.1, NaN/sai kiểu | X2 |
+| `letterGrade` | `""` hoặc khóa trong bảng quy đổi tham khảo | V3 | `constructor`, `__proto__`, mã lạ | X3 |
+| Dữ liệu lưu | JSON mảng đầy đủ trường, ID duy nhất | V4 | JSON lỗi, thiếu trường, trùng ID | X4 |
+| Phục hồi v1 | Người dùng xác nhận và ghi v2 thành công | V5 | hủy hoặc bộ nhớ từ chối ghi | X5 |
+| Nguồn Portal | Chỉ hiển thị trạng thái chưa kết nối | V6 | Gắn nhãn điểm giả lập là điểm chính thức | X6 |
 
-1. **Ràng buộc số tín chỉ nguyên `[1..10]` đồng bộ UI và Logic (`src/gpaData.ts`, `src/components/GpaCalculator.tsx` — `CONFIRMED`):**
-   - Ô nhập tín chỉ trên UI (`step={1}`, `min={1}`, `max={10}`) chỉ chấp nhận số nguyên trong đoạn $[1, 10]$; từ chối số thập phân (ví dụ `2.5`) và giá trị ngoài biên (`0`, `11`) kèm thông báo `role="alert"`.
-   - `parseGpaSubjects` và `calculateGpaStats` kiểm tra `Number.isInteger(credits) && credits >= 1 && credits <= 10` và bỏ qua các hàng chưa nhập hoàn chỉnh (`credits === ""`, `letterGrade === ""` hoặc `score10 === ""`).
-2. **Sửa luồng phục hồi dữ liệu cũ `v1` $\rightarrow$ `v2` có xác nhận (`src/gpaData.ts`, `src/components/GpaCalculator.tsx` — `CONFIRMED`):**
-   - Khắc phục lỗi tự động ghi dữ liệu từ `ca_gpa_calculator_data_v1` sang `ca_gpa_calculator_manual_v2` lúc khởi tạo ở PR #9/#16: hàm `loadGpaSubjects()` chỉ đọc trạng thái và bật cờ `hasLegacyV1 = true` mà không tự ý ghi đè khóa `v2`.
-   - Việc chuyển dữ liệu từ `v1` sang `v2` chỉ thực hiện khi người dùng chủ động nhấn nút xác nhận và đồng ý trong hộp thoại `window.confirm`.
-3. **Bảo vệ dữ liệu hỏng (`Corrupt Data` — hợp nhất từ PR #9/#16 — `CONFIRMED`):**
-   - Khi `ca_gpa_calculator_manual_v2` chứa JSON lỗi hoặc sai lược đồ, hệ thống bật `corruptWarning`, tạm ngưng tự động ghi đè `localStorage` để bảo toàn dữ liệu gốc và cung cấp nút cho phép người dùng chủ động đặt lại.
-4. **Tích hợp luồng GPA chính thức từ Portal (`src/gpaData.ts`, `src/components/GpaCalculator.tsx`, `src/pages/CampusDataPages.tsx` — `CONFIRMED`):**
-   - Bổ sung `calculatePortalGpaStats` tách bạch điểm chính thức từ Portal (`source: "uth-portal"`, `verified: true`) với bảng điểm ước tính nhập tay; không tự sinh GPA giả khi chưa đồng bộ bảng điểm Portal (`DATA-001`) và hỗ trợ nạp môn đã xác minh từ Portal sang bảng ước tính.
+## Giá trị biên (BVA)
 
----
+| Biến | min- | min | min+ | nominal | max- | max | max+ | Tag |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `credits` nguyên | 0 | 1 | 2 | 3 | 9 | 10 | 11 | B1–B7 |
+| `score10` | -0.1 | 0 | 0.1 | 5 | 9.9 | 10 | 10.1 | B8–B14 |
 
-## 2. Thiết kế Kịch bản Kiểm thử Hộp đen (EP & Standard BVA)
+Biên riêng: `credits=2.5` (X1), hàng chưa nhập (`""`, V1/V2), danh sách rỗng (không có GPA thực), lỗi ghi storage (X5). Miền điểm hệ 10 chỉ là miền nhập ước tính, không phải contract Portal.
 
-### 2.1. Phân hoạch lớp tương đương (EP)
+## Test case và kết quả mong đợi
 
-| Biến / Điều kiện | Lớp hợp lệ (Valid) | Lớp không hợp lệ (Invalid) |
-|---|---|---|
-| **ID môn học (`id`)** | **V1:** Chuỗi không rỗng, duy nhất trong danh sách | **X1:** Thiếu `id`, `id` rỗng hoặc trùng `id` giữa 2 hàng |
-| **Tên môn học (`name`)** | **V2:** Kiểu `string` (cho phép rỗng khi mới thêm hàng) | **X2:** Thiếu trường `name` hoặc sai kiểu dữ liệu |
-| **Số tín chỉ (`credits`)** | **V3:** Số nguyên `1 <= credits <= 10` hoặc `""` | **X3:** Thiếu trường, `<= 0`, `> 10`, số thập phân (`2.5`) hoặc chuỗi |
-| **Điểm thang 10 (`score10`)** | **V4:** Số thực `0.0 <= score10 <= 10.0` hoặc `""` | **X4:** Thiếu trường, `< 0`, `> 10`, `NaN`/`Infinity` hoặc chuỗi |
-| **Điểm chữ (`letterGrade`)** | **V5:** Thuộc `GRADE_CONVERSION` hoặc `""` | **X5:** Thiếu trường hoặc giá trị ngoài allowlist (`"constructor"`) |
-| **Di chuyển dữ liệu `v1` $\rightarrow$ `v2`** | **V6:** Người dùng bấm nút phục hồi và xác nhận `OK` | **X6:** Mới tải trang (chưa xác nhận) hoặc bấm `Cancel` |
-| **Nguồn dữ liệu Portal** | **V7:** Bản ghi `source: "uth-portal"` và `verified: true` | **X7:** Danh sách rỗng hoặc bản ghi `verified: false` |
+| TC | Đầu vào/tình huống | Mong đợi | Tag | Bằng chứng tự động |
+| --- | --- | --- | --- | --- |
+| 01 | `credits=1`, điểm 0 | Chấp nhận, tính F | V1,V2,B2,B9 | `gpaData.test.ts` |
+| 02 | `credits=10`, điểm 10 | Chấp nhận, tính điểm cao nhất | V1,V2,B6,B13 | `gpaData.test.ts` |
+| 03 | `credits=0` hoặc 11 | Từ chối | X1,B1,B7 | `gpaData.test.ts` |
+| 04 | `credits=2.5` | Từ chối, không tự làm tròn | X1 | `gpaData.test.ts`, `GpaCalculator.test.tsx` |
+| 05 | `score10=-0.1` hoặc 10.1 | Từ chối, không kẹp về 0/10 | X2,B8,B14 | `gpaData.test.ts`, `GpaCalculator.test.tsx` |
+| 06 | Hàng nháp, chưa nhập đủ | Không ảnh hưởng GPA | V1,V2 | `gpaData.test.ts`, `GpaCalculator.test.tsx` |
+| 07 | Bảng điểm trống | UI hiển thị `--`, không báo điểm chính thức 0.00 | V6 | `GpaCalculator.test.tsx` |
+| 08 | JSON v2 sai cấu trúc | Cảnh báo; không tự ghi đè | X4 | `gpaData.test.ts`, `GpaCalculator.test.tsx` |
+| 09 | v1 có dữ liệu, hủy phục hồi | v2 không đổi | X5 | `GpaCalculator.test.tsx` |
+| 10 | v1 có dữ liệu, xác nhận | Chỉ ghi v2 sau xác nhận | V5 | `GpaCalculator.test.tsx` |
+| 11 | Storage từ chối xóa dữ liệu hỏng | Dữ liệu hỏng vẫn giữ, cảnh báo còn | X5 | `GpaCalculator.test.tsx` |
+| 12 | Không có nguồn Portal xác thực | Không có nút nạp, không tuyên bố GPA chính thức | V6,X6 | `GpaCalculator.test.tsx`; static `rg` |
 
-### 2.2. Phân tích giá trị biên chuẩn (Standard BVA)
+## Kiểm chứng và giới hạn
 
-| Biến đầu vào | `min-` | `min` | `min+` | `nominal` | `max-` | `max` | `max+` | Tag biên |
-|---|---:|---:|---:|---:|---:|---:|---:|---|
-| **`score10`** | `-0.1` *(X4)* | `0` *(B1)* | `0.1` *(B2)* | `5.0` *(B3)* | `9.9` *(B4)* | `10` *(B5)* | `10.1` *(X4)* | `B1`..`B5`, `X4` |
-| **`credits`** | `0` *(X3)* | `1` *(B6)* | `2` *(B7)* | `3` *(B8)* | `9` *(B9)* | `10` *(B10)* | `11` *(X3)* | `B6`..`B10`, `X3` |
-
-- **Biên trạng thái đặc biệt:**
-  - `B11`: Danh sách rỗng (`[]`, `null`, `""`) $\rightarrow$ `parseGpaSubjects` trả về `[]`, `calculateGpaStats` trả về `gpaScale4 = "0.00"`.
-  - `B12`: Hàng mới thêm chưa nhập dữ liệu (`credits: "", letterGrade: "", score10: ""`) $\rightarrow$ Bỏ qua khi tính tổng tín chỉ và GPA.
-  - `B13`: Cực trị thang 4.0 $\rightarrow$ Toàn điểm `F` trả về `"0.00"`; toàn điểm `A+` trả về `"4.00"`.
-
----
-
-## 3. Ma trận Truy vết & Kết quả Thực thi Kiểm thử Tự động (`CONFIRMED`)
-
-### 3.1. Bộ Unit Test Logic (`src/gpaData.test.ts` — 24/24 PASS)
-
-| STT | Tên Test Case trong `src/gpaData.test.ts` | Hàm kiểm thử | Tag bao phủ | Kết quả & Phân loại (`DOC-001`) |
-|---:|---|---|---|---|
-| 1 | `không tụt GPA khi thêm hàng mới chưa nhập điểm` | `calculateGpaStats` | `V1..V5, B8, B12` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 2 | `tính đúng GPA thấp nhất (toàn điểm F)` | `calculateGpaStats` | `V1..V5, B7, B8, B13` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 3 | `tính đúng GPA cao nhất (toàn điểm A+)` | `calculateGpaStats` | `V1..V5, B5, B8, B13` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 4 | `trả về 0.00 khi bảng điểm trống` | `calculateGpaStats` | `B11` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 5 | `không tính grade không thuộc allowlist vào tổng GPA` | `calculateGpaStats` | `X5` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 6 | `tính đúng GPA tại các mốc biên BVA hợp lệ của score10 (0, 0.1, 5.0, 9.9, 10)` | `calculateGpaStats` | `B1, B2, B3, B4, B5, B6` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 7 | `tính đúng GPA tại các mốc biên BVA hợp lệ của credits (1, 2, 3, 9, 10)` | `calculateGpaStats` | `B6, B7, B8, B9, B10` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 8 | `bỏ qua môn học có tín chỉ thập phân hoặc ngoài biên [1..10] khi tính GPA` | `calculateGpaStats` | `X3` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 9 | `parse thành công mảng rỗng khi truyền null hoặc chuỗi rỗng` | `parseGpaSubjects` | `B11` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 10 | `parse thành công dữ liệu JSON hợp lệ có chứa giá trị rỗng` | `parseGpaSubjects` | `V1..V5, B12` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 11 | `chấp nhận các giá trị biên BVA hợp lệ của score10 (0, 0.1, 9.9, 10) và credits (1, 2, 9, 10)` | `parseGpaSubjects` | `B1, B2, B4, B5, B6, B7, B9, B10` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 12 | `từ chối score10 ngoài biên (-0.1 và 10.1)` | `parseGpaSubjects` | `X4` (`min-`, `max+`) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 13 | `từ chối credits ngoài biên (0 và 11) hoặc dạng số thập phân (2.5)` | `parseGpaSubjects` | `X3` (`min-`, `max+`, decimal) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 14 | `từ chối danh sách có hai môn học trùng ID` | `parseGpaSubjects` | `X1` (Duplicate ID) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 15 | `ném lỗi độc lập khi thiếu trường bắt buộc id` | `parseGpaSubjects` | `X1` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 16 | `ném lỗi độc lập khi thiếu trường bắt buộc name` | `parseGpaSubjects` | `X2` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 17 | `ném lỗi độc lập khi thiếu trường bắt buộc credits` | `parseGpaSubjects` | `X3` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 18 | `ném lỗi độc lập khi thiếu trường bắt buộc letterGrade` | `parseGpaSubjects` | `X5` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 19 | `ném lỗi độc lập khi thiếu trường bắt buộc score10` | `parseGpaSubjects` | `X4` (Single fault) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 20 | `ném lỗi khi dữ liệu không phải mảng hoặc sai kiểu dữ liệu` | `parseGpaSubjects` | `X1, X3` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 21 | `lưu và nạp dữ liệu v2 thành công mà không báo lỗi hỏng` | `saveGpaSubjects`, `loadGpaSubjects` | `V1..V5` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 22 | `KHÔNG tự động ghi dữ liệu v1 sang v2 lúc tải khi chưa có xác nhận` | `loadGpaSubjects` | `X6` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 23 | `bắt lỗi và bật cờ isCorrupted khi dữ liệu v2 bị hỏng` | `loadGpaSubjects` | `X1` (Corrupt JSON) | **PASS** — **`CONFIRMED`** *(Vitest)* |
-| 24 | `tính GPA chính thức từ bảng điểm Portal đã xác minh và bỏ qua bản ghi chưa xác minh` | `calculatePortalGpaStats` | `V7, X7` | **PASS** — **`CONFIRMED`** *(Vitest)* |
-
-### 3.2. Bộ UI Integration Test (`src/components/GpaCalculator.test.tsx` — 6/6 PASS — `AUTOMATED`)
-
-| STT | Tên Test Case trong `src/components/GpaCalculator.test.tsx` | Tag bao phủ | Kết quả & Phân loại (`DOC-001` / `AI-008`) |
-|---:|---|---|---|
-| 1 | `thêm hàng Pending không làm tụt GPA` | `B12` | **PASS** — **`CONFIRMED`** *(Automated jsdom test — `AI-008`)* |
-| 2 | `nhập điểm F thật sự được tính vào GPA` | `V3, V4, V5` | **PASS** — **`CONFIRMED`** *(Automated jsdom test — `AI-008`)* |
-| 3 | `chặn tín chỉ thập phân hoặc ngoài khoảng nguyên 1-10 trên UI` | `X3` | **PASS** — **`CONFIRMED`** *(Automated jsdom test — `AI-008`)* |
-| 4 | `không tự ghi v1 sang v2 lúc tải và chỉ phục hồi khi người dùng xác nhận` | `V6, X6` | **PASS** — **`CONFIRMED`** *(Automated jsdom test — `AI-008`)* |
-| 5 | `bảo vệ dữ liệu v2 bị hỏng và cho phép đặt lại an toàn` | `Corrupt Data` | **PASS** — **`CONFIRMED`** *(Automated jsdom test — `AI-008`)* |
-| 6 | `tính đúng GPA chính thức từ bảng điểm Portal và cho phép nạp sang bảng ước tính` | `V7` | **PASS** — **`CONFIRMED`** *(Automated jsdom test — `AI-008`)* |
-
----
-
-## 4. Lệnh Kiểm chứng & Bằng chứng Thực thi (`AI-006`)
-
-- **Lệnh thực thi:** `npx vitest run src/gpaData.test.ts src/components/GpaCalculator.test.tsx` và `npm run check:all`
-- **Kết quả kiểm thử GPA hợp nhất (`CONFIRMED`):**
-  - `src/gpaData.test.ts`: **24 passed (24)**
-  - `src/components/GpaCalculator.test.tsx`: **6 passed (6)**
-- **Kết quả kiểm thử toàn cục (`CONFIRMED` — `npm run check:all`):**
-  - `vitest run`: **14 test files passed (14) | 128 tests passed (128)**
-  - `test:layout`, `check:postman`, `tsc && vite build`, `cargo check`, `cargo test` (61 passed), `npm audit` (0 vulnerabilities): **PASS 100%**.
+- **CONFIRMED (2026-11-24, worktree PR #26 sau khi tích hợp `main`):** `npm run check:all` exit 0: Vitest, layout, Postman tĩnh 10/10, build, `cargo check`, Rust 70/70, audit 0. `npx vitest run src/gpaData.test.ts src/components/GpaCalculator.test.tsx`: 33/33 PASS. `git diff --check`: exit 0.
+- Chạy `git diff --check` và kiểm static `rg -n 'GPA chính thức|Nạp vào bảng ước tính|portalGrades' src/components/GpaCalculator.tsx src/pages/CampusDataPages.tsx` trước khi push.
+- **Postman:** GPA nhập tay không có HTTP endpoint; `check:postman` chỉ bảo vệ collection REST local, không kiểm GPA hay chứng minh API trường. Không dựng request giả để lấy điểm Portal.
+- **Manual visual/native:** chưa xác nhận; cần chạy app Windows, kiểm nhập điểm, F5, hủy/xác nhận khôi phục, storage bị chặn và mở Portal trước nghiệm thu.
+- **Exit:** Chỉ báo phần GPA local đã qua test tự động khi các lệnh pass. CA-088/Portal vẫn chưa Done nếu thiếu fixture/IPC/E2E.

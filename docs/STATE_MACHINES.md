@@ -6,6 +6,8 @@ CA-080 setup (2026-10-10): mặc định probe bị khóa; consent/live/request-
 
 CA-083 CURRENT (2026-10-09): contract_unverified là error riêng cho UTH; không transition sang authenticated/sync_success/cache_ready. Dữ liệu cache cũ không bị xóa nhưng không được hiển thị như lịch chính thức. Không đồng nhất error với empty, không tự retry thu token. Mở portal browser không đổi state auth của app.
 
+GPA local CURRENT (PR #26 remediation): v2 hợp lệ → bảng ước tính; v2 hỏng → cảnh báo, không ghi đè tự động; v1 có dữ liệu → chờ confirm, hủy giữ nguyên, ghi thất bại giữ nguyên; reset dữ liệu hỏng chỉ đổi UI sau khi ghi thành công. Portal vẫn ở trạng thái chưa kết nối, không có transition sang GPA chính thức.
+
 CA-090.01 CURRENT (2026-10-19): migration SQLite giữ dữ liệu cũ; khởi động không có transition xóa lịch sử chat. Reset cấu hình sau confirm chỉ chuyển các key cấu hình về trạng thái mặc định; GPA/chat/profile không bị chuyển sang trạng thái xóa. Manual native/UI verification chưa chạy.
 
 CA-090 migration v6 CURRENT (source/tests): lịch cũ không có ngày thật giữ `class_date = ''`; mở DB và schema repair không chuyển giá trị này thành ngày suy đoán. Ngày đã lưu từ nguồn vẫn giữ nguyên. Đây chỉ là thuộc tính cache nội bộ, không bổ sung trạng thái auth/sync hay xác nhận Portal; native upgrade smoke còn `UNKNOWN`.

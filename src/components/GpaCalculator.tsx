@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Calculator, RotateCcw, ExternalLink, Download } from "lucide-react";
+import { Plus, Trash2, Calculator, RotateCcw, ExternalLink } from "lucide-react";
 import {
   GPA_LEGACY_STORAGE_KEY,
   parseGpaSubjects,
   loadGpaSubjects,
   saveGpaSubjects,
   calculateGpaStats,
-  calculatePortalGpaStats,
   getLetterGradeFrom10,
   isValidCredits,
-  type PortalGradeRecord,
+  isValidScore10,
 } from "../gpaData";
 
 export interface GpaSubject {
@@ -21,14 +20,12 @@ export interface GpaSubject {
 }
 
 export interface GpaCalculatorProps {
-  portalGrades?: PortalGradeRecord[];
   schoolShortName?: string;
   portalUrl?: string;
   onOpenPortal?: () => void;
 }
 
 export function GpaCalculator({
-  portalGrades = [],
   schoolShortName = "UTH",
   portalUrl,
   onOpenPortal,
@@ -97,18 +94,24 @@ export function GpaCalculator({
       updateSubject(id, { score10: "", letterGrade: "" });
       return;
     }
-    const numVal = Math.min(10, Math.max(0, Number(rawVal)));
-    if (!Number.isFinite(numVal)) return;
+    const numVal = Number(rawVal);
+    if (!isValidScore10(numVal)) {
+      setNotice("Điểm thang 10 phải nằm trong khoảng 0 đến 10.");
+      return;
+    }
     setNotice("");
     updateSubject(id, { score10: numVal, letterGrade: getLetterGradeFrom10(numVal) });
   }
 
   function handleResetCorruptedStorage() {
     if (!window.confirm("Xóa dữ liệu bảng điểm bị hỏng và bắt đầu lại với bảng trống?")) return;
+    if (!saveGpaSubjects([])) {
+      setNotice("Không thể xóa dữ liệu hỏng trên thiết bị; dữ liệu cũ vẫn được giữ nguyên.");
+      return;
+    }
     setSubjects([]);
     setCorruptWarning(false);
-    setIsDirty(true);
-    saveGpaSubjects([]);
+    setIsDirty(false);
     setNotice("Đã làm mới bộ nhớ bảng điểm cục bộ.");
   }
 
@@ -137,42 +140,20 @@ export function GpaCalculator({
 
     try {
       const legacySubjects = parseGpaSubjects(rawV1);
+      if (!saveGpaSubjects(legacySubjects)) {
+        setNotice("Không lưu được dữ liệu cũ; bảng hiện tại không bị thay đổi.");
+        return;
+      }
       setSubjects(legacySubjects);
       setCorruptWarning(false);
       setHasLegacyV1(false);
-      setIsDirty(true);
-      saveGpaSubjects(legacySubjects);
+      setIsDirty(false);
       setNotice("Đã phục hồi dữ liệu cũ (v1) chưa xác minh. Hãy kiểm tra từng điểm với bảng điểm trường.");
     } catch {
       setNotice("Không đọc được dữ liệu cũ; bảng hiện tại không bị thay đổi.");
     }
   }
 
-  function importPortalGradesToManual() {
-    const validPortal = portalGrades.filter((r) => r.source === "uth-portal" && r.verified && isValidCredits(r.credits));
-    if (validPortal.length === 0) return;
-    if (
-      !window.confirm(
-        "Nạp danh sách môn học từ bảng điểm Portal vào bảng ước tính nhập tay? Bảng nhập tay hiện tại sẽ được thay thế để bạn mô phỏng thêm môn mới.",
-      )
-    ) {
-      return;
-    }
-    const imported: GpaSubject[] = validPortal.map((r) => ({
-      id: r.id,
-      name: r.subjectName,
-      credits: r.credits,
-      letterGrade: r.letterGrade,
-      score10: r.score10,
-    }));
-    setSubjects(imported);
-    setCorruptWarning(false);
-    setIsDirty(true);
-    saveGpaSubjects(imported);
-    setNotice(`Đã nạp ${imported.length} môn từ bảng điểm Portal vào công cụ ước tính.`);
-  }
-
-  const portalStats = calculatePortalGpaStats(portalGrades);
   const { totalCredits, gpaScale4, gpaScale10, numGpa4 } = calculateGpaStats(subjects);
 
   function getClassification(gpa4: number): { text: string; color: string } {
@@ -228,41 +209,22 @@ export function GpaCalculator({
         </p>
       )}
 
-      {/* Khối 1: GPA Chính thức từ Bảng điểm Portal (Tích hợp luồng Portal theo CA-088) */}
+      {/* Portal chưa có nguồn bảng điểm đã xác minh; không hiển thị điểm chính thức giả. */}
       <div style={{ padding: "14px 16px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           <div>
             <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 600 }}>
-              GPA chính thức từ Portal ({schoolShortName})
+              Bảng điểm Portal ({schoolShortName}) — chưa kết nối
             </h4>
             <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--muted)" }}>
-              {portalStats.hasVerifiedData
-                ? `Đã đồng bộ ${portalStats.subjectCount} môn học (${portalStats.totalCredits} tín chỉ) từ bảng điểm cổng trường.`
-                : "Chưa có dữ liệu bảng điểm Portal được xác minh. Hệ thống không tự tạo GPA chính thức giả."}
+              Ứng dụng chưa nhận bảng điểm xác thực từ Portal. GPA bên dưới chỉ là ước tính nhập tay, không phải điểm chính thức.
             </p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "18px", fontWeight: 700 }}>
-                {portalStats.hasVerifiedData ? `${portalStats.gpaScale4} / 4.00` : "-- / 4.00"}
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--muted)" }}>
-                {portalStats.hasVerifiedData ? `Thang 10: ${portalStats.gpaScale10}` : "Chưa đồng bộ Portal"}
-              </div>
-            </div>
-            {portalStats.hasVerifiedData ? (
-              <button className="settings-btn-secondary" onClick={importPortalGradesToManual} style={{ fontSize: "12px" }}>
-                <Download size={13} /> Nạp vào bảng ước tính
-              </button>
-            ) : (
-              portalUrl &&
-              onOpenPortal && (
-                <button className="settings-btn-secondary" onClick={onOpenPortal} style={{ fontSize: "12px" }}>
-                  <ExternalLink size={13} /> Mở cổng {schoolShortName}
-                </button>
-              )
-            )}
-          </div>
+          {portalUrl && onOpenPortal && (
+            <button className="settings-btn-secondary" onClick={onOpenPortal} style={{ fontSize: "12px" }}>
+              <ExternalLink size={13} /> Mở cổng {schoolShortName}
+            </button>
+          )}
         </div>
       </div>
 
@@ -273,28 +235,28 @@ export function GpaCalculator({
       {/* Khối 2: Thống kê Ước tính GPA / CPA nhập tay */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
         <div style={{ padding: "14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }}>
-          <span style={{ fontSize: "12px", color: "var(--muted)" }}>Tổng tín chỉ tích lũy</span>
+          <span style={{ fontSize: "12px", color: "var(--muted)" }}>Tổng tín chỉ đã nhập</span>
           <div style={{ fontSize: "24px", fontWeight: 700, color: "var(--accent)", marginTop: "4px" }}>
             {totalCredits} <span style={{ fontSize: "14px", fontWeight: 400 }}>Tín chỉ</span>
           </div>
         </div>
 
         <div style={{ padding: "14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }}>
-          <span style={{ fontSize: "12px", color: "var(--muted)" }}>GPA / CPA (Thang điểm 4.0)</span>
+          <span style={{ fontSize: "12px", color: "var(--muted)" }}>GPA ước tính (Thang điểm 4.0)</span>
           <div style={{ fontSize: "24px", fontWeight: 700, color: "var(--text)", marginTop: "4px" }}>
-            {gpaScale4} <span style={{ fontSize: "14px", color: "var(--muted)" }}>/ 4.00</span>
+            {totalCredits ? gpaScale4 : "--"} <span style={{ fontSize: "14px", color: "var(--muted)" }}>/ 4.00</span>
           </div>
         </div>
 
         <div style={{ padding: "14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }}>
-          <span style={{ fontSize: "12px", color: "var(--muted)" }}>Điểm trung bình (Thang điểm 10)</span>
+          <span style={{ fontSize: "12px", color: "var(--muted)" }}>Điểm trung bình ước tính (Thang điểm 10)</span>
           <div style={{ fontSize: "24px", fontWeight: 700, color: "var(--text)", marginTop: "4px" }}>
-            {gpaScale10} <span style={{ fontSize: "14px", color: "var(--muted)" }}>/ 10.0</span>
+            {totalCredits ? gpaScale10 : "--"} <span style={{ fontSize: "14px", color: "var(--muted)" }}>/ 10.0</span>
           </div>
         </div>
 
         <div style={{ padding: "14px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px" }}>
-          <span style={{ fontSize: "12px", color: "var(--muted)" }}>Xếp loại Học lực Local</span>
+          <span style={{ fontSize: "12px", color: "var(--muted)" }}>Xếp loại ước tính Local</span>
           <div style={{ fontSize: "20px", fontWeight: 700, color: classification.color, marginTop: "4px" }}>
             {classification.text}
           </div>

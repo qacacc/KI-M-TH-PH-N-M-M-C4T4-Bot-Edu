@@ -211,7 +211,7 @@ describe("GPA Persistence, Legacy v1 Confirmation & Portal Integration", () => {
     expect(result.subjects).toEqual([]);
   });
 
-  it("tính GPA chính thức từ bảng điểm Portal đã xác minh và bỏ qua bản ghi chưa xác minh", () => {
+  it("tính thuần trên bản ghi giả lập có cờ xác minh, chưa chứng minh đồng bộ Portal", () => {
     const records: PortalGradeRecord[] = [
       {
         id: "p1",
