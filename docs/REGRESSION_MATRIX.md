@@ -1,5 +1,13 @@
 # REGRESSION MATRIX - CAMPUS ASSISTANT LOCAL
 
+## CA-106 backend ghi chú — PR #32
+
+| Module | Tự động | Còn thiếu |
+| --- | --- | --- |
+| `src-tauri/src/db.rs`, `lib.rs`, `models.rs` | `cargo test --manifest-path src-tauri/Cargo.toml db::tests`; `npm run check:all` | UI confirm, backup/restore native E2E, SQLite upgrade smoke |
+
+EP/BVA và 12 test case ở `docs/testing/CA-106-student-notes-backend.md`; Postman N/A vì không có HTTP route ghi chú.
+
 ## CA-103 - Local REST API
 
 | File / Module được chỉnh sửa | Executive Contract | Test Status | Executable Command / Test | Manual / E2E Verification |

@@ -1,5 +1,7 @@
 # DEPENDENCY MAP - CAMPUS ASSISTANT LOCAL
 
+**CURRENT (PR #32):** `src-tauri/src/lib.rs` Tauri commands ghi chú → `src-tauri/src/db.rs` CRUD/transaction → SQLite `student_notes` v6 → `src-tauri/src/models.rs` `StudentNoteRecord`. Frontend ghi chú/confirm chưa nối; Postman N/A cho IPC. `class_date` của lịch cũ vẫn là ngày chưa xác minh, không liên quan ghi chú.
+
 **CONFIRMED (source/tests):** CA-098.01 Tauri startup calls best-effort `api::start()`; missing/invalid token or thread/runtime/bind failure leaves desktop running. Startup log ignores stderr errors. Two instances contend for `127.0.0.1:47821`; first listener stays active and second continues desktop-only. Bearer middleware protects routes; query validation precedes data/connector services; token comparison uses `subtle::ConstantTimeEq`. Postman local Collection uses HTTP loopback with Environment `BASE_URL`/secret `API_TOKEN`, checked by `tools/check-local-postman.cjs`.
 
 **UNKNOWN:** UTH upstream API/auth/schema; the local collection is not evidence for it. Manual Windows/Postman HTTP smoke is not verified by automated tests.

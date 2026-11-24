@@ -1,5 +1,9 @@
 # FLOW MAP - CAMPUS ASSISTANT LOCAL
 
+## CA-106 ghi chú backend CURRENT (PR #32)
+
+Tauri command ghi chú → `open_db` → bảng `student_notes` v6 → trả bản ghi/lỗi. Import dùng transaction; không xóa toàn bộ ghi chú trước khi import. UI xác nhận và luồng backup hoàn chỉnh còn `PLANNED`. Không có HTTP route Postman cho ghi chú.
+
 ## CA-090.01 - Reset cấu hình và khởi động SQLite CURRENT 2026-10-19
 
 1. App mở SQLite và chạy migration theo `PRAGMA user_version`; foreign key được bật trước khi dùng schema.
