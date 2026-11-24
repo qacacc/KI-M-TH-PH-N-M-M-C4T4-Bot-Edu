@@ -235,3 +235,15 @@ pub(crate) struct ChatMessageRecord {
     pub(crate) content: String,
     pub(crate) created_at: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct StudentNoteRecord {
+    pub(crate) id: String,
+    pub(crate) title: String,
+    pub(crate) content: String,
+    pub(crate) subject_id: Option<String>,
+    pub(crate) subject_name: Option<String>,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+}

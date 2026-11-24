@@ -186,3 +186,13 @@ export type PublicSearchResponse = {
 };
 
 export type PublicSearchStatus = "success" | "partial" | "no_match" | "error";
+
+export type StudentNoteRecord = {
+  id: string;
+  title: string;
+  content: string;
+  subjectId: string | null;
+  subjectName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
