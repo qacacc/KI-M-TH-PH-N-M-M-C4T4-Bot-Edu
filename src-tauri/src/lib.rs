@@ -172,9 +172,9 @@ fn save_student_note(
 ) -> Result<StudentNoteRecord, String> {
     let roots = resolve_roots()?;
     ensure_directories(&roots)?;
-    let conn = open_db(&roots)?;
+    let mut conn = open_db(&roots)?;
     db::save_student_note_in_db(
-        &conn,
+        &mut conn,
         id.as_deref(),
         &title,
         &content,
@@ -225,9 +225,20 @@ pub fn run() {
             theme_assets::delete_theme_background,
             connectors::connector_engine::sync_embedded_school_data,
             connectors::connector_engine::open_uth_login_window,
+            connectors::connector_engine::receive_uth_schedule_payload,
+            connectors::connector_engine::receive_uth_transcript_payload,
+            connectors::connector_engine::list_connector_transcript,
+            connectors::lms::open_lms_window,
+            connectors::lms::rescan_lms_courses,
+            connectors::lms::receive_lms_snapshot,
+            connectors::lms::list_lms_courses,
+            connectors::lms::list_lms_documents,
+            connectors::lms::download_lms_document,
+            connectors::lms::open_lms_document,
             connectors::connector_engine::receive_uth_jwt,
             connectors::connector_engine::sync_uth_after_login,
             connectors::connector_engine::list_connector_schedules,
+            connectors::connector_engine::list_connector_schedule_weeks,
             connectors::connector_engine::list_connector_exams,
             connectors::connector_engine::get_connector_sync_status,
             connectors::connector_engine::disconnect_uth_connector,

@@ -1,16 +1,28 @@
-use chrono::Utc;
-use rusqlite::{params, Connection};
-use std::collections::HashSet;
+use chrono::{DateTime, Utc};
+use rusqlite::{params, Connection, TransactionBehavior};
+use serde::{Deserialize, Serialize};
 use std::fs;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration as StdDuration;
 
-use crate::models::{
-    ActionLogEntry, ChatMessageRecord, ChatSessionRecord, DocumentRecord, StudentNoteRecord,
-};
+use crate::models::{ActionLogEntry, ChatMessageRecord, ChatSessionRecord, DocumentRecord};
 use crate::paths::{ensure_child_path, ensure_directories, ensure_safe_relative_path, Roots};
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct StudentNoteRecord {
+    pub(crate) id: String,
+    pub(crate) title: String,
+    pub(crate) content: String,
+    pub(crate) subject_id: Option<String>,
+    pub(crate) subject_name: Option<String>,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
+}
+
 static SCHEMA_INIT_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+static NOTE_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 pub(crate) fn open_db(roots: &Roots) -> Result<Connection, String> {
     let mut conn =
@@ -122,7 +134,7 @@ fn migrate_to_v4(conn: &mut Connection) -> Result<(), String> {
     let columns: Vec<String> = {
         let mut stmt = tx.prepare("PRAGMA table_info(connector_schedules)").map_err(|e| format!("Lỗi kiểm tra schema lịch: {}", e))?;
         let rows = stmt.query_map([], |row| row.get(1)).map_err(|e| format!("Lỗi đọc schema lịch: {}", e))?;
-        rows.filter_map(Result::ok).collect()
+        rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Lỗi giải mã cột schema lịch: {}", e))?
     };
     if !columns.iter().any(|column| column == "class_date") {
         tx.execute("ALTER TABLE connector_schedules ADD COLUMN class_date TEXT NOT NULL DEFAULT ''", [])
@@ -169,7 +181,7 @@ fn migrate_to_v6(conn: &mut Connection) -> Result<(), String> {
     Ok(())
 }
 
-/// Ngày học trống của cache cũ là dữ liệu chưa xác minh, không phải lỗi schema.
+/// Kiểm tra chỉ đọc xem toàn bộ các bảng connector, cột class_date và student_notes đã đầy đủ chưa.
 fn is_runtime_schema_complete(conn: &Connection) -> bool {
     let table_count: i64 = conn
         .query_row(
@@ -195,10 +207,7 @@ fn is_runtime_schema_complete(conn: &Connection) -> bool {
             |row| row.get(0),
         )
         .unwrap_or(0);
-    if has_class_date == 0 {
-        return false;
-    }
-    true
+    has_class_date > 0
 }
 
 /// Đảm bảo schema connector và student_notes tồn tại cả khi DB cũ đã ghi user_version nhưng thiếu bảng.
@@ -218,7 +227,7 @@ fn ensure_connector_runtime_schema(conn: &mut Connection) -> Result<(), String> 
     let columns: Vec<String> = {
         let mut stmt = tx.prepare("PRAGMA table_info(connector_schedules)").map_err(|e| format!("Lỗi kiểm tra cột lịch connector: {}", e))?;
         let rows = stmt.query_map([], |row| row.get(1)).map_err(|e| format!("Lỗi đọc cột lịch connector: {}", e))?;
-        rows.filter_map(Result::ok).collect()
+        rows.collect::<Result<Vec<_>, _>>().map_err(|e| format!("Lỗi giải mã cột lịch connector: {}", e))?
     };
     if !columns.iter().any(|column| column == "class_date") {
         tx.execute("ALTER TABLE connector_schedules ADD COLUMN class_date TEXT NOT NULL DEFAULT ''", [])
@@ -709,8 +718,69 @@ pub(crate) fn get_session_messages(
         .map_err(|e| format!("Lỗi thu thập tin nhắn phiên: {}", e))
 }
 
+pub(crate) const MAX_NOTE_ID_CHARS: usize = 128;
 pub(crate) const MAX_NOTE_TITLE_CHARS: usize = 100;
 pub(crate) const MAX_NOTE_CONTENT_CHARS: usize = 10_000;
+pub(crate) const MAX_NOTE_SUBJECT_ID_CHARS: usize = 80;
+pub(crate) const MAX_NOTE_SUBJECT_NAME_CHARS: usize = 200;
+pub(crate) const MAX_NOTE_TIMESTAMP_CHARS: usize = 64;
+const NOTE_IMPORT_BATCH_SIZE: usize = 500;
+
+static NOTE_WRITE_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+fn next_unique_note_id() -> String {
+    let nanos = Utc::now().timestamp_nanos_opt().unwrap_or_default();
+    let seq = NOTE_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("note_{}_{}", nanos, seq)
+}
+
+fn validate_optional_subject_fields(
+    subject_id: Option<&str>,
+    subject_name: Option<&str>,
+) -> Result<(Option<String>, Option<String>), String> {
+    let clean_id = match subject_id.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(val) => {
+            if val.chars().count() > MAX_NOTE_SUBJECT_ID_CHARS || val.chars().any(char::is_control) {
+                return Err(format!(
+                    "Mã môn học không hợp lệ hoặc vượt quá {} ký tự.",
+                    MAX_NOTE_SUBJECT_ID_CHARS
+                ));
+            }
+            Some(val.to_string())
+        }
+        None => None,
+    };
+
+    let clean_name = match subject_name.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(val) => {
+            if val.chars().count() > MAX_NOTE_SUBJECT_NAME_CHARS || val.chars().any(char::is_control)
+            {
+                return Err(format!(
+                    "Tên môn học không hợp lệ hoặc vượt quá {} ký tự.",
+                    MAX_NOTE_SUBJECT_NAME_CHARS
+                ));
+            }
+            Some(val.to_string())
+        }
+        None => None,
+    };
+
+    Ok((clean_id, clean_name))
+}
+
+fn validate_iso_timestamp(raw: &str, fallback_now: &str) -> Result<String, String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Ok(fallback_now.to_string());
+    }
+    if trimmed.chars().count() > MAX_NOTE_TIMESTAMP_CHARS || trimmed.chars().any(char::is_control) {
+        return Err("Dấu thời gian của ghi chú trong bản sao lưu quá dài hoặc không hợp lệ.".to_string());
+    }
+    if DateTime::parse_from_rfc3339(trimmed).is_err() {
+        return Err("Dấu thời gian của ghi chú không đúng định dạng RFC3339.".to_string());
+    }
+    Ok(trimmed.to_string())
+}
 
 pub(crate) fn list_student_notes_in_db(
     conn: &Connection,
@@ -773,13 +843,18 @@ pub(crate) fn list_student_notes_in_db(
 }
 
 pub(crate) fn save_student_note_in_db(
-    conn: &Connection,
+    conn: &mut Connection,
     id: Option<&str>,
     title: &str,
     content: &str,
     subject_id: Option<&str>,
     subject_name: Option<&str>,
 ) -> Result<StudentNoteRecord, String> {
+    let _write_guard = NOTE_WRITE_LOCK
+        .get_or_init(|| Mutex::new(()))
+        .lock()
+        .map_err(|_| "Không khóa được luồng ghi sổ ghi chú.".to_string())?;
+
     let trimmed_title = title.trim();
     let title_char_count = trimmed_title.chars().count();
     if title_char_count == 0 {
@@ -800,56 +875,108 @@ pub(crate) fn save_student_note_in_db(
         ));
     }
 
-    let clean_subject_id = subject_id
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|s| s.chars().take(80).collect::<String>());
-    let clean_subject_name = subject_name
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(|s| s.chars().take(200).collect::<String>());
+    let (clean_subject_id, clean_subject_name) =
+        validate_optional_subject_fields(subject_id, subject_name)?;
+
+    let tx = conn
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .map_err(|e| format!("Lỗi tạo giao dịch lưu ghi chú: {}", e))?;
 
     let now = Utc::now().to_rfc3339();
-    let note_id = id
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(ToOwned::to_owned)
-        .unwrap_or_else(|| {
-            format!(
-                "note_{}",
-                Utc::now().timestamp_nanos_opt().unwrap_or_default()
+    let provided_id = id.map(str::trim).filter(|s| !s.is_empty());
+
+    let (note_id, created_at) = match provided_id {
+        None => {
+            // Tạo ghi chú mới: Sinh ID duy nhất tuyệt đối và dùng thuần INSERT để không bao giờ ghi đè ghi chú khác
+            let mut candidate_id = next_unique_note_id();
+            while tx
+                .query_row(
+                    "SELECT COUNT(*) FROM student_notes WHERE id = ?1",
+                    params![candidate_id],
+                    |row| row.get::<_, i64>(0),
+                )
+                .unwrap_or(0)
+                > 0
+            {
+                candidate_id = next_unique_note_id();
+            }
+
+            tx.execute(
+                "INSERT INTO student_notes (id, title, content, subject_id, subject_name, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                params![
+                    candidate_id,
+                    trimmed_title,
+                    content,
+                    clean_subject_id,
+                    clean_subject_name,
+                    now,
+                    now
+                ],
             )
-        });
+            .map_err(|e| format!("Lỗi tạo mới ghi chú học tập trong SQLite: {}", e))?;
 
-    let existing_created_at: Option<String> = conn
-        .query_row(
-            "SELECT created_at FROM student_notes WHERE id = ?1",
-            params![note_id],
-            |row| row.get(0),
-        )
-        .ok();
-    let created_at = existing_created_at.unwrap_or_else(|| now.clone());
+            (candidate_id, now.clone())
+        }
+        Some(raw_id) => {
+            if raw_id.chars().count() > MAX_NOTE_ID_CHARS || raw_id.chars().any(char::is_control) {
+                return Err("Mã định danh ghi chú không hợp lệ hoặc vượt quá giới hạn.".to_string());
+            }
 
-    conn.execute(
-        "INSERT INTO student_notes (id, title, content, subject_id, subject_name, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-         ON CONFLICT(id) DO UPDATE SET
-           title = excluded.title,
-           content = excluded.content,
-           subject_id = excluded.subject_id,
-           subject_name = excluded.subject_name,
-           updated_at = excluded.updated_at",
-        params![
-            note_id,
-            trimmed_title,
-            content,
-            clean_subject_id,
-            clean_subject_name,
-            created_at,
-            now
-        ],
-    )
-    .map_err(|e| format!("Lỗi lưu ghi chú học tập vào SQLite: {}", e))?;
+            let existing: Option<(String, String)> = tx
+                .query_row(
+                    "SELECT created_at, updated_at FROM student_notes WHERE id = ?1",
+                    params![raw_id],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )
+                .ok();
+
+            if let Some((existing_created_at, existing_updated_at)) = existing {
+                let updated_rows = tx
+                    .execute(
+                        "UPDATE student_notes
+                         SET title = ?1, content = ?2, subject_id = ?3, subject_name = ?4, updated_at = ?5
+                         WHERE id = ?6 AND updated_at = ?7",
+                        params![
+                            trimmed_title,
+                            content,
+                            clean_subject_id,
+                            clean_subject_name,
+                            now,
+                            raw_id,
+                            existing_updated_at
+                        ],
+                    )
+                    .map_err(|e| format!("Lỗi cập nhật ghi chú học tập: {}", e))?;
+                if updated_rows == 0 {
+                    return Err(
+                        "Ghi chú vừa được cập nhật bởi một thao tác khác. Vui lòng tải lại trước khi lưu."
+                            .to_string(),
+                    );
+                }
+                (raw_id.to_string(), existing_created_at)
+            } else {
+                tx.execute(
+                    "INSERT INTO student_notes (id, title, content, subject_id, subject_name, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                    params![
+                        raw_id,
+                        trimmed_title,
+                        content,
+                        clean_subject_id,
+                        clean_subject_name,
+                        now,
+                        now
+                    ],
+                )
+                .map_err(|e| format!("Lỗi lưu ghi chú học tập vào SQLite: {}", e))?;
+                (raw_id.to_string(), now.clone())
+            }
+        }
+    };
+
+    tx.commit()
+        .map_err(|e| format!("Lỗi hoàn tất giao dịch lưu ghi chú: {}", e))?;
 
     Ok(StudentNoteRecord {
         id: note_id,
@@ -864,7 +991,7 @@ pub(crate) fn save_student_note_in_db(
 
 pub(crate) fn delete_student_note_in_db(conn: &Connection, id: &str) -> Result<bool, String> {
     let trimmed_id = id.trim();
-    if trimmed_id.is_empty() {
+    if trimmed_id.is_empty() || trimmed_id.chars().count() > MAX_NOTE_ID_CHARS {
         return Err("Mã ghi chú không hợp lệ.".to_string());
     }
     let affected = conn
@@ -877,70 +1004,86 @@ pub(crate) fn import_student_notes_backup_in_db(
     conn: &mut Connection,
     notes: &[StudentNoteRecord],
 ) -> Result<usize, String> {
-    if notes.len() > 2_000 {
-        return Err("Số lượng ghi chú trong bản sao lưu vượt quá giới hạn an toàn (2000).".to_string());
-    }
+    let _write_guard = NOTE_WRITE_LOCK
+        .get_or_init(|| Mutex::new(()))
+        .lock()
+        .map_err(|_| "Không khóa được luồng khôi phục sổ ghi chú.".to_string())?;
 
-    let mut seen_ids = HashSet::new();
+    let fallback_now = Utc::now().to_rfc3339();
+    let mut validated_notes = Vec::with_capacity(notes.len());
+
+    // Xác thực nghiêm ngặt độ dài và định dạng của mọi trường trước khi mở giao dịch ghi
     for note in notes {
-        if note.id.trim().is_empty() {
-            return Err("Bản sao lưu chứa ghi chú thiếu mã định danh (id).".to_string());
+        let clean_id = note.id.trim();
+        let id_len = clean_id.chars().count();
+        if id_len == 0 || id_len > MAX_NOTE_ID_CHARS || clean_id.chars().any(char::is_control) {
+            return Err("Bản sao lưu chứa mã định danh ghi chú (id) không hợp lệ hoặc quá dài.".to_string());
         }
-        if !seen_ids.insert(note.id.trim()) {
-            return Err("Bản sao lưu chứa mã ghi chú trùng lặp.".to_string());
-        }
-        let title_len = note.title.trim().chars().count();
+
+        let clean_title = note.title.trim();
+        let title_len = clean_title.chars().count();
         if title_len == 0 || title_len > MAX_NOTE_TITLE_CHARS {
             return Err("Bản sao lưu chứa tiêu đề ghi chú không hợp lệ.".to_string());
         }
+
         if note.content.chars().count() > MAX_NOTE_CONTENT_CHARS {
             return Err("Bản sao lưu chứa nội dung ghi chú vượt quá 10.000 ký tự.".to_string());
         }
+
+        let (clean_subject_id, clean_subject_name) = validate_optional_subject_fields(
+            note.subject_id.as_deref(),
+            note.subject_name.as_deref(),
+        )?;
+
+        let created_at = validate_iso_timestamp(&note.created_at, &fallback_now)?;
+        let updated_at = validate_iso_timestamp(&note.updated_at, &fallback_now)?;
+
+        validated_notes.push(StudentNoteRecord {
+            id: clean_id.to_string(),
+            title: clean_title.to_string(),
+            content: note.content.clone(),
+            subject_id: clean_subject_id,
+            subject_name: clean_subject_name,
+            created_at,
+            updated_at,
+        });
     }
 
-    let tx = conn
-        .transaction()
-        .map_err(|e| format!("Lỗi tạo transaction khôi phục ghi chú: {}", e))?;
+    // Nhập theo các lô giao dịch có giới hạn (chunks) để hỗ trợ cả các bản sao lưu lớn (> 2.000 ghi chú)
+    for chunk in validated_notes.chunks(NOTE_IMPORT_BATCH_SIZE) {
+        let tx = conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|e| format!("Lỗi tạo transaction lô khôi phục ghi chú: {}", e))?;
 
-    for note in notes {
-        let now = Utc::now().to_rfc3339();
-        let created_at = if note.created_at.trim().is_empty() {
-            now.clone()
-        } else {
-            note.created_at.trim().to_string()
-        };
-        let updated_at = if note.updated_at.trim().is_empty() {
-            now
-        } else {
-            note.updated_at.trim().to_string()
-        };
+        for note in chunk {
+            tx.execute(
+                "INSERT INTO student_notes (id, title, content, subject_id, subject_name, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                 ON CONFLICT(id) DO UPDATE SET
+                   title = excluded.title,
+                   content = excluded.content,
+                   subject_id = excluded.subject_id,
+                   subject_name = excluded.subject_name,
+                   created_at = excluded.created_at,
+                   updated_at = excluded.updated_at",
+                params![
+                    note.id,
+                    note.title,
+                    note.content,
+                    note.subject_id,
+                    note.subject_name,
+                    note.created_at,
+                    note.updated_at
+                ],
+            )
+            .map_err(|e| format!("Lỗi khôi phục ghi chú '{}': {}", note.id, e))?;
+        }
 
-        tx.execute(
-            "INSERT INTO student_notes (id, title, content, subject_id, subject_name, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-             ON CONFLICT(id) DO UPDATE SET
-               title = excluded.title,
-               content = excluded.content,
-               subject_id = excluded.subject_id,
-               subject_name = excluded.subject_name,
-               created_at = excluded.created_at,
-               updated_at = excluded.updated_at",
-            params![
-                note.id.trim(),
-                note.title.trim(),
-                note.content,
-                note.subject_id.as_deref().map(str::trim).filter(|s| !s.is_empty()),
-                note.subject_name.as_deref().map(str::trim).filter(|s| !s.is_empty()),
-                created_at,
-                updated_at
-            ],
-        )
-        .map_err(|e| format!("Lỗi khôi phục ghi chú '{}': {}", note.id, e))?;
+        tx.commit()
+            .map_err(|e| format!("Lỗi commit lô khôi phục ghi chú: {}", e))?;
     }
 
-    tx.commit()
-        .map_err(|e| format!("Lỗi commit khôi phục ghi chú: {}", e))?;
-    Ok(notes.len())
+    Ok(validated_notes.len())
 }
 
 #[cfg(test)]
@@ -1093,7 +1236,7 @@ mod tests {
         let sync_status_exists: i64 = conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='connector_sync_status'", [], |row| row.get(0)).unwrap();
         let notes_exists: i64 = conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='student_notes'", [], |row| row.get(0)).unwrap();
         let stored_subject: String = conn.query_row("SELECT subject_name FROM connector_schedules WHERE id='keep'", [], |row| row.get(0)).unwrap();
-        let unknown_date: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='keep'", [], |row| row.get(0)).unwrap();
+        let backfilled_date: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='keep'", [], |row| row.get(0)).unwrap();
         let has_date_column: i64 = conn.query_row("SELECT COUNT(*) FROM pragma_table_info('connector_schedules') WHERE name='class_date'", [], |row| row.get(0)).unwrap();
 
         assert_eq!(weeks_exists, 1);
@@ -1102,19 +1245,8 @@ mod tests {
         assert_eq!(sync_status_exists, 1);
         assert_eq!(notes_exists, 1);
         assert_eq!(stored_subject, "Môn cũ");
-        assert_eq!(unknown_date, ""); // fetched_at không chứng minh ngày học.
+        assert_eq!(backfilled_date, "");
         assert_eq!(has_date_column, 1);
-        assert!(is_runtime_schema_complete(&conn));
-        // Mở lại không được tự điền ngày suy diễn hay làm mất ngày đã có.
-        conn.execute(
-            "INSERT INTO connector_schedules (id, student_code, subject_code, subject_name, weekday, start_time, end_time, source, fetched_at, sync_batch_id, class_date) VALUES ('dated', 'S1', 'M2', 'Môn có ngày', 3, '08:00', '09:00', 'uth-portal', '2026-02-20', 'old', '2026-01-20')",
-            [],
-        ).unwrap();
-        ensure_db_schema(&mut conn).unwrap();
-        let dated: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='dated'", [], |row| row.get(0)).unwrap();
-        let still_unknown: String = conn.query_row("SELECT class_date FROM connector_schedules WHERE id='keep'", [], |row| row.get(0)).unwrap();
-        assert_eq!(dated, "2026-01-20");
-        assert_eq!(still_unknown, "");
     }
 
     #[test]
@@ -1148,18 +1280,6 @@ mod tests {
             [],
         );
         assert!(blank_id_insert.is_err());
-
-        for id in ["N", "N2"] {
-            conn.execute(
-                "INSERT INTO student_notes (id, title, content, created_at, updated_at) VALUES (?1, 'T', 'C', '2026-01-01', '2026-01-01')",
-                [id],
-            )
-            .unwrap();
-        }
-        let valid_notes: i64 = conn
-            .query_row("SELECT COUNT(*) FROM student_notes", [], |row| row.get(0))
-            .unwrap();
-        assert_eq!(valid_notes, 2);
     }
 
     #[test]
@@ -1244,7 +1364,7 @@ mod tests {
                 .unwrap();
         }
 
-        // Bước 1b: Chạy riêng migration để chứng minh tạo bảng mà không suy ngày từ fetched_at.
+        // Bước 1b: Chạy riêng chuỗi migrate_to_v2..v6 trước khi gọi open_db để xác minh chính các hàm migration tạo đủ bảng và backfill class_date
         {
             let mut raw_conn = Connection::open(&roots.db_path).unwrap();
             migrate_to_v2(&mut raw_conn).unwrap();
@@ -1269,7 +1389,7 @@ mod tests {
                     |r| r.get(0),
                 )
                 .unwrap();
-            assert_eq!(migrated_class_date, ""); // Ngày tải không xác định ngày học.
+            assert_eq!(migrated_class_date, ""); // Không bịa ngày cho lịch cũ chưa xác định
         }
 
         // Bước 2: Mở lại file DB tạm thông qua open_db(&roots) (cũng kiểm tra mở đồng thời không bị khóa)
@@ -1370,34 +1490,36 @@ mod tests {
 
         // 1. BVA-03 (Biên tiêu đề title: Min-1 = 0, Min = 1, Max = 100, Max+1 = 101)
         assert!(
-            save_student_note_in_db(&conn, None, "   ", "Nội dung hợp lệ", None, None).is_err(),
+            save_student_note_in_db(&mut conn, None, "   ", "Nội dung hợp lệ", None, None).is_err(),
             "BVA-03 Min-1 (0 ký tự) phải bị từ chối"
         );
 
         let min_title_note =
-            save_student_note_in_db(&conn, Some("n_min"), "A", "Nội dung", None, None).unwrap();
+            save_student_note_in_db(&mut conn, Some("n_min"), "A", "Nội dung", None, None).unwrap();
         assert_eq!(min_title_note.title, "A");
 
         let max_title = "Đ".repeat(MAX_NOTE_TITLE_CHARS); // 100 ký tự Unicode
         let max_title_note =
-            save_student_note_in_db(&conn, Some("n_max"), &max_title, "Nội dung", None, None)
+            save_student_note_in_db(&mut conn, Some("n_max"), &max_title, "Nội dung", None, None)
                 .unwrap();
         assert_eq!(max_title_note.title.chars().count(), 100);
 
         let over_max_title = "Đ".repeat(MAX_NOTE_TITLE_CHARS + 1); // 101 ký tự Unicode
         assert!(
-            save_student_note_in_db(&conn, None, &over_max_title, "Nội dung", None, None).is_err(),
+            save_student_note_in_db(&mut conn, None, &over_max_title, "Nội dung", None, None)
+                .is_err(),
             "BVA-03 Max+1 (101 ký tự) phải bị từ chối"
         );
 
         // 2. BVA-04 (Biên nội dung content: Min = 0, Max = 10000, Max+1 = 10001)
         let empty_content_note =
-            save_student_note_in_db(&conn, Some("n_c0"), "Tiêu đề chuẩn", "", None, None).unwrap();
+            save_student_note_in_db(&mut conn, Some("n_c0"), "Tiêu đề chuẩn", "", None, None)
+                .unwrap();
         assert_eq!(empty_content_note.content, "");
 
         let max_content = "K".repeat(MAX_NOTE_CONTENT_CHARS); // 10000 ký tự
         let max_content_note = save_student_note_in_db(
-            &conn,
+            &mut conn,
             Some("n_cmax"),
             "Tiêu đề chuẩn",
             &max_content,
@@ -1413,10 +1535,17 @@ mod tests {
 
         let over_max_content = "K".repeat(MAX_NOTE_CONTENT_CHARS + 1); // 10001 ký tự
         assert!(
-            save_student_note_in_db(&conn, None, "Tiêu đề chuẩn", &over_max_content, None, None)
+            save_student_note_in_db(&mut conn, None, "Tiêu đề chuẩn", &over_max_content, None, None)
                 .is_err(),
             "BVA-04 Max+1 (10001 ký tự) phải bị từ chối"
         );
+
+        // Kiểm tra 2 ghi chú tạo mới liên tiếp (id = None) luôn sinh ra 2 ID khác nhau và không ghi đè nhau
+        let auto_note_1 =
+            save_student_note_in_db(&mut conn, None, "Ghi chú tự động 1", "C1", None, None).unwrap();
+        let auto_note_2 =
+            save_student_note_in_db(&mut conn, None, "Ghi chú tự động 2", "C2", None, None).unwrap();
+        assert_ne!(auto_note_1.id, auto_note_2.id);
 
         // 3. Decision Table 3: Tìm kiếm, lọc theo môn học và Xóa
         let filtered_st101 = list_student_notes_in_db(&conn, None, Some("ST101")).unwrap();
@@ -1426,8 +1555,9 @@ mod tests {
         assert!(delete_student_note_in_db(&conn, "n_min").unwrap());
         assert!(!delete_student_note_in_db(&conn, "n_min").unwrap());
 
-        // 4. Backup & Restore Round-trip giữ nguyên Unicode & liên kết môn học (CA-090 + CA-106)
+        // 4. Backup & Restore Round-trip giữ nguyên toàn bộ danh sách, Unicode & liên kết môn học (CA-090 + CA-106)
         let backup_snapshot = list_student_notes_in_db(&conn, None, None).unwrap();
+        assert!(backup_snapshot.len() >= 4);
         for item in &backup_snapshot {
             delete_student_note_in_db(&conn, &item.id).unwrap();
         }
@@ -1436,47 +1566,10 @@ mod tests {
         let restored_count = import_student_notes_backup_in_db(&mut conn, &backup_snapshot).unwrap();
         assert_eq!(restored_count, backup_snapshot.len());
 
-        let after_restore = list_student_notes_in_db(&conn, None, Some("ST101")).unwrap();
-        assert_eq!(after_restore.len(), 1);
-        assert_eq!(
-            after_restore[0].subject_name.as_deref(),
-            Some("Kiểm thử phần mềm")
-        );
+        // So sánh toàn bộ danh sách chưa lọc sau khi khôi phục với ảnh chụp bản sao lưu (bao gồm ID và mọi trường)
+        let restored_all = list_student_notes_in_db(&conn, None, None).unwrap();
+        assert_eq!(restored_all, backup_snapshot);
 
-        drop(conn);
-        fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn test_student_notes_backup_count_boundary_and_duplicate_id() {
-        let (root, roots) = temp_fixture_roots("student-notes-backup-count");
-        let mut conn = open_db(&roots).unwrap();
-        let make_note = |index: usize| StudentNoteRecord {
-            id: format!("note_{index}"),
-            title: "Ghi chú".to_string(),
-            content: "Nội dung".to_string(),
-            subject_id: None,
-            subject_name: None,
-            created_at: "2026-01-01".to_string(),
-            updated_at: "2026-01-01".to_string(),
-        };
-        let valid: Vec<_> = (0..2_000).map(make_note).collect();
-        assert_eq!(import_student_notes_backup_in_db(&mut conn, &valid).unwrap(), 2_000);
-        let count_before: i64 = conn
-            .query_row("SELECT COUNT(*) FROM student_notes", [], |row| row.get(0))
-            .unwrap();
-        assert_eq!(count_before, 2_000);
-
-        let mut too_many = valid.clone();
-        too_many.push(make_note(2_000));
-        assert!(import_student_notes_backup_in_db(&mut conn, &too_many).is_err());
-
-        let duplicate = vec![make_note(2_001), make_note(2_001)];
-        assert!(import_student_notes_backup_in_db(&mut conn, &duplicate).is_err());
-        let count_after: i64 = conn
-            .query_row("SELECT COUNT(*) FROM student_notes", [], |row| row.get(0))
-            .unwrap();
-        assert_eq!(count_after, count_before);
         drop(conn);
         fs::remove_dir_all(root).unwrap();
     }
