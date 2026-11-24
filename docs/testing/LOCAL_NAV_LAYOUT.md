@@ -6,7 +6,7 @@
 
 1. `CONFIRMED` (source trước thay đổi): `.starter-grid strong/small` dùng `white-space: nowrap` và `text-overflow: ellipsis`; nhãn dài bị cắt. Clone có quy tắc xuống dòng và cột co giãn. `UNKNOWN`: chưa đo bằng ảnh native ở nhiều DPI.
 2. Feature: lối tắt chat và bảng tìm nhanh; entry point là `src/App.tsx` và `src/styles.css`.
-3. `CURRENT` trước thay đổi: 8 lối tắt dùng cùng kiểu ô viền; `TARGET`: hai ô đầu nổi bật, các ô còn lại là hàng có đường phân cách, nhãn hiển thị đủ.
+3. `CURRENT` trước thay đổi: 8 lối tắt dùng cùng kiểu ô viền; `TARGET`: cả 8 là hàng có đường phân cách, hai ô đầu chỉ nhấn màu icon như CSS cuối của clone, nhãn hiển thị đủ.
 4. State trước/sau: không đổi state hoặc hành động; chỉ đổi bố cục hiện diện.
 5. Dữ liệu đọc/ghi: không có dữ liệu mới và không ghi storage/DB.
 6. Phụ thuộc: `App.tsx` gắn class, `styles.css` render; không đổi `engine.ts` hay `tauriApi.ts`.
@@ -22,7 +22,7 @@
 | --- | --- | --- | --- |
 | Bề rộng viewport | `>900px`, `601..900px`, `<=600px` | 901/900, 601/600, 599 px | 4/2/1 cột |
 | Độ dài nhãn | ngắn, dài nhiều dòng | 1 dòng/2 dòng trở lên | không cắt nội dung |
-| Kiểu lối tắt | nổi bật, thường | 2 ô đầu/6 ô còn lại | chỉ ô nổi bật có viền toàn bộ |
+| Kiểu lối tắt | nổi bật, thường | 2 ô đầu/6 ô còn lại | tất cả chỉ có đường phân cách; hai ô đầu có icon màu nhấn |
 | Kết quả palette | nhãn ngắn, nhãn dài | chữ vượt chiều rộng ô | chữ xuống dòng, icon không co |
 
 Không dùng dãy `tinChi/gpa/monNo/hocKy` của bài BVA mẫu vì màn này không nhận các biến đó.
@@ -39,7 +39,7 @@ Không dùng dãy `tinChi/gpa/monNo/hocKy` của bài BVA mẫu vì màn này kh
 | N06 | Viewport 600 px | 1 cột | Vitest static; visual pending |
 | N07 | Viewport 599 px | 1 cột, không tràn ngang | Vitest static; visual pending |
 | N08 | Nhãn dài | Xuống dòng, không ellipsis | Vitest static; visual pending |
-| N09 | Ô thường/nổi bật | Viền phân cấp đúng | Vitest static; visual pending |
+| N09 | Ô thường/nổi bật | Không có box; hai icon đầu có màu nhấn | Vitest static; visual pending |
 | N10 | Kết quả Ctrl+K dài | Icon cố định, phần chữ co và xuống dòng | Vitest static; visual pending |
 
 `src/navigationLayout.test.js` kiểm các quy tắc nguồn, không chứng minh pixel thực tế; native visual smoke còn `UNKNOWN`. Postman Runner **không áp dụng** vì task chỉ đổi CSS/JSX và không gọi HTTP. `npm run check:postman` là kiểm tra hồi quy collection REST độc lập, không được ghi là chứng cứ cho bố cục.

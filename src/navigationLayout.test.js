@@ -31,9 +31,10 @@ describe("Bố cục lối tắt và tìm nhanh", () => {
     expect(layout).toMatch(/\.starter-grid button\s*\{[\s\S]*min-height:\s*64px;/);
   });
 
-  it("ô thường chỉ còn đường phân cách; ô nổi bật có viền riêng", () => {
+  it("mọi lối tắt chỉ còn đường phân cách như quy tắc cuối của clone", () => {
     expect(layout).toMatch(/\.starter-grid button\s*\{[\s\S]*border:\s*0 !important;[\s\S]*border-bottom:\s*1px solid var\(--border\) !important;/);
-    expect(layout).toMatch(/\.starter-grid button\.starter-featured\s*\{[\s\S]*border:\s*1px solid var\(--border\) !important;/);
+    expect(layout).toMatch(/\.starter-grid button\.starter-featured\s*\{[\s\S]*border:\s*0 !important;[\s\S]*border-bottom:\s*1px solid var\(--border\) !important;/);
+    expect(layout).toMatch(/\.starter-grid button\.starter-featured > svg\s*\{[\s\S]*color:\s*var\(--accent\);/);
   });
 
   it("biểu tượng và phần chữ trong bảng tìm nhanh không ép cột", () => {
