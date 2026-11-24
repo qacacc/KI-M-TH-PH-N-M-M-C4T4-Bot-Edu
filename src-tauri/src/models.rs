@@ -25,6 +25,28 @@ pub(crate) struct DocumentRecord {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub(crate) struct LmsCourseRecord {
+    pub(crate) id: String,
+    pub(crate) name: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct LmsDocumentRecord {
+    pub(crate) id: String,
+    pub(crate) course_id: String,
+    pub(crate) course_name: String,
+    pub(crate) name: String,
+    pub(crate) source_path: String,
+    pub(crate) local_path: Option<String>,
+    pub(crate) size_bytes: i64,
+    pub(crate) status: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct AnnouncementRecord {
     pub(crate) id: String,
     pub(crate) title: String,
@@ -208,11 +230,6 @@ pub(crate) struct PublicSearchResponse {
     pub(crate) searched_urls: Vec<String>,
     pub(crate) results: Vec<PublicSearchResult>,
     pub(crate) message: String,
-    // CA-093.01: "success" | "partial" | "no_match" | "error" — Error != Empty (DATA-001)
-    pub(crate) status: String,
-    // URL gốc của các nguồn tải lỗi sau khi đã thử lại, giữ nguyên để truy vết
-    pub(crate) failed_urls: Vec<String>,
-    pub(crate) timed_out: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -234,4 +251,17 @@ pub(crate) struct ChatMessageRecord {
     pub(crate) role: String,
     pub(crate) content: String,
     pub(crate) created_at: String,
+}
+
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct StudentNoteRecord {
+    pub(crate) id: String,
+    pub(crate) title: String,
+    pub(crate) content: String,
+    pub(crate) subject_id: Option<String>,
+    pub(crate) subject_name: Option<String>,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: String,
 }
