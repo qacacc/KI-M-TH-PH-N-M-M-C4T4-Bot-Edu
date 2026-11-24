@@ -2163,6 +2163,29 @@ body[data-resizing="true"] .resize-handle:hover::before {
   margin: 0 0 12px;
 }
 
+.health-notice,
+.health-scope {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.health-notice-error {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.health-scope p {
+  margin: 0;
+}
+
+.health-scope p + p {
+  margin-top: 6px;
+}
+
 .health-list {
   width: 100%;
   overflow-x: auto;

@@ -171,6 +171,8 @@ export default function App() {
   const [actionLogs, setActionLogs] = useState<ActionLogEntry[]>([]);
   const [storageSummary, setStorageSummary] = useState<StorageSummary | null>(null);
   const [healthReport, setHealthReport] = useState<HealthReport | null>(null);
+  const [isCheckingHealth, setIsCheckingHealth] = useState(false);
+  const [healthError, setHealthError] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateCheckResult | null>(null);
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -215,7 +217,7 @@ export default function App() {
       { id: "appearance", title: "Giao diện & Chủ đề", detail: "Tùy biến màu sắc, ảnh nền, blur, preset", icon: Palette, action: () => { setView("appearance"); setCommandPaletteOpen(false); } },
       { id: "settings", title: "Cài đặt Hệ thống", detail: "Cấu hình chung, dữ liệu local, bảo mật vault, dev mode", icon: Settings, action: () => { openSettings(); setCommandPaletteOpen(false); } },
       { id: "storage", title: "Bộ nhớ & Dữ liệu Local", detail: "Quản lý CSDL SQLite local và bộ nhớ đệm", icon: Database, action: () => { setView("storage"); setCommandPaletteOpen(false); } },
-      { id: "health", title: "Kiểm tra Hệ thống", detail: "Chạy chẩn đoán sức khỏe bộ nhớ & file", icon: Check, action: () => { setView("health"); void refreshHealthReport(); setCommandPaletteOpen(false); } },
+      { id: "health", title: "Kiểm tra Hệ thống", detail: "Xem chẩn đoán bộ nhớ & file", icon: Check, action: () => { setView("health"); setCommandPaletteOpen(false); } },
       { id: "privacy", title: "Cam kết Quyền riêng tư", detail: "Xem thông tin bảo mật 100% Local-First", icon: Shield, action: () => { setView("privacy"); setCommandPaletteOpen(false); } },
     ];
     if (!commandSearchQuery.trim()) return list;
@@ -485,7 +487,7 @@ export default function App() {
   }, [messages.length, conversation?.step]);
 
   useEffect(() => {
-    if (!bootstrap || healthReport || (view !== "health" && view !== "release")) return;
+    if (!bootstrap || healthReport || view !== "release") return;
     let isCancelled = false;
     void getHealthReport()
       .then((report) => {
@@ -899,7 +901,6 @@ export default function App() {
         return;
       case "health":
         setView("health");
-        await refreshHealthReport();
         appendAssistant("Đã mở trang Kiểm tra.");
         return;
       case "release":
@@ -1220,10 +1221,14 @@ export default function App() {
   }
 
   async function refreshHealthReport() {
+    setIsCheckingHealth(true);
+    setHealthError(false);
     try {
       setHealthReport(await getHealthReport());
-    } catch (err) {
-      setError(String(err));
+    } catch {
+      setHealthError(true);
+    } finally {
+      setIsCheckingHealth(false);
     }
   }
 
@@ -1376,7 +1381,7 @@ export default function App() {
             </button>
             <button
               className={view === "health" ? "titlebar-btn active" : "titlebar-btn"}
-              onClick={() => { setView("health"); void refreshHealthReport(); }}
+              onClick={() => setView("health")}
               title="Kiểm tra hệ thống local"
               aria-label="Kiểm tra hệ thống"
             >
@@ -1735,6 +1740,8 @@ export default function App() {
             onRefresh={() => void refreshHealthReport()}
             onExport={() => void handleExportDiagnosticReport()}
             isBusy={isBusy}
+            isChecking={isCheckingHealth}
+            error={healthError}
           />
         )}
         {view === "release" && (
