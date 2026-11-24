@@ -50,6 +50,6 @@ Entry: `list_student_notes`, `save_student_note`, `delete_student_note`, `import
 
 ## Gate và giới hạn
 
-**CONFIRMED (targeted, 2026-11-24):** `cargo test --manifest-path src-tauri/Cargo.toml db::tests` với target cache riêng: 7 passed, 0 failed. `git diff --check`: exit 0. `rg -n 'infer_legacy_class_date|backfill_empty_schedule_class_dates' src-tauri/src/db.rs`: không có match. `npm run check:all` cần chạy lại sau khi ghép `main` mới nhất; chưa ghi PASS.
+**CONFIRMED (2026-11-24, sau khi ghép `main`):** `npm run check:all` exit 0; Vitest 131 passed, Rust 72 passed, audit 0 lỗ hổng. `cargo test --manifest-path src-tauri/Cargo.toml db::tests` với target cache riêng: 7 passed, 0 failed. `git diff --check`: exit 0. `rg -n 'infer_legacy_class_date|backfill_empty_schedule_class_dates' src-tauri/src/db.rs`: không có match. Kiểm tra Postman trong `check:all` là kiểm tĩnh collection, không phải HTTP live.
 
 Native UI, confirm xóa, lỗi quota và Postman live không thuộc kết quả xác minh của PR này. Dữ liệu ghi chú local không thay thế kết quả Portal; task tổng CA-106 vẫn chưa Done.
