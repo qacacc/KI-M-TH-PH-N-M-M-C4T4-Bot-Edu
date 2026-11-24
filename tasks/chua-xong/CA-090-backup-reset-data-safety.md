@@ -64,3 +64,16 @@ Commit nhỏ riêng cho task; không revert thay đổi user. Migration/data rec
 - Static source check: không còn `localStorage.clear()` trong flow reset khởi động/settings.
 - Manual visual/native check: chưa thực hiện; task chưa chuyển Done.
 
+
+## Evidence cập nhật CA-090 & phối hợp CA-106 (2026-11-24)
+
+- `src-tauri/src/db.rs:10-39`: Bổ sung `SCHEMA_INIT_LOCK` (`OnceLock<Mutex<()>>`) và `busy_timeout(5s)` khi mở kết nối SQLite, chống lỗi tranh chấp khóa ghi khi các lệnh Tauri chạy đồng thời.
+- `src-tauri/src/db.rs:77-282`:
+  - Khai báo khóa chính văn bản với `TEXT NOT NULL PRIMARY KEY CHECK(length(trim(...)) > 0)` cho toàn bộ các bảng.
+  - Thêm `migrate_to_v6` nâng cấp schema lên `PRAGMA user_version = 6` và khởi tạo bảng `student_notes`.
+  - Thêm `infer_legacy_class_date` và `backfill_empty_schedule_class_dates` để tự động điền `class_date` (`YYYY-MM-DD`) cho các hàng lịch học cũ khi nâng cấp lên v4+.
+  - Thêm `is_runtime_schema_complete` kiểm tra chỉ đọc trước khi chạy DDL trong `ensure_connector_runtime_schema`, đồng thời đảm bảo khôi phục đủ cả `connector_exams`, `connector_sync_status`, `connector_schedule_weeks`, `connector_transcripts` và `student_notes`.
+- `src-tauri/src/db.rs:948-1462`: Kiểm thử nâng cấp E2E trên Temp DB Fixture (`test_bva02_and_dt2_rule2_temp_db_fixture_upgrades_v1_to_v6_on_disk`), kiểm thử trực tiếp `migrate_to_v6` (`test_migrate_to_v6_directly_creates_student_notes_and_rejects_null_or_blank_primary_key`) và kiểm thử round-trip sao lưu/khôi phục ghi chú (`test_bva03_bva04_and_dt3_student_notes_crud_validation_and_backup_roundtrip`).
+- `src/utils/backupRestore.ts:12-151` & `src/utils/backupRestore.test.ts:36-162`: Mở rộng `ALLOWLIST_KEYS` bao phủ đủ các khóa cấu hình active (`campus-assistant-appearance`, `campus-assistant-layout`, `ca_custom_theme_presets_v1`, `ca_gpa_calculator_manual_v2`), bọc `try/catch` cho cả snapshot và rollback, kiểm thử đủ 6 điểm biên kích thước file BVA-01 (`0`, `1`, `500`, `1MB - 1`, `1MB`, `1MB + 1`).
+- `src/pages/SettingsPage.tsx:568-575`: Chuẩn hóa nhãn nút đặt lại cấu hình thành `"Đặt lại Cấu hình Ứng dụng Local"`, giữ nguyên dữ liệu DB, GPA, chat và sổ ghi chú.
+- Automated (`npm run check:all`): **PASS** (74 Vitest tests, 64 Rust tests, layout check, local Postman check, TypeScript/Vite build, `npm audit` 0 vulnerabilities).
