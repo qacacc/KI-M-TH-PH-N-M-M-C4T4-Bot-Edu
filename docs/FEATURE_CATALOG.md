@@ -174,6 +174,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
   - Last Verified: 2026-07-27
   - Verification Scope: AUTOMATED (`npm run check:all` PASS)
 - **Known Gaps & Tracking**:
+  - **CONFIRMED (PR #26 remediation):** UI hiển thị rõ GPA nhập tay là ước tính, không có nút nạp bảng điểm Portal hay giá trị chính thức khi chưa có IPC. Phục hồi v1 phải xác nhận; lỗi ghi storage không xóa trạng thái hỏng. **PLANNED:** GPA Portal chính thức và theo học kỳ cần CA-080/081/088. Manual Windows chưa kiểm.
   - Grade entry is manual/localStorage only; blank draft rows are excluded from GPA and persisted grade labels use an own-key allowlist. SQLite persistence remains **`DEFERRED`**; no verified school grade scale/data source.
   - Verification (historical before dependency refresh): `npm run check:all` passed Vitest (84 tests), layout, Postman, TypeScript/Vite build, Rust check and Rust tests, then exited non-zero at `npm audit` for 2 moderate `@vitest/mocker` and 1 high Vite advisories. Latest merged-tree run passes `npm run check:all` with 84 Vitest, 55 Rust tests, and audit 0 vulnerabilities. Manual/native GPA validation remains `UNKNOWN`.
 

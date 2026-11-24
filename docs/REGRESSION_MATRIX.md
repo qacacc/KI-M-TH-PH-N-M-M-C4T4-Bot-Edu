@@ -6,7 +6,15 @@
 | --- | --- | --- |
 | `src-tauri/src/db.rs`, `lib.rs`, `models.rs` | `cargo test --manifest-path src-tauri/Cargo.toml db::tests`; `npm run check:all` | UI confirm, backup/restore native E2E, SQLite upgrade smoke |
 
-EP/BVA và 12 test case ở `docs/testing/CA-106-student-notes-backend.md`; Postman N/A vì không có HTTP route ghi chú.
+EP/BVA và 13 test case ở `docs/testing/CA-106-student-notes-backend.md`; Postman N/A vì không có HTTP route ghi chú.
+
+## GPA local — PR #26 remediation
+
+| Phạm vi | Tự động | Manual/native còn thiếu |
+| --- | --- | --- |
+| `src/gpaData.ts`, `src/components/GpaCalculator.tsx`, `src/pages/CampusDataPages.tsx` | `npx vitest run src/gpaData.test.ts src/components/GpaCalculator.test.tsx`; `npm run check:all` | Nhập điểm/F5, quota storage, hủy/đồng ý khôi phục, mở Portal trên Windows |
+
+`npm run check:postman` chỉ kiểm collection REST local; GPA nhập tay không có endpoint HTTP. Không coi test giả lập `PortalGradeRecord` là E2E Portal. EP/BVA và 12 test case trong `docs/testing/baocaokiemthu_task_ca_088_02_gpa_calculation.md`.
 
 ## CA-103 - Local REST API
 
