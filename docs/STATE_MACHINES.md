@@ -10,6 +10,8 @@ GPA local CURRENT (PR #26 remediation): v2 hợp lệ → bảng ước tính; v
 
 CA-090.01 CURRENT (2026-10-19): migration SQLite giữ dữ liệu cũ; khởi động không có transition xóa lịch sử chat. Reset cấu hình sau confirm chỉ chuyển các key cấu hình về trạng thái mặc định; GPA/chat/profile không bị chuyển sang trạng thái xóa. Manual native/UI verification chưa chạy.
 
+`CONFIRMED` (source): khi ở chat starter, `welcomeMessage` vẫn nằm trong state nhưng không render thành bubble; hai nút lệnh đi qua `submitText`, sáu nút trang chỉ chuyển `view` sang schedule/files/announcements/exams/gpa/health. Điều hướng không đổi trạng thái conversation hay dữ liệu chat. `UNKNOWN`: kiểm tra native visual sau thay đổi.
+
 CA-090 migration v6 CURRENT (source/tests): lịch cũ không có ngày thật giữ `class_date = ''`; mở DB và schema repair không chuyển giá trị này thành ngày suy đoán. Ngày đã lưu từ nguồn vẫn giữ nguyên. Đây chỉ là thuộc tính cache nội bộ, không bổ sung trạng thái auth/sync hay xác nhận Portal; native upgrade smoke còn `UNKNOWN`.
 
 Tài liệu định nghĩa chính thức các máy trạng thái (State Machines) trong ứng dụng. AI không được tự phát minh ra trạng thái mới ngoài danh sách này.

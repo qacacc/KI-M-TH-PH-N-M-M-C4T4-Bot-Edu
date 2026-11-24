@@ -94,9 +94,10 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
    - Nút Gửi trong composer
    - Phím Enter trong textarea
    - Command suggestion
-   - Starter card
+   - Hai lối tắt starter gửi lệnh (Tìm tài liệu, Lệnh nhanh)
    - Composer shortcut
    - Command palette action có gửi chat
+1a. Nếu bấm một trong sáu lối tắt mở trang, App.tsx chỉ đổi `view`; không đi tiếp qua bước 2-5 và không thêm tin nhắn.
 2. App.tsx gọi submitUserMessage(rawValue, source)
 3. submitUserMessage:
    - Trim input
