@@ -8,6 +8,8 @@
 
 CA-083 (2026-10-09): mọi entry UTH auth/sync/đọc lịch -> ensure_uth_contract_verified -> Err trước IO. academicDataErrorMessage -> chat/useAcademicCache trả thông báo an toàn. Prototype command giữ tên/payload để tương thích nhưng không ghi DB. Dependencies HTTP/parser UTH đã gỡ; portal browser và SQLite/cache management không đổi.
 
+GPA CURRENT (PR #26 remediation): `CampusDataPages.GpaPage` → `GpaCalculator` → `gpaData` → localStorage v2/v1. `openExternalUrl` chỉ mở Portal trong trình duyệt; không có phụ thuộc IPC bảng điểm. `calculatePortalGpaStats` chỉ là hàm thuần được test bằng dữ liệu tổng hợp, không phải nguồn runtime. CA-080/081/088 là điều kiện cho dữ liệu chính thức.
+
 **CONFIRMED (migration v6 source/tests):** `open_db`/`open_db_schema_only` → `ensure_db_schema` → SQLite `connector_schedules`/`connector_schedule_weeks`/`connector_transcripts`/`student_notes`. `class_date` trống của lịch cũ là ngày chưa xác định; không phụ thuộc `fetched_at` để suy lịch. Test DB temp: `cargo test --manifest-path src-tauri/Cargo.toml db::tests`. Portal contract và native upgrade vẫn `UNKNOWN`; Postman N/A cho migration nội bộ.
 
 Tài liệu bản đồ phụ thuộc giữa các module, component, API, capability và file cấu hình trong hệ thống. 

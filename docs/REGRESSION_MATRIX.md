@@ -1,5 +1,13 @@
 # REGRESSION MATRIX - CAMPUS ASSISTANT LOCAL
 
+## GPA local — PR #26 remediation
+
+| Phạm vi | Tự động | Manual/native còn thiếu |
+| --- | --- | --- |
+| `src/gpaData.ts`, `src/components/GpaCalculator.tsx`, `src/pages/CampusDataPages.tsx` | `npx vitest run src/gpaData.test.ts src/components/GpaCalculator.test.tsx`; `npm run check:all` | Nhập điểm/F5, quota storage, hủy/đồng ý khôi phục, mở Portal trên Windows |
+
+`npm run check:postman` chỉ kiểm collection REST local; GPA nhập tay không có endpoint HTTP. Không coi test giả lập `PortalGradeRecord` là E2E Portal. EP/BVA và 12 test case trong `docs/testing/baocaokiemthu_task_ca_088_02_gpa_calculation.md`.
+
 ## CA-103 - Local REST API
 
 | File / Module được chỉnh sửa | Executive Contract | Test Status | Executable Command / Test | Manual / E2E Verification |
