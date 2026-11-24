@@ -6614,25 +6614,34 @@ button:disabled {
   min-width: 0;
   min-height: 64px;
   justify-content: flex-start;
+  align-items: center;
   padding: 10px 12px;
+  border: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  text-align: left;
+}
+
+.starter-grid button.starter-featured {
   border: 0 !important;
   border-bottom: 1px solid var(--border) !important;
   border-radius: 0 !important;
   background: transparent !important;
 }
 
-.starter-grid button.starter-featured {
-  border: 1px solid var(--border) !important;
-  border-radius: 8px !important;
-  background: color-mix(in srgb, var(--accent) 7%, var(--panel)) !important;
-}
-
 .starter-grid button > svg {
   flex: 0 0 18px;
+  color: var(--muted);
+}
+
+.starter-grid button.starter-featured > svg {
+  color: var(--accent);
 }
 
 .starter-grid span,
 .command-palette-item > div:last-child {
+  flex: 1;
   min-width: 0;
 }
 
@@ -6651,6 +6660,10 @@ button:disabled {
   width: 100%;
   min-width: 0;
   min-height: 52px;
+}
+
+.command-palette-item-icon {
+  flex: 0 0 32px;
 }
 
 @media (max-width: 900px) {
