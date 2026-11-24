@@ -6,15 +6,19 @@ export interface BackupBundle {
   data: Record<string, string>;
 }
 
-export const MAX_BACKUP_BYTES = 1 * 1024 * 1024; // 1 MB limit
+export const MAX_BACKUP_BYTES = 1 * 1024 * 1024; // 1 MB limit (1,048,576 bytes)
 
-// ALLAWLIST CHÍNH XÁC: Chỉ cho phép các khóa cấu hình hiển thị & tùy chọn cá nhân
-const ALLOWLIST_KEYS = new Set([
+// ALLOWLIST CHÍNH XÁC: Bao gồm đầy đủ các khóa cấu hình hiển thị, layout, preset & GPA manual v2/v1
+export const ALLOWLIST_KEYS = new Set([
   "ca-settings-lang",
   "ca-settings-default-view",
   "ca-settings-autofocus",
   "ca-settings-dev-mode",
   "ca-appearance-settings",
+  "campus-assistant-appearance",
+  "campus-assistant-layout",
+  "campus-assistant-custom-presets",
+  "ca_custom_theme_presets_v1",
   "ca_gpa_calculator_data_v1",
   "ca_gpa_calculator_manual_v2",
 ]);
@@ -29,9 +33,13 @@ export function exportLocalAppDataJSON(): string {
   const data: Record<string, string> = {};
 
   for (const key of ALLOWLIST_KEYS) {
-    const val = localStorage.getItem(key);
-    if (val !== null) {
-      data[key] = val;
+    try {
+      const val = localStorage.getItem(key);
+      if (val !== null) {
+        data[key] = val;
+      }
+    } catch {
+      // Bỏ qua nếu storage bị chặn
     }
   }
 
@@ -64,10 +72,11 @@ export function downloadBackupFile(): void {
 }
 
 /**
- * Phục hồi dữ liệu cấu hình local từ chuỗi JSON có kiểm tra Schema & Allowlist nghiêm ngặt
+ * Phục hồi dữ liệu cấu hình local từ chuỗi JSON có kiểm tra Schema & Allowlist nghiêm ngặt.
+ * Bọc cả bước đọc snapshot và bước rollback trong try/catch để không bao giờ crash khi quota/storage bị chặn.
  */
 export function importLocalAppDataJSON(jsonString: string): boolean {
-  if (!jsonString || jsonString.length > MAX_BACKUP_BYTES) {
+  if (!jsonString || jsonString.length === 0 || jsonString.length > MAX_BACKUP_BYTES) {
     return false;
   }
 
@@ -80,10 +89,13 @@ export function importLocalAppDataJSON(jsonString: string): boolean {
     return false;
   }
 
-  // Backup snapshot cũ để rollback nếu có lỗi
   const snapshot: Record<string, string | null> = {};
-  for (const key of ALLOWLIST_KEYS) {
-    snapshot[key] = localStorage.getItem(key);
+  try {
+    for (const key of ALLOWLIST_KEYS) {
+      snapshot[key] = localStorage.getItem(key);
+    }
+  } catch {
+    return false;
   }
 
   try {
@@ -95,16 +107,20 @@ export function importLocalAppDataJSON(jsonString: string): boolean {
       bundle.format !== "campus-assistant-backup" ||
       bundle.schemaVersion !== 1 ||
       !bundle.data ||
-      typeof bundle.data !== "object"
+      typeof bundle.data !== "object" ||
+      Array.isArray(bundle.data)
     ) {
       return false;
     }
 
     const data = bundle.data;
 
-    // Chặn Prototype Pollution
-    for (const key of Object.keys(data)) {
+    // Chặn Prototype Pollution & kiểm tra kiểu giá trị trước khi ghi (Transactional Validation)
+    for (const [key, value] of Object.entries(data)) {
       if (DANGEROUS_KEYS.has(key)) {
+        return false;
+      }
+      if (ALLOWLIST_KEYS.has(key) && typeof value !== "string") {
         return false;
       }
     }
@@ -118,13 +134,17 @@ export function importLocalAppDataJSON(jsonString: string): boolean {
 
     return true;
   } catch {
-    // Rollback về snapshot cũ nếu gặp sự cố trong quá trình parse
-    for (const [key, value] of Object.entries(snapshot)) {
-      if (value !== null) {
-        localStorage.setItem(key, value);
-      } else {
-        localStorage.removeItem(key);
+    // Rollback an toàn trong try/catch để không throw khi storage bị đầy hoặc bị khóa
+    try {
+      for (const [key, value] of Object.entries(snapshot)) {
+        if (value !== null) {
+          localStorage.setItem(key, value);
+        } else {
+          localStorage.removeItem(key);
+        }
       }
+    } catch {
+      // Nếu cả rollback cũng gặp lỗi storage-blocked, vẫn trả về false rõ ràng thay vì crash
     }
     return false;
   }
@@ -135,7 +155,7 @@ export function importLocalAppDataJSON(jsonString: string): boolean {
  */
 export function uploadBackupFile(file: File): Promise<boolean> {
   return new Promise((resolve) => {
-    if (file.size > MAX_BACKUP_BYTES) {
+    if (file.size === 0 || file.size > MAX_BACKUP_BYTES) {
       resolve(false);
       return;
     }
