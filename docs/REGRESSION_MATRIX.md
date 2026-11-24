@@ -1,5 +1,9 @@
 # REGRESSION MATRIX - CAMPUS ASSISTANT LOCAL
 
+## LOCAL_NAV_LAYOUT — lối tắt và bảng tìm nhanh
+
+`src/App.tsx` + `src/styles.css`: `npx vitest run src/navigationLayout.test.js`, `npm run test:layout`, `npm run build`; kiểm thủ công desktop tại 599/600/601/900/901 px, nội dung dài, hover/focus và click. EP/BVA/test case trong `docs/testing/LOCAL_NAV_LAYOUT.md`. Postman không áp dụng cho CSS/JSX; native visual smoke vẫn `UNKNOWN`.
+
 ## GPA local — PR #26 remediation
 
 | Phạm vi | Tự động | Manual/native còn thiếu |
