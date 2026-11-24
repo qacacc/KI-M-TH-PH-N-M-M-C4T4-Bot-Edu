@@ -1,5 +1,7 @@
 # STATE MACHINES - CAMPUS ASSISTANT LOCAL
 
+**STORAGE_HEALTH UI (thay đổi đang xác minh):** `CHƯA_CHẠY` → (người dùng bấm trên desktop) `ĐANG_CHẠY` → `CÓ_BÁO_CÁO`; thất bại → `LỖI` và giữ báo cáo trước nếu có. Trình duyệt không có IPC nên không chuyển sang `ĐANG_CHẠY`. Đây là trạng thái giao diện, không thay đổi trạng thái sync Portal/Courses. Native visual smoke `UNKNOWN`.
+
 **CONFIRMED (source/tests), CA-098.01:** Local REST API has startup states `API_DISABLED` when `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` is absent/invalid (desktop continues; no port bind), and `API_READY` when a valid 32–256 ASCII token is configured (loopback accepts matching Bearer requests). Startup logging is best-effort; write error does not panic. Request is `UNAUTHORIZED` (401) before route processing or proceeds to route-specific validation/data status. This is separate from UTH login/sync/cache; UTH connector remains `CONTRACT_UNVERIFIED`. **UNKNOWN:** manual desktop/Postman HTTP smoke.
 
 CA-080 setup (2026-10-10): mặc định probe bị khóa; consent/live/request-reviewed + Vault cho phép gửi thủ công trên Postman Desktop. Chỉ là trạng thái công cụ kiểm thử, không transition auth/sync/cache của Campus Assistant. Transport PASS vẫn giữ contract UNKNOWN cho đến khi có evidence/schema/fixture thật. Chưa có request live trong đợt setup.

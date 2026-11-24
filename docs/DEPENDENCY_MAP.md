@@ -81,6 +81,7 @@ Khi chỉnh sửa một module trong cột bên trái, các module thuộc cùng
 | `src-tauri/src/public_search.rs` | Chat Admissions Queries, Outbound Web Scraper, `src/publicSearchMessage.ts` (contract `status`/`failedUrls`/`timedOut`) |
 | `src-tauri/capabilities/default.json` | Tauri Window IPC Permissions, Main vs Remote WebView Isolation |
 | `src-tauri/src/lib.rs` | Tauri Command Registry, Health Diagnostics, App Lifecycle |
+| `src/pages/HealthPage.tsx` | `src/App.tsx` state kiểm tra, `src-tauri/src/diagnostics.rs` qua `getHealthReport`; trang Release dùng cùng báo cáo |
 | `src/tauriApi.ts` | Toàn bộ Frontend UI (Mọi lệnh IPC giữa React và Rust) |
 | `src/types.ts` | Type Coverage trên toàn bộ mã nguồn React Frontend |
 | `src/engine.ts` | Chatbox, Intent Router, Slash Command Parsing |

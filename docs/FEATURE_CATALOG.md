@@ -250,11 +250,11 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
 - **Status**: Implemented
 - **Owner**: Diagnostic Service
 - **Evidence**:
-  - Source: `src-tauri/src/lib.rs` (`get_health_report`)
+  - Source: `src-tauri/src/diagnostics.rs` (`get_health_report`), `src/pages/HealthPage.tsx`
   - Last Verified: 2026-07-27
-  - Verification Scope: AUTOMATED (`cargo test tests::health_report_contains_core_checks`)
+  - Verification Scope: AUTOMATED (`cargo test tests::health_report_contains_core_checks`); thay đổi Health UI cần `npx vitest run src/pages/HealthPage.test.tsx` và native visual smoke riêng
 - **Known Gaps & Tracking**:
-  - None | Status: **`STABLE`**
+  - `PLANNED` native visual smoke cho thay đổi Health UI; xem `docs/testing/LOCAL_HEALTH_UI.md`.
 
 ---
 

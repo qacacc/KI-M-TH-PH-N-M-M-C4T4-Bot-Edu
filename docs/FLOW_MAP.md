@@ -1,5 +1,9 @@
 # FLOW MAP - CAMPUS ASSISTANT LOCAL
 
+## STORAGE_HEALTH — thay đổi UI đang xác minh
+
+`CURRENT` trong nhánh thay đổi: mở màn Health không tự gọi IPC; bấm “Chạy kiểm tra” mới gọi `getHealthReport`. Thành công cập nhật báo cáo và thời điểm; lỗi hiện cảnh báo, giữ báo cáo cũ. Trang Release vẫn tự tải health report khi cần. Backend không đổi; lệnh kiểm có thể tạo thư mục/schema local. `UNKNOWN`: native visual smoke. Xem `docs/testing/LOCAL_HEALTH_UI.md`.
+
 ## CA-090.01 - Reset cấu hình và khởi động SQLite CURRENT 2026-10-19
 
 1. App mở SQLite và chạy migration theo `PRAGMA user_version`; foreign key được bật trước khi dùng schema.

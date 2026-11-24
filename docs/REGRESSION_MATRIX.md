@@ -1,5 +1,9 @@
 # REGRESSION MATRIX - CAMPUS ASSISTANT LOCAL
 
+## STORAGE_HEALTH UI — đối chiếu clone (đang xác minh)
+
+`src/App.tsx`, `src/pages/HealthPage.tsx`, `src/styles.css`: chạy `npx vitest run src/pages/HealthPage.test.tsx`, `npm run check:all`; kiểm thủ công trên desktop ở hai kích thước cửa sổ, nút chạy/xuất và lỗi IPC. Kiểm trang Release vẫn tự tải báo cáo. Postman chỉ là gate REST độc lập, không xác nhận Tauri IPC. EP/BVA và 10 test case: `docs/testing/LOCAL_HEALTH_UI.md`. Native visual `UNKNOWN`.
+
 ## GPA local — PR #26 remediation
 
 | Phạm vi | Tự động | Manual/native còn thiếu |
