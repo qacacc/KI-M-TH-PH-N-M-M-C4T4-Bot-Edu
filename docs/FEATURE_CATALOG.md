@@ -114,7 +114,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
   - Last Verified: 2026-08-02
   - Verification Scope: AUTOMATED (`npm run check:all` PASS)
 - **Known Gaps & Tracking**:
-  - None | Status: **`STABLE`** (`submitUserMessage` là entry thống nhất cho nút Gửi/Enter/chip/starter/command suggestion; `NEEDS_SUBJECT` prevents fallback to `subjects[0]`; unknown/random chat does not get forced into business intent)
+  - None | Status: **`STABLE`** (`submitUserMessage` là entry thống nhất cho các control gửi tin nhắn, gồm hai lối tắt chat; lối tắt mở trang chỉ đổi `view` và không sinh tin nhắn; `NEEDS_SUBJECT` prevents fallback to `subjects[0]`; unknown/random chat does not get forced into business intent)
   - AI chat tổng quát / BYOK model provider: **`PLANNED / DEFERRED`**
 
 ---
@@ -158,7 +158,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
   - None | Decision: **`REMOVED_AS_DEAD_CODE`**
 
 ## FEATURE: LOCAL_NAV_LAYOUT
-- **Status**: `CONFIRMED` source — lối tắt chat dùng bố cục responsive 4/2/1 cột; nhãn lối tắt và kết quả command palette xuống dòng; chưa native visual smoke.
+- **Status**: `CONFIRMED` source — lối tắt chat dùng bố cục responsive 4/2/1 cột, ẩn thẻ chào tại trạng thái starter, hai lệnh chat và sáu route có thật; nhãn lối tắt và kết quả command palette xuống dòng. `UNKNOWN` native visual sau sửa.
 - **Owner**: `src/App.tsx`, `src/styles.css`
 - **Verification Scope**: `AUTOMATED` static CSS/JSX (`src/navigationLayout.test.js`), layout regression; `UNKNOWN` native visual.
 - **Test design**: `docs/testing/LOCAL_NAV_LAYOUT.md`.

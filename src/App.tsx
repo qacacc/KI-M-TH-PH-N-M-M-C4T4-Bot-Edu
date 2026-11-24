@@ -3,6 +3,7 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
+  ChartNoAxesCombined,
   Check,
   Circle,
   ClipboardList,
@@ -1580,7 +1581,7 @@ export default function App() {
         {view === "chat" && (
           <>
             <div className="chat-panel" aria-live="polite">
-              {messages.map((message) => (
+              {messages.filter((message) => !(message.id === "welcome" && messages.length === 1 && !conversation)).map((message) => (
                 <article key={message.id} className={`message ${message.role}`}>
                   <div className="bubble">
                     <p>{message.content}</p>
@@ -1601,14 +1602,14 @@ export default function App() {
 
               {messages.length === 1 && !conversation && (
                 <div className="starter-grid">
-                  <button className="starter-featured" onClick={() => void submitText("tìm tài liệu", "starter")} disabled={isBusy}><BookOpen size={18} /><span><strong>Tìm tài liệu</strong><small>Hệ thống học tập của trường</small></span></button>
-                  <button className="starter-featured" onClick={() => setView("files")} disabled={isBusy}><FolderOpen size={18} /><span><strong>Tài liệu</strong><small>Tài liệu trường và tệp minh họa</small></span></button>
-                  <button onClick={() => void submitText("xem thông báo", "starter")} disabled={isBusy}><Bell size={18} /><span><strong>Xem thông báo</strong><small>Website trường</small></span></button>
-                  <button onClick={() => void submitText("xem lịch học", "starter")} disabled={isBusy}><CalendarDays size={18} /><span><strong>Xem lịch học</strong><small>Cache tài khoản trường</small></span></button>
-                  <button onClick={() => void submitText("xem lịch thi", "starter")} disabled={isBusy}><ClipboardList size={18} /><span><strong>Xem lịch thi</strong><small>Cache tài khoản trường</small></span></button>
-                  <button onClick={() => setView("logs")} disabled={!bootstrap || isBusy}><ListChecks size={18} /><span><strong>Kiểm tra nhật ký</strong><small>Chỉ metadata an toàn</small></span></button>
-                  <button onClick={() => setView("health")} disabled={!bootstrap || isBusy}><Check size={18} /><span><strong>Kiểm tra app</strong><small>Báo cáo local</small></span></button>
-                  <button onClick={() => void submitText("/help", "starter")} disabled={isBusy}><HelpCircle size={18} /><span><strong>Xem lệnh nhanh</strong><small>Danh sách command v1.0</small></span></button>
+                  <button className="starter-featured" onClick={() => void submitText("tìm tài liệu", "starter")} disabled={isBusy}><BookOpen size={18} /><span><strong>Tìm tài liệu</strong><small>Tìm tài liệu có sẵn</small></span></button>
+                  <button className="starter-featured" onClick={() => setView("schedule")} disabled={isBusy}><CalendarDays size={18} /><span><strong>Lịch học</strong><small>Xem lịch học đã lưu</small></span></button>
+                  <button className="starter-quiet" onClick={() => setView("files")} disabled={isBusy}><FolderOpen size={17} /><span><strong>Tài liệu</strong><small>Tài liệu trường và tệp minh họa</small></span></button>
+                  <button className="starter-quiet" onClick={() => setView("announcements")} disabled={isBusy}><Bell size={17} /><span><strong>Thông báo</strong><small>Xem thông báo có sẵn</small></span></button>
+                  <button className="starter-quiet" onClick={() => setView("exams")} disabled={isBusy}><ClipboardList size={17} /><span><strong>Lịch thi</strong><small>Xem lịch thi đã lưu</small></span></button>
+                  <button className="starter-quiet" onClick={() => setView("gpa")} disabled={isBusy}><ChartNoAxesCombined size={17} /><span><strong>GPA / CPA</strong><small>Ước tính điểm nhập tay</small></span></button>
+                  <button className="starter-quiet" onClick={() => setView("health")} disabled={!bootstrap || isBusy}><Activity size={17} /><span><strong>Kiểm tra ứng dụng</strong><small>Chẩn đoán dữ liệu local</small></span></button>
+                  <button className="starter-quiet" onClick={() => void submitText("/help", "starter")} disabled={isBusy}><HelpCircle size={17} /><span><strong>Lệnh nhanh</strong><small>Xem các lệnh có sẵn</small></span></button>
                 </div>
               )}
 

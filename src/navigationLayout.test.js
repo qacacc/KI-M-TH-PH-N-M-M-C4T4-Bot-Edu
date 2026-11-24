@@ -4,10 +4,35 @@ import { describe, expect, it } from "vitest";
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const layout = styles.slice(styles.lastIndexOf("/* Lối tắt có chiều cao"));
+const starterStart = app.indexOf('<div className="starter-grid">');
+const starter = app.slice(starterStart, app.indexOf("</div>", starterStart));
 
 describe("Bố cục lối tắt và tìm nhanh", () => {
   it("chỉ hai lối tắt đầu là ô nổi bật", () => {
     expect([...app.matchAll(/className="starter-featured"/g)]).toHaveLength(2);
+  });
+
+  it("chỉ hiển thị tám lối tắt đúng thứ tự của màn chat", () => {
+    expect([...starter.matchAll(/<button\b/g)]).toHaveLength(8);
+    expect([...starter.matchAll(/<strong>([^<]+)<\/strong>/g)].map((match) => match[1])).toEqual([
+      "Tìm tài liệu", "Lịch học", "Tài liệu", "Thông báo",
+      "Lịch thi", "GPA / CPA", "Kiểm tra ứng dụng", "Lệnh nhanh",
+    ]);
+  });
+
+  it("các lối tắt điều hướng đến trang hiện có, không giả có trang ghi chú", () => {
+    for (const route of ["schedule", "files", "announcements", "exams", "gpa", "health"]) {
+      expect(starter).toContain(`setView("${route}")`);
+    }
+    expect(starter).not.toContain("Ghi chú");
+    expect(starter).not.toContain('setView("logs")');
+    expect(starter).toContain('submitText("tìm tài liệu", "starter")');
+    expect(starter).toContain('submitText("/help", "starter")');
+  });
+
+  it("ẩn riêng tin chào khi đang hiện lối tắt, không xóa khỏi state hoặc DB", () => {
+    expect(app).toContain('message.id === "welcome" && messages.length === 1 && !conversation');
+    expect(app).toContain("setMessages([welcomeMessage])");
   });
 
   it("ở cửa sổ rộng dùng bốn cột bằng nhau", () => {
