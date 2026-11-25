@@ -8,7 +8,6 @@ import {
   Lock,
   LogOut,
   MonitorCheck,
-  Save,
   Shield,
   Trash2,
   UserCheck,
@@ -116,23 +115,27 @@ export function SchoolPage() {
   }, [profile]);
 
   function updateSchool(school: SchoolOption) {
-    setNotice("");
-    setProfile((current) => ({
-      ...current,
-      schoolId: school.id,
-      schoolName: school.name,
-    }));
-  }
-
-  function handleSaveProfile() {
     const next = {
       ...profile,
+      schoolId: school.id,
+      schoolName: school.name,
+      updatedAt: new Date().toISOString(),
+    };
+    saveSchoolProfile(next);
+    setProfile(next);
+    setNotice(`Đã lưu trường: ${school.shortName}.`);
+  }
+
+  function handleProfileModeChange(mode: "public" | "student") {
+    const next = {
+      ...profile,
+      mode,
       schoolName: selectedSchool.name,
       updatedAt: new Date().toISOString(),
     };
     saveSchoolProfile(next);
     setProfile(next);
-    setNotice("✅ Đã lưu hồ sơ sinh viên local thành công.");
+    setNotice(`Đã lưu chế độ tài khoản: ${mode === "public" ? "Tân sinh viên / Chưa có MSSV" : "Sinh viên đang học"}.`);
   }
 
   async function handleOpenSchoolPortalPrimary() {
@@ -231,15 +234,6 @@ export function SchoolPage() {
         
         <div className="school-form-grid">
           <label className="school-field">
-            Tên sinh viên hiển thị
-            <input
-              value={profile.displayName}
-              onChange={(event) => setProfile((current) => ({ ...current, displayName: event.target.value }))}
-              placeholder="Ví dụ: Nguyễn Văn A"
-            />
-          </label>
-
-          <label className="school-field">
             Trường Đại học đang học
             <select
               className="school-select"
@@ -257,29 +251,20 @@ export function SchoolPage() {
             </select>
           </label>
 
-          <label className="school-field">
-            Mã số sinh viên (MSSV nếu có)
-            <input
-              value={profile.studentCode}
-              onChange={(event) => setProfile((current) => ({ ...current, studentCode: event.target.value }))}
-              placeholder="Ví dụ: 2251120001"
-            />
-          </label>
-
           <div className="school-field">
             Chế độ tài khoản
             <div className="school-mode-selector">
               <button
                 type="button"
                 className={profile.mode === "public" ? "school-mode-btn active" : "school-mode-btn"}
-                onClick={() => setProfile((current) => ({ ...current, mode: "public" }))}
+                onClick={() => handleProfileModeChange("public")}
               >
                 Tân sinh viên / Chưa có MSSV
               </button>
               <button
                 type="button"
                 className={profile.mode === "student" ? "school-mode-btn active" : "school-mode-btn"}
-                onClick={() => setProfile((current) => ({ ...current, mode: "student" }))}
+                onClick={() => handleProfileModeChange("student")}
               >
                 Sinh viên đang học
               </button>
@@ -287,12 +272,6 @@ export function SchoolPage() {
           </div>
         </div>
 
-        <div className="school-block-actions">
-          <button className="settings-btn-secondary" onClick={handleSaveProfile}>
-            <Save size={14} />
-            Lưu hồ sơ
-          </button>
-        </div>
       </section>
 
       {/* KHỐI 2: KẾT NỐI CỔNG TRƯỜNG */}

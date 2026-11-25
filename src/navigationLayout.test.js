@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const schoolPage = readFileSync(new URL("./pages/SchoolPage.tsx", import.meta.url), "utf8");
 const layout = styles.slice(styles.lastIndexOf("/* Lối tắt có chiều cao"));
 const starterStart = app.indexOf('<div className="starter-grid">');
 const starter = app.slice(starterStart, app.indexOf("</div>", starterStart));
@@ -59,7 +60,22 @@ describe("Bố cục lối tắt và tìm nhanh", () => {
   it("mọi lối tắt chỉ còn đường phân cách như quy tắc cuối của clone", () => {
     expect(layout).toMatch(/\.starter-grid button\s*\{[\s\S]*border:\s*0 !important;[\s\S]*border-bottom:\s*1px solid var\(--border\) !important;/);
     expect(layout).toMatch(/\.starter-grid button\.starter-featured\s*\{[\s\S]*border:\s*0 !important;[\s\S]*border-bottom:\s*1px solid var\(--border\) !important;/);
-    expect(layout).toMatch(/\.starter-grid button\.starter-featured > svg\s*\{[\s\S]*color:\s*var\(--accent\);/);
+    expect(layout).toMatch(/\.starter-grid button\.starter-featured > svg\s*\{[\s\S]*color:\s*var\(--muted\);/);
+  });
+
+  it("icon lối tắt đồng màu, icon khu vực tài khoản không trùng GPA", () => {
+    expect(layout).toMatch(/\.starter-grid button > svg\s*\{[\s\S]*color:\s*var\(--muted\);/);
+    expect(app).toMatch(/view === "gpa"[^]*?<GraduationCap size=\{17\}/);
+    expect(app).toMatch(/view === "school"[^]*?<Building2 size=\{17\}/);
+  });
+
+  it("chế độ tài khoản tự lưu và không yêu cầu nhập tên/MSSV thủ công", () => {
+    expect(schoolPage).toContain('function handleProfileModeChange(mode: "public" | "student")');
+    expect(schoolPage).toMatch(/handleProfileModeChange[\s\S]*saveSchoolProfile\(next\)/);
+    expect(schoolPage).toMatch(/function updateSchool\(school: SchoolOption\)[\s\S]*saveSchoolProfile\(next\)/);
+    expect(schoolPage).not.toContain("Tên sinh viên hiển thị");
+    expect(schoolPage).not.toContain("Mã số sinh viên (MSSV nếu có)");
+    expect(schoolPage).not.toContain("Lưu hồ sơ");
   });
 
   it("biểu tượng và phần chữ trong bảng tìm nhanh không ép cột", () => {

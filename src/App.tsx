@@ -31,6 +31,7 @@ import {
   Settings,
   Pin,
   GraduationCap,
+  Building2,
   History,
   Minus,
   Square,
@@ -1503,7 +1504,7 @@ export default function App() {
             <h2>Kết nối</h2>
             <nav className="nav-groups" aria-label="Kết nối">
               <button className={view === "school" ? "active" : ""} onClick={() => setView("school")}>
-                <GraduationCap size={17} />
+                <Building2 size={17} />
                 <span className="nav-label">Trường & tài khoản</span>
                 {!sidebarExpanded && <span className="sidebar-tooltip">Trường & tài khoản</span>}
               </button>

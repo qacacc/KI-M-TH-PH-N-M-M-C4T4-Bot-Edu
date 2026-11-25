@@ -6636,7 +6636,7 @@ button:disabled {
 }
 
 .starter-grid button.starter-featured > svg {
-  color: var(--accent);
+  color: var(--muted);
 }
 
 .starter-grid span,
