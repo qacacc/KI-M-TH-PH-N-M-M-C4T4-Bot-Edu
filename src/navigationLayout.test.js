@@ -7,6 +7,10 @@ const schoolPage = readFileSync(new URL("./pages/SchoolPage.tsx", import.meta.ur
 const historyPage = readFileSync(new URL("./pages/ChatHistoryPage.tsx", import.meta.url), "utf8");
 const filesPage = readFileSync(new URL("./pages/FilesPage.tsx", import.meta.url), "utf8");
 const campusPages = readFileSync(new URL("./pages/CampusDataPages.tsx", import.meta.url), "utf8");
+const lmsCapability = JSON.parse(readFileSync(new URL("../src-tauri/capabilities/lms-portal.json", import.meta.url), "utf8"));
+const lmsBridgePermission = readFileSync(new URL("../src-tauri/permissions/lms-bridge.toml", import.meta.url), "utf8");
+const mainCapability = JSON.parse(readFileSync(new URL("../src-tauri/capabilities/default.json", import.meta.url), "utf8"));
+const appCommandsPermission = readFileSync(new URL("../src-tauri/permissions/app-commands.toml", import.meta.url), "utf8");
 const layout = styles.slice(styles.lastIndexOf("/* Lối tắt có chiều cao"));
 const starterStart = app.indexOf('<div className="starter-grid">');
 const starter = app.slice(starterStart, app.indexOf("</div>", starterStart));
@@ -95,11 +99,36 @@ describe("Bố cục lối tắt và tìm nhanh", () => {
     expect(historyPage).toContain("Bật lưu lịch sử");
   });
 
-  it("tài liệu và thông báo báo kết quả mở website, không giả vờ đã đồng bộ", () => {
-    expect(filesPage).toContain("openExternalUrl(school.lmsPortalUrl)");
-    expect(filesPage).toContain("Tài liệu LMS chưa được đồng bộ vào ứng dụng");
-    expect(campusPages).toContain("await openExternalUrl(school.publicNewsUrl)");
-    expect(campusPages).toContain("Tin chưa được đồng bộ vào ứng dụng");
+  it("tài liệu nhóm theo môn, quét từ LMS và tải bằng IPC, không mở link ngoài thay cho đồng bộ", () => {
+    expect(filesPage).toContain("listenLmsSnapshotUpdated");
+    expect(filesPage).toContain("rescanLmsCourses()");
+    expect(filesPage).toContain("openLmsWindow()");
+    expect(filesPage).toContain("downloadLmsDocument(item.id)");
+    expect(filesPage).toContain("openLmsDocument(item.id)");
+    expect(filesPage).toContain('school.id === "uth"');
+    expect(campusPages).toContain("announcement-channel-grid");
+    expect(campusPages).toContain("selectedCategory");
+    expect(campusPages).toContain("Nội dung chưa được đồng bộ vào ứng dụng.");
+    expect(campusPages).toContain("chưa tự thu thập nội dung hoặc gửi thông báo mới");
+  });
+
+  it("WebView LMS chỉ được gọi bridge nhận metadata trên origin Courses đã allowlist", () => {
+    expect(lmsCapability.windows).toEqual(["lms-login"]);
+    expect(lmsCapability.remote.urls).toEqual(["https://courses.ut.edu.vn/**"]);
+    expect(lmsCapability.permissions).toEqual(["lms-snapshot-bridge"]);
+    expect(lmsBridgePermission).toContain('commands.allow = ["receive_lms_snapshot"]');
+    expect(lmsBridgePermission).not.toContain("download_lms_document");
+    expect(lmsBridgePermission).not.toContain("open_lms_document");
+  });
+
+  it("cửa sổ chính được cấp command app cần thiết nhưng không nhận API chuyển JWT qua React", () => {
+    expect(mainCapability.windows).toEqual(["main"]);
+    expect(mainCapability.permissions).toContain("app-commands");
+    expect(appCommandsPermission).toContain('"init_app"');
+    expect(appCommandsPermission).toContain('"list_student_notes"');
+    expect(appCommandsPermission).not.toContain('"receive_uth_jwt"');
+    expect(appCommandsPermission).not.toContain('"sync_uth_after_login"');
+    expect(appCommandsPermission).not.toContain('"receive_lms_snapshot"');
   });
 
   it("biểu tượng và phần chữ trong bảng tìm nhanh không ép cột", () => {

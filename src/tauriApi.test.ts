@@ -4,11 +4,19 @@ import {
   deleteStudentNote,
   importStudentNotesBackup,
   listStudentNotes,
+  downloadLmsDocument,
+  listenLmsSnapshotUpdated,
+  listLmsCourses,
+  listLmsDocuments,
+  openLmsDocument,
+  openLmsWindow,
   openExternalUrl,
+  rescanLmsCourses,
   saveStudentNote,
 } from "./tauriApi";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.resetAllMocks();
@@ -25,6 +33,38 @@ describe("mở portal desktop", () => {
     vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
     vi.mocked(invoke).mockRejectedValue(new Error("Không mở được trình duyệt"));
     await expect(openExternalUrl("https://portal.ut.edu.vn/")).rejects.toThrow("Không mở được trình duyệt");
+  });
+});
+
+describe("LMS IPC — quét, cache, tải và mở tài liệu", () => {
+  it("gọi đúng các command desktop và truyền ID tài liệu", async () => {
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    await openLmsWindow();
+    await rescanLmsCourses();
+    await listLmsCourses();
+    await listLmsDocuments();
+    await downloadLmsDocument("lms-0123456789abcdef");
+    await openLmsDocument("lms-0123456789abcdef");
+    expect(invoke).toHaveBeenNthCalledWith(1, "open_lms_window", undefined);
+    expect(invoke).toHaveBeenNthCalledWith(2, "rescan_lms_courses", undefined);
+    expect(invoke).toHaveBeenNthCalledWith(3, "list_lms_courses", undefined);
+    expect(invoke).toHaveBeenNthCalledWith(4, "list_lms_documents", undefined);
+    expect(invoke).toHaveBeenNthCalledWith(5, "download_lms_document", { documentId: "lms-0123456789abcdef" });
+    expect(invoke).toHaveBeenNthCalledWith(6, "open_lms_document", { documentId: "lms-0123456789abcdef" });
+  });
+
+  it("đăng ký sự kiện cache và giữ lỗi IPC để UI thông báo", async () => {
+    const { listen } = await import("@tauri-apps/api/event");
+    const stop = vi.fn();
+    vi.mocked(listen).mockResolvedValue(stop);
+    const callback = vi.fn();
+    await expect(listenLmsSnapshotUpdated(callback)).resolves.toBe(stop);
+    expect(listen).toHaveBeenCalledWith("lms-snapshot-updated", callback);
+
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+    vi.mocked(invoke).mockRejectedValue(new Error("LMS bị từ chối"));
+    await expect(downloadLmsDocument("lms-0123456789abcdef")).rejects.toThrow("LMS bị từ chối");
   });
 });
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Calendar, Download, ExternalLink, RotateCcw } from "lucide-react";
+import { Bell, Calendar, Download, ExternalLink, RotateCcw } from "lucide-react";
 import { ExamTable, ScheduleTable } from "../components/DataTables";
 import { GpaCalculator } from "../components/GpaCalculator";
 import { useAcademicCache } from "../hooks/useAcademicCache";
@@ -12,7 +12,16 @@ import { openExternalUrl } from "../tauriApi";
 export function AnnouncementsPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const school = getSchoolOption(readSchoolProfile());
+  const channels = school.id === "uth" ? [
+    { title: "Cổng thông tin đào tạo UTH", category: "Đào tạo & Học vụ", description: "Thông tin học vụ, thời khóa biểu, lịch thi và đăng ký học phần.", url: "https://daotao.uth.edu.vn" },
+    { title: "Phòng Công tác sinh viên UTH", category: "Công tác sinh viên", description: "Kênh thông tin công tác sinh viên của trường.", url: "https://ctsv.uth.edu.vn" },
+    { title: "Trang tin UTH", category: "Tin tức chung", description: "Tin tức và thông tin công khai từ website trường.", url: "https://uth.edu.vn" },
+  ] : school.publicNewsUrl ? [
+    { title: `Trang tin ${school.shortName}`, category: "Tin tức chung", description: `Website công khai của ${school.name}.`, url: school.publicNewsUrl },
+  ] : [];
+  const visibleChannels = selectedCategory === "all" ? channels : channels.filter((channel) => channel.category === selectedCategory);
   async function openNews() {
     try {
       setError("");
@@ -24,10 +33,27 @@ export function AnnouncementsPage() {
       setError("Không mở được website trường. Vui lòng thử lại.");
     }
   }
-  return <div className="page-card">
-    <div className="page-card-header"><div><h2>Thông báo trường</h2><p>Chưa có nguồn thông báo trường được đồng bộ vào ứng dụng.</p></div></div>
-    <p className="empty-state">Bạn có thể xem thông báo trên website chính thức của trường đang chọn.</p>
-    <button className="settings-btn-secondary" onClick={() => void openNews()} disabled={!school.publicNewsUrl}><ExternalLink size={16} />Website {school.shortName}</button>
+  return <div className="page-card announcements-page">
+    <div className="page-card-header"><div><h2>Thông báo &amp; Kênh học vụ</h2><p>Chọn kênh chính thức để xem thông báo mới nhất từ {school.shortName}.</p></div></div>
+    <div className="filter-bar" aria-label="Lọc kênh thông báo">
+      <button className={selectedCategory === "all" ? "settings-btn-primary" : "settings-btn-secondary"} onClick={() => setSelectedCategory("all")}>Tất cả kênh</button>
+      {channels.some((channel) => channel.category === "Đào tạo & Học vụ") && <button className={selectedCategory === "Đào tạo & Học vụ" ? "settings-btn-primary" : "settings-btn-secondary"} onClick={() => setSelectedCategory("Đào tạo & Học vụ")}>Đào tạo &amp; Học vụ</button>}
+      {channels.some((channel) => channel.category === "Công tác sinh viên") && <button className={selectedCategory === "Công tác sinh viên" ? "settings-btn-primary" : "settings-btn-secondary"} onClick={() => setSelectedCategory("Công tác sinh viên")}>Công tác sinh viên</button>}
+    </div>
+    <div className="announcement-channel-grid">
+      {visibleChannels.map((channel) => <article className="announcement-channel-card" key={channel.url}>
+        <span>{channel.category}</span><h3>{channel.title}</h3><p>{channel.description}</p>
+        <button className="settings-btn-secondary" onClick={() => {
+          setError(""); setNotice("");
+          void openExternalUrl(channel.url).then(() => setNotice(`Đã mở ${channel.title}. Nội dung chưa được đồng bộ vào ứng dụng.`)).catch(() => setError(`Không mở được ${channel.title}. Vui lòng thử lại.`));
+        }}><ExternalLink size={15} />Mở kênh</button>
+      </article>)}
+    </div>
+    <section className="announcements-empty" aria-live="polite">
+      <span className="announcements-empty-icon"><Bell size={18} /></span>
+      <div className="announcements-empty-copy"><strong>Chưa có thông báo đồng bộ trong ứng dụng</strong><p>Các nút trên mở website ngoài; ứng dụng chưa tự thu thập nội dung hoặc gửi thông báo mới.</p></div>
+      <button className="settings-btn-secondary" onClick={() => void openNews()} disabled={!school.publicNewsUrl}><ExternalLink size={15} />Trang tin {school.shortName}</button>
+    </section>
     {notice && <p role="status">{notice}</p>}
     {error && <p role="alert" className="warning-box">{error}</p>}
   </div>;

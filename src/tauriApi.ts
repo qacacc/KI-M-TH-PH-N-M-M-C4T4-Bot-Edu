@@ -10,6 +10,8 @@ import type {
   ExamRecord,
   FileActionResult,
   HealthReport,
+  LmsCourseRecord,
+  LmsDocumentRecord,
   PublicSearchResponse,
   ScheduleRecord,
   StorageSummary,
@@ -36,6 +38,34 @@ export function saveSetting(key: "theme" | "accentColor", value: string): Promis
 
 export function listDocuments(subjectId: string, semester: number): Promise<DocumentRecord[]> {
   return tauriInvoke("list_documents", { subjectId, semester });
+}
+
+export function openLmsWindow(): Promise<void> {
+  return tauriInvoke("open_lms_window");
+}
+
+export function rescanLmsCourses(): Promise<void> {
+  return tauriInvoke("rescan_lms_courses");
+}
+
+export function listLmsCourses(): Promise<LmsCourseRecord[]> {
+  return tauriInvoke("list_lms_courses");
+}
+
+export function listLmsDocuments(): Promise<LmsDocumentRecord[]> {
+  return tauriInvoke("list_lms_documents");
+}
+
+export function downloadLmsDocument(documentId: string): Promise<void> {
+  return tauriInvoke("download_lms_document", { documentId });
+}
+
+export function openLmsDocument(documentId: string): Promise<void> {
+  return tauriInvoke("open_lms_document", { documentId });
+}
+
+export function listenLmsSnapshotUpdated(callback: () => void): Promise<() => void> {
+  return listen("lms-snapshot-updated", callback);
 }
 
 export function listAnnouncements(): Promise<AnnouncementRecord[]> {

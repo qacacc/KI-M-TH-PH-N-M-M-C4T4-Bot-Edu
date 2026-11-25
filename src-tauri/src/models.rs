@@ -25,6 +25,28 @@ pub(crate) struct DocumentRecord {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub(crate) struct LmsCourseRecord {
+    pub(crate) id: String,
+    pub(crate) name: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct LmsDocumentRecord {
+    pub(crate) id: String,
+    pub(crate) course_id: String,
+    pub(crate) course_name: String,
+    pub(crate) name: String,
+    pub(crate) source_path: String,
+    pub(crate) local_path: Option<String>,
+    pub(crate) size_bytes: i64,
+    pub(crate) status: String,
+    pub(crate) updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct AnnouncementRecord {
     pub(crate) id: String,
     pub(crate) title: String,

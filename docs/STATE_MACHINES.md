@@ -10,6 +10,8 @@ CA-083 CURRENT (2026-10-09): contract_unverified là error riêng cho UTH; khôn
 
 GPA local CURRENT (PR #26 remediation): v2 hợp lệ → bảng ước tính; v2 hỏng → cảnh báo, không ghi đè tự động; v1 có dữ liệu → chờ confirm, hủy giữ nguyên, ghi thất bại giữ nguyên; reset dữ liệu hỏng chỉ đổi UI sau khi ghi thành công. Portal vẫn ở trạng thái chưa kết nối, không có transition sang GPA chính thức.
 
+LMS UTH CURRENT: chưa có cache → WebView login/quét → cache SQLite (môn/tài liệu available) → người dùng yêu cầu tải (`downloading`) → hoàn tất trong managed Downloads (`downloaded`) hoặc lỗi (`error`); lần quét mới cập nhật metadata nhưng giữ nguyên trạng thái/đường dẫn file đã tải. Mở chỉ khả dụng ở `downloaded`. Live LMS Windows chưa xác minh.
+
 CA-090.01 CURRENT (2026-10-19): migration SQLite giữ dữ liệu cũ; khởi động không có transition xóa lịch sử chat. Reset cấu hình sau confirm chỉ chuyển các key cấu hình về trạng thái mặc định; GPA/chat/profile không bị chuyển sang trạng thái xóa. Manual native/UI verification chưa chạy.
 
 `CONFIRMED` (source): khi ở chat starter, `welcomeMessage` vẫn nằm trong state nhưng không render thành bubble; hai nút lệnh đi qua `submitText`, sáu nút trang chỉ chuyển `view` sang schedule/files/announcements/exams/gpa/health. Điều hướng không đổi trạng thái conversation hay dữ liệu chat. `UNKNOWN`: kiểm tra native visual sau thay đổi.

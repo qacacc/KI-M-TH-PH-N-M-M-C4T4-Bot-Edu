@@ -7,6 +7,12 @@
 - **UNKNOWN:** native Windows smoke; Postman không có endpoint HTTP ghi chú.
 - **Test:** `docs/testing/CA-106-student-notes-backend.md`.
 
+## FEATURE: LMS_COURSE_MATERIALS
+- **CURRENT**: `FilesPage` can open a dedicated UTH LMS WebView, scan supported Moodle course/resource metadata, persist courses/documents to SQLite, group/search by course, download selected files to managed Downloads, and reopen downloaded files.
+- **Security**: the remote WebView capability is restricted to `courses.ut.edu.vn` and only the `receive_lms_snapshot` command. Rust validates window/origin, payload bounds, numeric IDs, Moodle plugin paths, names, and managed-root download paths.
+- **Limits**: only UTH LMS is implemented. Other schools open their configured site externally; no LMS HTTP API or Postman collection is used. Live authentication, website DOM variants, and Windows download/reopen remain **`UNKNOWN`** until desktop smoke with an authorized account.
+- **Tests**: `docs/testing/clone-lms-parity.md`; `cargo test --manifest-path src-tauri/Cargo.toml connectors::lms::tests`; `npx vitest run src/tauriApi.test.ts`.
+
 ## FEATURE: LOCAL_REST_API
 - **Truth status**: `CONFIRMED` for local source/tests only; UTH contract is `UNKNOWN`; manual desktop/Postman HTTP smoke is `UNKNOWN`.
 - **Status**: `CURRENT / LOOPBACK`

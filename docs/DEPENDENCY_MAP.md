@@ -46,7 +46,7 @@ CampusDataPages.tsx / App.tsx (Schedule, Exams)
    └──> useAcademicCache.ts -> schoolProfile / academicEvents (reload, cleanup)
 
 GpaCalculator.tsx -> gpaData.ts -> LocalStorage manual_v2 (hàng chưa chấm để trống; parser chỉ nhận grade là own key trong allowlist; F/0 thật vẫn tính)
-FilesPage.tsx -> tài liệu trường chưa đồng bộ / tab mẫu opt-in / file service
+`FilesPage.tsx` -> LMS UTH commands trong `tauriApi.ts` -> `connectors/lms.rs` -> SQLite `lms_courses`/`lms_documents` -> sự kiện `lms-snapshot-updated` -> nhóm học liệu theo môn. WebView `lms-login` chỉ được cấp command `receive_lms_snapshot`; tải file bị giới hạn `courses.ut.edu.vn` và managed Downloads. Các LMS trường khác hiện chỉ mở website ngoài.
 
 
 AppearancePage.tsx (Theme Presets & Custom Styling)
