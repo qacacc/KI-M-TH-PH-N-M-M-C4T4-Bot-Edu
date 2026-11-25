@@ -235,3 +235,4 @@ pub(crate) struct ChatMessageRecord {
     pub(crate) content: String,
     pub(crate) created_at: String,
 }
+

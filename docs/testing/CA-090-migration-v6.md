@@ -1,5 +1,7 @@
 # CA-090 — Kiểm thử migration SQLite v6
 
+> **Truth check PR #32 (2026-11-24):** bản đầu của nhánh đã thêm lại phép suy `class_date` từ `fetched_at`; bản sửa hiện tại gỡ phép suy đó. Test migration mong `class_date = ''` khi chưa có ngày thật và giữ ngày đã có. Không coi `fetched_at` là bằng chứng Portal.
+
 ## Phạm vi và phân loại
 
 - `CONFIRMED`: `open_db` chạy migration theo `PRAGMA user_version`; v6 thêm `student_notes`, v4 thêm `class_date` và `connector_schedule_weeks` (`src-tauri/src/db.rs`).

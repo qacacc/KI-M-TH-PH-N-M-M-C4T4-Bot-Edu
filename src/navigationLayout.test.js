@@ -16,15 +16,15 @@ describe("Bố cục lối tắt và tìm nhanh", () => {
     expect([...starter.matchAll(/<button\b/g)]).toHaveLength(8);
     expect([...starter.matchAll(/<strong>([^<]+)<\/strong>/g)].map((match) => match[1])).toEqual([
       "Tìm tài liệu", "Lịch học", "Tài liệu", "Thông báo",
-      "Lịch thi", "GPA / CPA", "Kiểm tra ứng dụng", "Lệnh nhanh",
+      "Ghi chú", "GPA / CPA", "Kiểm tra ứng dụng", "Lệnh nhanh",
     ]);
   });
 
-  it("các lối tắt điều hướng đến trang hiện có, không giả có trang ghi chú", () => {
-    for (const route of ["schedule", "files", "announcements", "exams", "gpa", "health"]) {
+  it("các lối tắt điều hướng đến trang hiện có", () => {
+    for (const route of ["schedule", "files", "announcements", "notes", "gpa", "health"]) {
       expect(starter).toContain(`setView("${route}")`);
     }
-    expect(starter).not.toContain("Ghi chú");
+    expect(app).toContain('<NotesPage />');
     expect(starter).not.toContain('setView("logs")');
     expect(starter).toContain('submitText("tìm tài liệu", "starter")');
     expect(starter).toContain('submitText("/help", "starter")');

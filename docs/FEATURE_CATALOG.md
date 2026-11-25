@@ -1,5 +1,12 @@
 # FEATURE CATALOG - CAMPUS ASSISTANT LOCAL
 
+## FEATURE: STUDENT_NOTES_BACKEND (PR #32)
+
+- **CURRENT source:** SQLite v6 và Tauri commands cho CRUD/lọc/import ghi chú local (`src-tauri/src/db.rs`, `src-tauri/src/lib.rs`).
+- **CURRENT:** giao diện SQLite Ghi chú có CRUD, tìm/lọc theo môn, xác nhận xóa và import/export JSON; điều hướng thay mục Lịch thi.
+- **UNKNOWN:** native Windows smoke; Postman không có endpoint HTTP ghi chú.
+- **Test:** `docs/testing/CA-106-student-notes-backend.md`.
+
 ## FEATURE: LOCAL_REST_API
 - **Truth status**: `CONFIRMED` for local source/tests only; UTH contract is `UNKNOWN`; manual desktop/Postman HTTP smoke is `UNKNOWN`.
 - **Status**: `CURRENT / LOOPBACK`

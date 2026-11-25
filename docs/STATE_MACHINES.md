@@ -1,5 +1,7 @@
 # STATE MACHINES - CAMPUS ASSISTANT LOCAL
 
+Ghi chú backend CURRENT (PR #32): tạo/cập nhật → bản ghi SQLite, xóa ID có/không có → true/false, import hợp lệ → transaction commit, validation/error → không ghi. UI confirm và restore end-to-end còn `PLANNED`; không coi có Tauri command là UI đã xong.
+
 **CONFIRMED (source/tests), CA-098.01:** Local REST API has startup states `API_DISABLED` when `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` is absent/invalid (desktop continues; no port bind), and `API_READY` when a valid 32–256 ASCII token is configured (loopback accepts matching Bearer requests). Startup logging is best-effort; write error does not panic. Request is `UNAUTHORIZED` (401) before route processing or proceeds to route-specific validation/data status. This is separate from UTH login/sync/cache; UTH connector remains `CONTRACT_UNVERIFIED`. **UNKNOWN:** manual desktop/Postman HTTP smoke.
 
 CA-080 setup (2026-10-10): mặc định probe bị khóa; consent/live/request-reviewed + Vault cho phép gửi thủ công trên Postman Desktop. Chỉ là trạng thái công cụ kiểm thử, không transition auth/sync/cache của Campus Assistant. Transport PASS vẫn giữ contract UNKNOWN cho đến khi có evidence/schema/fixture thật. Chưa có request live trong đợt setup.

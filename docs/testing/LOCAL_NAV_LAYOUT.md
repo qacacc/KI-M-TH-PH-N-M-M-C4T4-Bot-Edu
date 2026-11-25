@@ -1,6 +1,6 @@
 # Đối chiếu clone: lối tắt và bảng tìm nhanh
 
-**Trạng thái:** Đang xác minh. Đây là task giao diện/điều hướng độc lập; không thay đổi lịch, GPA, Portal/Courses, SQLite, REST hoặc dữ liệu của nhóm.
+**Trạng thái:** Lối tắt chat đối chiếu clone; mục Lịch thi được thay bằng trang Ghi chú SQLite CA-106.
 
 ## Phân tích tác động
 
@@ -11,7 +11,7 @@
 5. Dữ liệu đọc/ghi: không có dữ liệu mới và không ghi storage/DB.
 6. Phụ thuộc: `App.tsx` gắn class và điều hướng vào các view đã có, `styles.css` render; không đổi `engine.ts` hay `tauriApi.ts`.
 7. Bất biến: `UI-001` không gợi ý capability chưa có; `DOC-001` chỉ báo mức kiểm chứng thực tế.
-8. Hồi quy cần canh: nút không vượt container, focus/hover còn dùng được, palette không ép chữ dọc; route Lịch thi không bị gắn nhãn Ghi chú, GPA không claim điểm Portal thật.
+8. Hồi quy cần canh: nút không vượt container, focus/hover còn dùng được, palette không ép chữ dọc; Ghi chú phải mở trang SQLite, GPA không claim điểm Portal thật.
 9. File thay đổi: `src/App.tsx`, `src/styles.css`, `src/navigationLayout.test.js`, tài liệu này và `docs/REGRESSION_MATRIX.md`/`docs/FEATURE_CATALOG.md`/`docs/FLOW_MAP.md`/`docs/STATE_MACHINES.md`.
 10. Kiểm chứng: `npx vitest run src/navigationLayout.test.js`, `npm run test:layout`, `npm run build`, `npm run check:postman` (gate độc lập), `cargo check`, `cargo test`, `npm audit`.
 11. Evidence trước: `rg -n 'text-overflow: ellipsis|white-space: nowrap' src/styles.css` thấy cặp quy tắc trong `.starter-grid`; sau: test static xác nhận rule cuối `clip`/`normal` và 4/2/1 cột.
@@ -32,7 +32,7 @@ Không dùng dãy `tinChi/gpa/monNo/hocKy` của bài BVA mẫu vì màn này kh
 | ID | Điều kiện | Kỳ vọng | Mức kiểm tra |
 | --- | --- | --- | --- |
 | N01 | 2 lối tắt đầu | Có class nổi bật | Vitest static |
-| N02 | 8 lối tắt | Đúng thứ tự 4×2, hai lệnh chat và sáu route có thật | Vitest static; visual pending |
+| N02 | 8 lối tắt | Đúng thứ tự 4×2, hai lệnh chat và sáu route có thật, gồm Ghi chú SQLite | Vitest static; visual pending |
 | N03 | Viewport 901 px | 4 cột | Vitest static; visual pending |
 | N04 | Viewport 900 px | 2 cột | Vitest static; visual pending |
 | N05 | Viewport 601 px | 2 cột | Vitest static; visual pending |
@@ -42,7 +42,7 @@ Không dùng dãy `tinChi/gpa/monNo/hocKy` của bài BVA mẫu vì màn này kh
 | N09 | Ô thường/nổi bật | Không có box; hai icon đầu có màu nhấn | Vitest static; visual pending |
 | N10 | Kết quả Ctrl+K dài | Icon cố định, phần chữ co và xuống dòng | Vitest static; visual pending |
 | N11 | Chưa có hội thoại | Thẻ chào không chiếm dòng phía trên lưới; vẫn giữ trong state | Vitest static; visual pending |
-| N12 | Lối tắt lịch thi/GPA/tài liệu | Không gắn nhãn Ghi chú, điểm Portal hoặc Course đã sync khi backend chưa có | Vitest static; visual pending |
+| N12 | Lối tắt Ghi chú/GPA/tài liệu | Ghi chú mở SQLite; GPA/tài liệu không nhận nhầm trạng thái sync | Vitest static; visual pending |
 
 `src/navigationLayout.test.js` kiểm các quy tắc nguồn, không chứng minh pixel thực tế; native visual smoke còn `UNKNOWN`. Postman Runner **không áp dụng** vì task chỉ đổi CSS/JSX và không gọi HTTP. `npm run check:postman` là kiểm tra hồi quy collection REST độc lập, không được ghi là chứng cứ cho bố cục.
 

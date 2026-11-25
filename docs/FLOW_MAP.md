@@ -1,5 +1,9 @@
 # FLOW MAP - CAMPUS ASSISTANT LOCAL
 
+## CA-106 ghi chú CURRENT
+
+Trang Ghi chú → Tauri IPC → `open_db` → SQLite `student_notes` v6. Người dùng tạo/lưu/xóa có xác nhận, tìm/lọc, xuất JSON hoặc nhập qua transaction. Lỗi được hiển thị, không biến thành danh sách rỗng. Không có HTTP route Postman cho ghi chú.
+
 ## CA-090.01 - Reset cấu hình và khởi động SQLite CURRENT 2026-10-19
 
 1. App mở SQLite và chạy migration theo `PRAGMA user_version`; foreign key được bật trước khi dùng schema.

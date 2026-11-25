@@ -58,6 +58,7 @@ import {
 import { useAppearanceDraft } from "./hooks/useAppearanceDraft";
 import { useLayoutState } from "./hooks/useLayoutState";
 import { AppearancePage } from "./pages/AppearancePage";
+import { NotesPage } from "./pages/NotesPage";
 import { AnnouncementsPage, ExamsPage, SchedulePage, GpaPage } from "./pages/CampusDataPages";
 import { FilesPage } from "./pages/FilesPage";
 import { HealthPage } from "./pages/HealthPage";
@@ -115,6 +116,7 @@ type View =
   | "chat"
   | "announcements"
   | "schedule"
+  | "notes"
   | "exams"
   | "files"
   | "storage"
@@ -209,6 +211,7 @@ export default function App() {
       { id: "chat", title: "Trò chuyện với trợ lý AI", detail: "Nhập câu hỏi, tra cứu môn học, tài liệu local", icon: Sparkles, action: () => { setView("chat"); setCommandPaletteOpen(false); setTimeout(() => inputRef.current?.focus(), 50); } },
       { id: "announcements", title: "Tra cứu Thông báo nhà trường", detail: "Xem thông báo từ phòng đào tạo, khoa", icon: Bell, action: () => { setView("announcements"); setCommandPaletteOpen(false); } },
       { id: "schedule", title: "Lịch học & Thời khóa biểu", detail: "Xem lịch học theo tuần và phòng học", icon: CalendarDays, action: () => { setView("schedule"); setCommandPaletteOpen(false); } },
+      { id: "notes", title: "Ghi chú học tập", detail: "Tạo và lưu ghi chú trên thiết bị", icon: ClipboardList, action: () => { setView("notes"); setCommandPaletteOpen(false); } },
       { id: "exams", title: "Lịch thi & Địa điểm thi", detail: "Tra cứu ngày thi, môn thi và phòng thi", icon: ClipboardList, action: () => { setView("exams"); setCommandPaletteOpen(false); } },
       { id: "files", title: "File mẫu & Biểu mẫu", detail: "Duyệt danh sách file PDF, DOCX local", icon: FolderOpen, action: () => { setView("files"); setCommandPaletteOpen(false); } },
       { id: "school", title: "Trường & tài khoản", detail: "Chọn trường, hồ sơ sinh viên local, cổng xác thực", icon: GraduationCap, action: () => { setView("school"); setCommandPaletteOpen(false); } },
@@ -1296,6 +1299,8 @@ export default function App() {
         return "Thông báo";
       case "schedule":
         return "Lịch học";
+      case "notes":
+        return "Ghi chú học tập";
       case "exams":
         return "Lịch thi";
       case "files":
@@ -1476,10 +1481,10 @@ export default function App() {
                 <span className="nav-label">Lịch học</span>
                 {!sidebarExpanded && <span className="sidebar-tooltip">Lịch học</span>}
               </button>
-              <button className={view === "exams" ? "active" : ""} onClick={() => setView("exams")}>
+              <button className={view === "notes" ? "active" : ""} onClick={() => setView("notes")}>
                 <ClipboardList size={17} />
-                <span className="nav-label">Lịch thi</span>
-                {!sidebarExpanded && <span className="sidebar-tooltip">Lịch thi</span>}
+                <span className="nav-label">Ghi chú</span>
+                {!sidebarExpanded && <span className="sidebar-tooltip">Ghi chú học tập</span>}
               </button>
               <button className={view === "files" ? "active" : ""} onClick={() => setView("files")}>
                 <FolderOpen size={17} />
@@ -1606,7 +1611,7 @@ export default function App() {
                   <button className="starter-featured" onClick={() => setView("schedule")} disabled={isBusy}><CalendarDays size={18} /><span><strong>Lịch học</strong><small>Xem lịch học đã lưu</small></span></button>
                   <button className="starter-quiet" onClick={() => setView("files")} disabled={isBusy}><FolderOpen size={17} /><span><strong>Tài liệu</strong><small>Tài liệu trường và tệp minh họa</small></span></button>
                   <button className="starter-quiet" onClick={() => setView("announcements")} disabled={isBusy}><Bell size={17} /><span><strong>Thông báo</strong><small>Xem thông báo có sẵn</small></span></button>
-                  <button className="starter-quiet" onClick={() => setView("exams")} disabled={isBusy}><ClipboardList size={17} /><span><strong>Lịch thi</strong><small>Xem lịch thi đã lưu</small></span></button>
+                  <button className="starter-quiet" onClick={() => setView("notes")} disabled={isBusy}><ClipboardList size={17} /><span><strong>Ghi chú</strong><small>Ghi chú học tập trên máy</small></span></button>
                   <button className="starter-quiet" onClick={() => setView("gpa")} disabled={isBusy}><ChartNoAxesCombined size={17} /><span><strong>GPA / CPA</strong><small>Ước tính điểm nhập tay</small></span></button>
                   <button className="starter-quiet" onClick={() => setView("health")} disabled={!bootstrap || isBusy}><Activity size={17} /><span><strong>Kiểm tra ứng dụng</strong><small>Chẩn đoán dữ liệu local</small></span></button>
                   <button className="starter-quiet" onClick={() => void submitText("/help", "starter")} disabled={isBusy}><HelpCircle size={17} /><span><strong>Lệnh nhanh</strong><small>Xem các lệnh có sẵn</small></span></button>
@@ -1718,6 +1723,7 @@ export default function App() {
         {view === "files" && <FilesPage bootstrap={bootstrap} />}
         {view === "announcements" && <AnnouncementsPage />}
         {view === "schedule" && <SchedulePage />}
+        {view === "notes" && <NotesPage />}
         {view === "exams" && <ExamsPage />}
         {view === "gpa" && <GpaPage />}
         {view === "storage" && (

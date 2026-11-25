@@ -6673,3 +6673,17 @@ button:disabled {
 @media (max-width: 600px) {
   .starter-grid { grid-template-columns: minmax(0, 1fr); }
 }
+.study-notes-layout { display: grid; grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.8fr); gap: 14px; min-height: 360px; }
+.study-notes-list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.study-note-item { display: grid; gap: 5px; width: 100%; padding: 12px; text-align: left; border: 1px solid var(--border-color, #d9dce3); border-radius: 10px; background: var(--surface, #fff); color: inherit; cursor: pointer; }
+.study-note-item.selected { border-color: var(--accent-color, #5b8def); box-shadow: 0 0 0 1px var(--accent-color, #5b8def); }
+.study-note-item span, .study-note-item small, .study-note-editor-actions > span { color: var(--muted, #6b7280); }
+.study-note-item small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.study-note-editor { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 14px; border: 1px solid var(--border-color, #d9dce3); border-radius: 10px; }
+.study-note-editor-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.study-note-editor input, .study-note-editor textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color, #d9dce3); border-radius: 8px; background: var(--surface, #fff); color: inherit; font: inherit; }
+.study-note-editor textarea { resize: vertical; }
+.study-note-subject-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 8px; }
+.study-note-placeholder { align-self: center; }
+.note-save-status { padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--accent-color, #5b8def) 12%, transparent); }
+@media (max-width: 720px) { .study-notes-layout { grid-template-columns: 1fr; } .study-note-subject-fields { grid-template-columns: 1fr; } }

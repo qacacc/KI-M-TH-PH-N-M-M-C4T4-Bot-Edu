@@ -4,6 +4,14 @@
 
 `src/App.tsx` + `src/styles.css`: `npx vitest run src/navigationLayout.test.js`, `npm run test:layout`, `npm run build`; kiểm thủ công desktop tại 599/600/601/900/901 px, nội dung dài, hover/focus, welcome ẩn và click từng route. EP/BVA/12 test case trong `docs/testing/LOCAL_NAV_LAYOUT.md`. Postman không áp dụng cho JSX/CSS local; native visual sau sửa vẫn `UNKNOWN`.
 
+## CA-106 backend ghi chú — PR #32
+
+| Module | Tự động | Còn thiếu |
+| --- | --- | --- |
+| `src-tauri/src/db.rs`, `lib.rs`, `models.rs` | `cargo test --manifest-path src-tauri/Cargo.toml db::tests`; `npm run check:all` | UI confirm, backup/restore native E2E, SQLite upgrade smoke |
+
+EP/BVA và 13 test case ở `docs/testing/CA-106-student-notes-backend.md`; Postman N/A vì không có HTTP route ghi chú.
+
 ## GPA local — PR #26 remediation
 
 | Phạm vi | Tự động | Manual/native còn thiếu |
