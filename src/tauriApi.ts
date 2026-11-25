@@ -10,6 +10,8 @@ import type {
   ExamRecord,
   FileActionResult,
   HealthReport,
+  LmsCourseRecord,
+  LmsDocumentRecord,
   PublicSearchResponse,
   ScheduleRecord,
   StorageSummary,
@@ -36,6 +38,34 @@ export function saveSetting(key: "theme" | "accentColor", value: string): Promis
 
 export function listDocuments(subjectId: string, semester: number): Promise<DocumentRecord[]> {
   return tauriInvoke("list_documents", { subjectId, semester });
+}
+
+export function openLmsWindow(): Promise<void> {
+  return tauriInvoke("open_lms_window");
+}
+
+export function rescanLmsCourses(): Promise<void> {
+  return tauriInvoke("rescan_lms_courses");
+}
+
+export function listLmsCourses(): Promise<LmsCourseRecord[]> {
+  return tauriInvoke("list_lms_courses");
+}
+
+export function listLmsDocuments(): Promise<LmsDocumentRecord[]> {
+  return tauriInvoke("list_lms_documents");
+}
+
+export function downloadLmsDocument(documentId: string): Promise<void> {
+  return tauriInvoke("download_lms_document", { documentId });
+}
+
+export function openLmsDocument(documentId: string): Promise<void> {
+  return tauriInvoke("open_lms_document", { documentId });
+}
+
+export function listenLmsSnapshotUpdated(callback: () => void): Promise<() => void> {
+  return listen("lms-snapshot-updated", callback);
 }
 
 export function listAnnouncements(): Promise<AnnouncementRecord[]> {
@@ -302,4 +332,44 @@ export function restoreTrashItem(trashId: string): Promise<string> {
 
 export function emptyTrashBin(): Promise<number> {
   return tauriInvoke("empty_trash_bin");
+}
+
+export function listStudentNotes(
+  searchQuery?: string,
+  subjectFilter?: string,
+): Promise<import("./types").StudentNoteRecord[]> {
+  return tauriInvoke("list_student_notes", {
+    search_query: searchQuery ?? null,
+    subject_filter: subjectFilter ?? null,
+    searchQuery: searchQuery ?? null,
+    subjectFilter: subjectFilter ?? null,
+  });
+}
+
+export function saveStudentNote(payload: {
+  id?: string | null;
+  title: string;
+  content: string;
+  subjectId?: string | null;
+  subjectName?: string | null;
+}): Promise<import("./types").StudentNoteRecord> {
+  return tauriInvoke("save_student_note", {
+    id: payload.id ?? null,
+    title: payload.title,
+    content: payload.content,
+    subject_id: payload.subjectId ?? null,
+    subject_name: payload.subjectName ?? null,
+    subjectId: payload.subjectId ?? null,
+    subjectName: payload.subjectName ?? null,
+  });
+}
+
+export function deleteStudentNote(id: string): Promise<boolean> {
+  return tauriInvoke("delete_student_note", { id });
+}
+
+export function importStudentNotesBackup(
+  notes: import("./types").StudentNoteRecord[],
+): Promise<number> {
+  return tauriInvoke("import_student_notes_backup", { notes });
 }

@@ -45,6 +45,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState<string>("");
   const [deleteModal, setDeleteModal] = useState<DeleteModalState>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     loadState();
@@ -62,6 +63,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
 
   const loadState = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const enabledVal = await invoke<string>("get_setting_cmd", {
         key: "chatHistoryEnabled",
@@ -76,6 +78,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
       }
     } catch (err) {
       console.error("Lỗi đọc lịch sử trò chuyện:", err);
+      setLoadError("Không tải được lịch sử local. Hãy thử tải lại.");
     } finally {
       setLoading(false);
     }
@@ -83,12 +86,14 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
 
   const handleEnableHistory = async () => {
     try {
+      setLoadError(null);
       await invoke("save_setting_cmd", { key: "chatHistoryEnabled", value: "true" });
       setHistoryEnabled(true);
       const list = await invoke<ChatSession[]>("list_chat_sessions");
       setSessions(list || []);
     } catch (err) {
       console.error("Lỗi bật lưu lịch sử:", err);
+      setLoadError("Không bật hoặc tải được lịch sử local. Hãy thử lại.");
     }
   };
 
@@ -98,6 +103,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
       onSelectSession(newSess);
     } catch (err) {
       console.error("Lỗi tạo phiên mới:", err);
+      setLoadError("Không tạo được cuộc trò chuyện mới. Hãy thử lại.");
     }
   };
 
@@ -111,6 +117,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
       loadState();
     } catch (err) {
       console.error("Lỗi đổi tên phiên:", err);
+      setLoadError("Không đổi tên được phiên trò chuyện. Hãy thử lại.");
     }
   };
 
@@ -121,6 +128,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
       loadState();
     } catch (err) {
       console.error("Lỗi ghim phiên:", err);
+      setLoadError("Không cập nhật được trạng thái ghim. Hãy thử lại.");
     }
   };
 
@@ -131,6 +139,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
       loadState();
     } catch (err) {
       console.error("Lỗi lưu trữ phiên:", err);
+      setLoadError("Không lưu trữ được phiên trò chuyện. Hãy thử lại.");
     }
   };
 
@@ -160,6 +169,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
       }
     } catch (err) {
       console.error("Lỗi xóa phiên:", err);
+      setLoadError("Không xóa được phiên trò chuyện. Dữ liệu vẫn được giữ nguyên.");
     } finally {
       setDeleteModal(null);
       loadState();
@@ -215,6 +225,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
   if (!historyEnabled) {
     return (
       <div className="chat-history-container">
+        {loadError && <div className="warning-box" role="alert">{loadError}<button type="button" onClick={() => void loadState()}>Thử lại</button></div>}
         <div className="history-empty-state">
           <div className="empty-icon-wrapper">
             <History size={36} />
@@ -341,6 +352,7 @@ export const ChatHistoryPage: React.FC<Props> = ({ onSelectSession, onNewChat, o
       </header>
 
       <div className="history-groups-list">
+        {loadError && <div className="warning-box" role="alert">{loadError}<button type="button" onClick={() => void loadState()}>Thử lại</button></div>}
         {pinnedGroup.length > 0 && (
           <section className="history-group-section">
             <h3>Đã ghim</h3>

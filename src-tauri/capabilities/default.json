@@ -4,6 +4,7 @@
   "description": "Quyen mac dinh cho cua so chinh.",
   "windows": ["main"],
   "permissions": [
+    "app-commands",
     "core:default",
     "core:window:allow-close",
     "core:window:allow-minimize",

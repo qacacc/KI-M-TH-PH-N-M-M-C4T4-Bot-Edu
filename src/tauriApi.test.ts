@@ -1,8 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { openExternalUrl } from "./tauriApi";
+import {
+  deleteStudentNote,
+  importStudentNotesBackup,
+  listStudentNotes,
+  downloadLmsDocument,
+  listenLmsSnapshotUpdated,
+  listLmsCourses,
+  listLmsDocuments,
+  openLmsDocument,
+  openLmsWindow,
+  openExternalUrl,
+  rescanLmsCourses,
+  saveStudentNote,
+} from "./tauriApi";
+
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
-afterEach(() => { vi.unstubAllGlobals(); vi.resetAllMocks(); });
+vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.resetAllMocks();
+});
+
 describe("mở portal desktop", () => {
   it("đợi command Rust thành công mới resolve", async () => {
     vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
@@ -14,5 +33,95 @@ describe("mở portal desktop", () => {
     vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
     vi.mocked(invoke).mockRejectedValue(new Error("Không mở được trình duyệt"));
     await expect(openExternalUrl("https://portal.ut.edu.vn/")).rejects.toThrow("Không mở được trình duyệt");
+  });
+});
+
+describe("LMS IPC — quét, cache, tải và mở tài liệu", () => {
+  it("gọi đúng các command desktop và truyền ID tài liệu", async () => {
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    await openLmsWindow();
+    await rescanLmsCourses();
+    await listLmsCourses();
+    await listLmsDocuments();
+    await downloadLmsDocument("lms-0123456789abcdef");
+    await openLmsDocument("lms-0123456789abcdef");
+    expect(invoke).toHaveBeenNthCalledWith(1, "open_lms_window", undefined);
+    expect(invoke).toHaveBeenNthCalledWith(2, "rescan_lms_courses", undefined);
+    expect(invoke).toHaveBeenNthCalledWith(3, "list_lms_courses", undefined);
+    expect(invoke).toHaveBeenNthCalledWith(4, "list_lms_documents", undefined);
+    expect(invoke).toHaveBeenNthCalledWith(5, "download_lms_document", { documentId: "lms-0123456789abcdef" });
+    expect(invoke).toHaveBeenNthCalledWith(6, "open_lms_document", { documentId: "lms-0123456789abcdef" });
+  });
+
+  it("đăng ký sự kiện cache và giữ lỗi IPC để UI thông báo", async () => {
+    const { listen } = await import("@tauri-apps/api/event");
+    const stop = vi.fn();
+    vi.mocked(listen).mockResolvedValue(stop);
+    const callback = vi.fn();
+    await expect(listenLmsSnapshotUpdated(callback)).resolves.toBe(stop);
+    expect(listen).toHaveBeenCalledWith("lms-snapshot-updated", callback);
+
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+    vi.mocked(invoke).mockRejectedValue(new Error("LMS bị từ chối"));
+    await expect(downloadLmsDocument("lms-0123456789abcdef")).rejects.toThrow("LMS bị từ chối");
+  });
+});
+
+describe("CA-106 & CA-090: Tauri IPC Sổ ghi chú học tập local (SQLite)", () => {
+  it("gọi đúng command list_student_notes và save_student_note với tham số môn học", async () => {
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+    const mockNote = {
+      id: "note_1",
+      title: "Ôn tập Kiểm thử BVA",
+      content: "Nội dung ghi chú SQLite",
+      subjectId: "ST101",
+      subjectName: "Kiểm thử phần mềm",
+      createdAt: "2026-11-24T00:00:00Z",
+      updatedAt: "2026-11-24T00:00:00Z",
+    };
+    vi.mocked(invoke).mockResolvedValueOnce(mockNote).mockResolvedValueOnce([mockNote]);
+
+    const saved = await saveStudentNote({
+      id: "note_1",
+      title: "Ôn tập Kiểm thử BVA",
+      content: "Nội dung ghi chú SQLite",
+      subjectId: "ST101",
+      subjectName: "Kiểm thử phần mềm",
+    });
+    expect(saved.id).toBe("note_1");
+    expect(invoke).toHaveBeenCalledWith("save_student_note", {
+      id: "note_1",
+      title: "Ôn tập Kiểm thử BVA",
+      content: "Nội dung ghi chú SQLite",
+      subject_id: "ST101",
+      subject_name: "Kiểm thử phần mềm",
+      subjectId: "ST101",
+      subjectName: "Kiểm thử phần mềm",
+    });
+
+    const list = await listStudentNotes("BVA", "ST101");
+    expect(list).toHaveLength(1);
+    expect(invoke).toHaveBeenCalledWith("list_student_notes", {
+      search_query: "BVA",
+      subject_filter: "ST101",
+      searchQuery: "BVA",
+      subjectFilter: "ST101",
+    });
+  });
+
+  it("truyền nguyên vẹn lỗi DB từ Rust lên UI và hỗ trợ xóa / khôi phục backup ghi chú", async () => {
+    vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
+    vi.mocked(invoke)
+      .mockRejectedValueOnce("Tiêu đề không được để trống.")
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(2);
+
+    await expect(
+      saveStudentNote({ title: "   ", content: "Nội dung" }),
+    ).rejects.toBe("Tiêu đề không được để trống.");
+
+    await expect(deleteStudentNote("note_1")).resolves.toBe(true);
+    await expect(importStudentNotesBackup([])).resolves.toBe(2);
   });
 });

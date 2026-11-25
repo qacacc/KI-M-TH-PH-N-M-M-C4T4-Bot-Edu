@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "lms-snapshot-bridge"
+description = "Cho phép WebView LMS gửi metadata môn học và tài liệu về cache local."
+commands.allow = ["receive_lms_snapshot"]

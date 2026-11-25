@@ -1,5 +1,18 @@
 # FEATURE CATALOG - CAMPUS ASSISTANT LOCAL
 
+## FEATURE: STUDENT_NOTES_BACKEND (PR #32)
+
+- **CURRENT source:** SQLite v6 và Tauri commands cho CRUD/lọc/import ghi chú local (`src-tauri/src/db.rs`, `src-tauri/src/lib.rs`).
+- **CURRENT:** giao diện SQLite Ghi chú có CRUD, tìm/lọc theo môn, xác nhận xóa và import/export JSON; điều hướng thay mục Lịch thi.
+- **UNKNOWN:** native Windows smoke; Postman không có endpoint HTTP ghi chú.
+- **Test:** `docs/testing/CA-106-student-notes-backend.md`.
+
+## FEATURE: LMS_COURSE_MATERIALS
+- **CURRENT**: `FilesPage` can open a dedicated UTH LMS WebView, scan supported Moodle course/resource metadata, persist courses/documents to SQLite, group/search by course, download selected files to managed Downloads, and reopen downloaded files.
+- **Security**: the remote WebView capability is restricted to `courses.ut.edu.vn` and only the `receive_lms_snapshot` command. Rust validates window/origin, payload bounds, numeric IDs, Moodle plugin paths, names, and managed-root download paths.
+- **Limits**: only UTH LMS is implemented. Other schools open their configured site externally; no LMS HTTP API or Postman collection is used. Live authentication, website DOM variants, and Windows download/reopen remain **`UNKNOWN`** until desktop smoke with an authorized account.
+- **Tests**: `docs/testing/clone-lms-parity.md`; `cargo test --manifest-path src-tauri/Cargo.toml connectors::lms::tests`; `npx vitest run src/tauriApi.test.ts`.
+
 ## FEATURE: LOCAL_REST_API
 - **Truth status**: `CONFIRMED` for local source/tests only; UTH contract is `UNKNOWN`; manual desktop/Postman HTTP smoke is `UNKNOWN`.
 - **Status**: `CURRENT / LOOPBACK`
@@ -114,7 +127,7 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
   - Last Verified: 2026-08-02
   - Verification Scope: AUTOMATED (`npm run check:all` PASS)
 - **Known Gaps & Tracking**:
-  - None | Status: **`STABLE`** (`submitUserMessage` là entry thống nhất cho nút Gửi/Enter/chip/starter/command suggestion; `NEEDS_SUBJECT` prevents fallback to `subjects[0]`; unknown/random chat does not get forced into business intent)
+  - None | Status: **`STABLE`** (`submitUserMessage` là entry thống nhất cho các control gửi tin nhắn, gồm hai lối tắt chat; lối tắt mở trang chỉ đổi `view` và không sinh tin nhắn; `NEEDS_SUBJECT` prevents fallback to `subjects[0]`; unknown/random chat does not get forced into business intent)
   - AI chat tổng quát / BYOK model provider: **`PLANNED / DEFERRED`**
 
 ---
@@ -156,6 +169,12 @@ Các nhãn None/STABLE/E2E lịch sử bên dưới không vượt [audit source
   - Verification Scope: STATIC (`rg QuickSearchModal` returned no source references before deletion)
 - **Known Gaps & Tracking**:
   - None | Decision: **`REMOVED_AS_DEAD_CODE`**
+
+## FEATURE: LOCAL_NAV_LAYOUT
+- **Status**: `CONFIRMED` source — lối tắt chat dùng bố cục responsive 4/2/1 cột, ẩn thẻ chào tại trạng thái starter, hai lệnh chat và sáu route có thật; nhãn lối tắt và kết quả command palette xuống dòng. `UNKNOWN` native visual sau sửa.
+- **Owner**: `src/App.tsx`, `src/styles.css`
+- **Verification Scope**: `AUTOMATED` static CSS/JSX (`src/navigationLayout.test.js`), layout regression; `UNKNOWN` native visual.
+- **Test design**: `docs/testing/LOCAL_NAV_LAYOUT.md`.
 
 ---
 

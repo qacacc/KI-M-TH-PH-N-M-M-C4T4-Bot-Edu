@@ -1,5 +1,7 @@
 # DEPENDENCY MAP - CAMPUS ASSISTANT LOCAL
 
+**CURRENT:** `src/pages/NotesPage.tsx` → `src/tauriApi.ts` Tauri IPC → các command ở `src-tauri/src/lib.rs` → SQLite `student_notes` v6 trong `src-tauri/src/db.rs`. Import dùng transaction; giao diện xác nhận trước khi xóa. Postman không áp dụng cho IPC. Ngày của lịch cũ vẫn chưa xác minh.
+
 **CONFIRMED (source/tests):** CA-098.01 Tauri startup calls best-effort `api::start()`; missing/invalid token or thread/runtime/bind failure leaves desktop running. Startup log ignores stderr errors. Two instances contend for `127.0.0.1:47821`; first listener stays active and second continues desktop-only. Bearer middleware protects routes; query validation precedes data/connector services; token comparison uses `subtle::ConstantTimeEq`. Postman local Collection uses HTTP loopback with Environment `BASE_URL`/secret `API_TOKEN`, checked by `tools/check-local-postman.cjs`.
 
 **UNKNOWN:** UTH upstream API/auth/schema; the local collection is not evidence for it. Manual Windows/Postman HTTP smoke is not verified by automated tests.
@@ -44,7 +46,7 @@ CampusDataPages.tsx / App.tsx (Schedule, Exams)
    └──> useAcademicCache.ts -> schoolProfile / academicEvents (reload, cleanup)
 
 GpaCalculator.tsx -> gpaData.ts -> LocalStorage manual_v2 (hàng chưa chấm để trống; parser chỉ nhận grade là own key trong allowlist; F/0 thật vẫn tính)
-FilesPage.tsx -> tài liệu trường chưa đồng bộ / tab mẫu opt-in / file service
+`FilesPage.tsx` -> LMS UTH commands trong `tauriApi.ts` -> `connectors/lms.rs` -> SQLite `lms_courses`/`lms_documents` -> sự kiện `lms-snapshot-updated` -> nhóm học liệu theo môn. WebView `lms-login` chỉ được cấp command `receive_lms_snapshot`; tải file bị giới hạn `courses.ut.edu.vn` và managed Downloads. Các LMS trường khác hiện chỉ mở website ngoài.
 
 
 AppearancePage.tsx (Theme Presets & Custom Styling)

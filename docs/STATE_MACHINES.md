@@ -1,5 +1,7 @@
 # STATE MACHINES - CAMPUS ASSISTANT LOCAL
 
+Ghi chú backend CURRENT (PR #32): tạo/cập nhật → bản ghi SQLite, xóa ID có/không có → true/false, import hợp lệ → transaction commit, validation/error → không ghi. UI confirm và restore end-to-end còn `PLANNED`; không coi có Tauri command là UI đã xong.
+
 **CONFIRMED (source/tests), CA-098.01:** Local REST API has startup states `API_DISABLED` when `CAMPUS_ASSISTANT_LOCAL_API_TOKEN` is absent/invalid (desktop continues; no port bind), and `API_READY` when a valid 32–256 ASCII token is configured (loopback accepts matching Bearer requests). Startup logging is best-effort; write error does not panic. Request is `UNAUTHORIZED` (401) before route processing or proceeds to route-specific validation/data status. This is separate from UTH login/sync/cache; UTH connector remains `CONTRACT_UNVERIFIED`. **UNKNOWN:** manual desktop/Postman HTTP smoke.
 
 CA-080 setup (2026-10-10): mặc định probe bị khóa; consent/live/request-reviewed + Vault cho phép gửi thủ công trên Postman Desktop. Chỉ là trạng thái công cụ kiểm thử, không transition auth/sync/cache của Campus Assistant. Transport PASS vẫn giữ contract UNKNOWN cho đến khi có evidence/schema/fixture thật. Chưa có request live trong đợt setup.
@@ -8,7 +10,11 @@ CA-083 CURRENT (2026-10-09): contract_unverified là error riêng cho UTH; khôn
 
 GPA local CURRENT (PR #26 remediation): v2 hợp lệ → bảng ước tính; v2 hỏng → cảnh báo, không ghi đè tự động; v1 có dữ liệu → chờ confirm, hủy giữ nguyên, ghi thất bại giữ nguyên; reset dữ liệu hỏng chỉ đổi UI sau khi ghi thành công. Portal vẫn ở trạng thái chưa kết nối, không có transition sang GPA chính thức.
 
+LMS UTH CURRENT: chưa có cache → WebView login/quét → cache SQLite (môn/tài liệu available) → người dùng yêu cầu tải (`downloading`) → hoàn tất trong managed Downloads (`downloaded`) hoặc lỗi (`error`); lần quét mới cập nhật metadata nhưng giữ nguyên trạng thái/đường dẫn file đã tải. Mở chỉ khả dụng ở `downloaded`. Live LMS Windows chưa xác minh.
+
 CA-090.01 CURRENT (2026-10-19): migration SQLite giữ dữ liệu cũ; khởi động không có transition xóa lịch sử chat. Reset cấu hình sau confirm chỉ chuyển các key cấu hình về trạng thái mặc định; GPA/chat/profile không bị chuyển sang trạng thái xóa. Manual native/UI verification chưa chạy.
+
+`CONFIRMED` (source): khi ở chat starter, `welcomeMessage` vẫn nằm trong state nhưng không render thành bubble; hai nút lệnh đi qua `submitText`, sáu nút trang chỉ chuyển `view` sang schedule/files/announcements/exams/gpa/health. Điều hướng không đổi trạng thái conversation hay dữ liệu chat. `UNKNOWN`: kiểm tra native visual sau thay đổi.
 
 CA-090 migration v6 CURRENT (source/tests): lịch cũ không có ngày thật giữ `class_date = ''`; mở DB và schema repair không chuyển giá trị này thành ngày suy đoán. Ngày đã lưu từ nguồn vẫn giữ nguyên. Đây chỉ là thuộc tính cache nội bộ, không bổ sung trạng thái auth/sync hay xác nhận Portal; native upgrade smoke còn `UNKNOWN`.
 

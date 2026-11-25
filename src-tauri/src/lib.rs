@@ -1,5 +1,5 @@
-mod connectors;
 mod api;
+mod connectors;
 mod data;
 mod db;
 mod diagnostics;
@@ -151,6 +151,54 @@ fn save_setting_cmd(key: String, value: String) -> Result<(), String> {
     db::set_setting(&conn, &key, &value)
 }
 
+#[tauri::command]
+fn list_student_notes(
+    search_query: Option<String>,
+    subject_filter: Option<String>,
+) -> Result<Vec<db::StudentNoteRecord>, String> {
+    let roots = resolve_roots()?;
+    ensure_directories(&roots)?;
+    let conn = open_db(&roots)?;
+    db::list_student_notes_in_db(&conn, search_query.as_deref(), subject_filter.as_deref())
+}
+
+#[tauri::command]
+fn save_student_note(
+    id: Option<String>,
+    title: String,
+    content: String,
+    subject_id: Option<String>,
+    subject_name: Option<String>,
+) -> Result<db::StudentNoteRecord, String> {
+    let roots = resolve_roots()?;
+    ensure_directories(&roots)?;
+    let mut conn = open_db(&roots)?;
+    db::save_student_note_in_db(
+        &mut conn,
+        id.as_deref(),
+        &title,
+        &content,
+        subject_id.as_deref(),
+        subject_name.as_deref(),
+    )
+}
+
+#[tauri::command]
+fn delete_student_note(id: String) -> Result<bool, String> {
+    let roots = resolve_roots()?;
+    ensure_directories(&roots)?;
+    let conn = open_db(&roots)?;
+    db::delete_student_note_in_db(&conn, &id)
+}
+
+#[tauri::command]
+fn import_student_notes_backup(notes: Vec<db::StudentNoteRecord>) -> Result<usize, String> {
+    let roots = resolve_roots()?;
+    ensure_directories(&roots)?;
+    let mut conn = open_db(&roots)?;
+    db::import_student_notes_backup_in_db(&mut conn, &notes)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     api::start();
@@ -179,6 +227,13 @@ pub fn run() {
             connectors::connector_engine::open_uth_login_window,
             connectors::connector_engine::receive_uth_jwt,
             connectors::connector_engine::sync_uth_after_login,
+            connectors::lms::open_lms_window,
+            connectors::lms::rescan_lms_courses,
+            connectors::lms::receive_lms_snapshot,
+            connectors::lms::list_lms_courses,
+            connectors::lms::list_lms_documents,
+            connectors::lms::download_lms_document,
+            connectors::lms::open_lms_document,
             connectors::connector_engine::list_connector_schedules,
             connectors::connector_engine::list_connector_exams,
             connectors::connector_engine::get_connector_sync_status,
@@ -199,7 +254,11 @@ pub fn run() {
             clear_all_chat_sessions,
             get_session_messages,
             get_setting_cmd,
-            save_setting_cmd
+            save_setting_cmd,
+            list_student_notes,
+            save_student_note,
+            delete_student_note,
+            import_student_notes_backup
         ])
         .run(tauri::generate_context!())
         .expect("Không khởi động được Campus Assistant Local");

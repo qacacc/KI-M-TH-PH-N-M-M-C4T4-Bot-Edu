@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "lms-portal-course-metadata-bridge",
+  "description": "Cầu IPC giới hạn để WebView LMS gửi metadata môn học và tài liệu đã quét.",
+  "windows": ["lms-login"],
+  "remote": {
+    "urls": ["https://courses.ut.edu.vn/**"]
+  },
+  "permissions": ["lms-snapshot-bridge"]
+}

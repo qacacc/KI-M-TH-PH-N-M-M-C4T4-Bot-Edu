@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Trash2, RotateCcw, FileText, FolderOpen, AlertCircle } from "lucide-react";
-import type { BootstrapState } from "../types";
+import { Trash2, RotateCcw, FileText, FolderOpen, AlertCircle, Download, RefreshCw, ChevronDown, BookOpen, Search } from "lucide-react";
+import type { BootstrapState, LmsCourseRecord, LmsDocumentRecord } from "../types";
 import { formatBytes } from "../utils/format";
 import { emptyTrashBin as emptyTrashBinLocal, getTrashItems as getTrashItemsLocal, restoreFromTrash as restoreFromTrashLocal, type TrashItem } from "../utils/trashBin";
-import { emptyTrashBin, listTrashItems, moveFileToTrash, restoreTrashItem, type TrashItemRecord } from "../tauriApi";
+import { downloadLmsDocument, emptyTrashBin, listenLmsSnapshotUpdated, listLmsCourses, listLmsDocuments, listTrashItems, moveFileToTrash, openLmsDocument, openLmsWindow, rescanLmsCourses, restoreTrashItem } from "../tauriApi";
 import { openExternalUrl } from "../tauriApi";
 import { getSchoolOption, readSchoolProfile } from "../schoolProfile";
 
@@ -18,6 +18,24 @@ export function FilesPage({ bootstrap }: { bootstrap: BootstrapState | null }) {
   
   // Trash bin state
   const [trashItems, setTrashItems] = useState<TrashItem[]>([]);
+  const [lmsCourses, setLmsCourses] = useState<LmsCourseRecord[]>([]);
+  const [lmsDocuments, setLmsDocuments] = useState<LmsDocumentRecord[]>([]);
+  const [lmsLoading, setLmsLoading] = useState(false);
+  const [lmsQuery, setLmsQuery] = useState("");
+  const [expandedCourses, setExpandedCourses] = useState<Set<string>>(() => new Set());
+
+  const refreshLms = () => {
+    setLmsLoading(true);
+    Promise.all([listLmsCourses(), listLmsDocuments()])
+      .then(([courses, docs]) => {
+        setLmsCourses(courses);
+        setLmsDocuments(docs);
+      })
+      .catch((error: unknown) => {
+        setNotice(`Không tải được cache học liệu local: ${String(error)}`);
+      })
+      .finally(() => setLmsLoading(false));
+  };
 
   const refreshTrashItems = () => {
     listTrashItems()
@@ -40,6 +58,12 @@ export function FilesPage({ bootstrap }: { bootstrap: BootstrapState | null }) {
 
   useEffect(() => {
     refreshTrashItems();
+    refreshLms();
+    let unlisten: (() => void) | undefined;
+    void listenLmsSnapshotUpdated(() => refreshLms())
+      .then((stop) => { unlisten = stop; })
+      .catch(() => undefined);
+    return () => unlisten?.();
   }, []);
 
   function handleMoveToTrash(relPath: string, name: string) {
@@ -85,6 +109,23 @@ export function FilesPage({ bootstrap }: { bootstrap: BootstrapState | null }) {
     () => filteredDocuments.reduce((total, document) => total + document.sizeBytes, 0),
     [filteredDocuments],
   );
+
+  const filteredLmsGroups = useMemo(() => {
+    const normalizedQuery = lmsQuery.trim().toLocaleLowerCase("vi");
+    const knownCourseIds = new Set(lmsCourses.map((course) => course.id));
+    const courses = [
+      ...lmsCourses,
+      ...lmsDocuments.filter((doc) => !knownCourseIds.has(doc.courseId)).map((doc) => ({ id: doc.courseId, name: doc.courseName, updatedAt: doc.updatedAt })),
+    ];
+    const uniqueCourses = Array.from(new Map(courses.map((course) => [course.id, course])).values());
+    return uniqueCourses.flatMap((course) => {
+      const courseDocs = lmsDocuments.filter((doc) => doc.courseId === course.id);
+      const courseMatches = course.name.toLocaleLowerCase("vi").includes(normalizedQuery);
+      const matchingDocs = !normalizedQuery || courseMatches ? courseDocs : courseDocs.filter((doc) => doc.name.toLocaleLowerCase("vi").includes(normalizedQuery));
+      if (normalizedQuery && !courseMatches && matchingDocs.length === 0) return [];
+      return [{ ...course, documents: matchingDocs }];
+    });
+  }, [lmsCourses, lmsDocuments, lmsQuery]);
 
   const trashSizeBytes = useMemo(
     () => trashItems.reduce((total, item) => total + item.sizeBytes, 0),
@@ -155,10 +196,74 @@ export function FilesPage({ bootstrap }: { bootstrap: BootstrapState | null }) {
       )}
 
       {activeTab === "school" && <>
-        <p className="empty-state">Chưa đồng bộ tài liệu từ tài khoản trường. Bạn có thể xem tài liệu trên hệ thống học tập chính thức.</p>
-        <button className="settings-btn-secondary" disabled={!school.lmsPortalUrl} onClick={() => {
-          if (school.lmsPortalUrl) void openExternalUrl(school.lmsPortalUrl).catch(() => setNotice("Không mở được hệ thống học tập. Hãy thử lại."));
-        }}><FolderOpen size={16} />Mở hệ thống học tập {school.shortName}</button>
+        <div className="page-card-header compact">
+          <div>
+            <h2>Môn học &amp; học liệu</h2>
+            <p>{school.id === "uth" ? "Mở LMS UTH để quét môn và tệp được phép truy cập; tải từng tệp về thư mục Downloads của ứng dụng." : `Mở LMS ${school.shortName}; quét/tải trong ứng dụng hiện chỉ hỗ trợ UTH.`}</p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="settings-btn-secondary" onClick={() => {
+              setNotice(null);
+              void rescanLmsCourses().then(() => setNotice("Đã yêu cầu quét lại danh sách môn và học liệu LMS.")).catch((error: unknown) => setNotice(`Không quét lại được LMS: ${String(error)}`));
+            }} disabled={lmsLoading || school.id !== "uth"}><RefreshCw size={15} />Làm mới</button>
+            <button className="settings-btn-primary" disabled={!school.lmsPortalUrl} onClick={() => {
+              if (school.id !== "uth" || !("__TAURI_INTERNALS__" in window)) {
+                if (school.lmsPortalUrl) void openExternalUrl(school.lmsPortalUrl).then(() => setNotice(`Đã mở LMS ${school.shortName}; dữ liệu chưa được đồng bộ vào ứng dụng.`)).catch(() => setNotice("Không mở được LMS. Hãy kiểm tra trình duyệt mặc định rồi thử lại."));
+                return;
+              }
+              void openLmsWindow().then(() => setNotice("Cửa sổ LMS đã mở. Đăng nhập để quét môn và tài liệu.")).catch((error: unknown) => setNotice(`Không mở được LMS: ${String(error)}`));
+            }}><FolderOpen size={15} />Mở LMS {school.id === "uth" ? "& quét học liệu" : school.shortName}</button>
+          </div>
+        </div>
+
+        <div className="metric-strip" aria-label="Thống kê học liệu LMS">
+          <div><strong>{lmsCourses.length}</strong><span>Môn học đã quét</span></div>
+          <div><strong>{lmsDocuments.length}</strong><span>Tệp tìm thấy</span></div>
+          <div><strong>{formatBytes(lmsDocuments.reduce((total, item) => total + (item.status === "downloaded" ? item.sizeBytes : 0), 0))}</strong><span>Đã tải local</span></div>
+        </div>
+
+        <label className="lms-search">
+          <Search size={16} aria-hidden="true" />
+          <input value={lmsQuery} onChange={(event) => setLmsQuery(event.target.value)} placeholder="Tìm môn học hoặc tài liệu..." aria-label="Tìm học liệu LMS" />
+          {lmsQuery && <button type="button" onClick={() => setLmsQuery("")} aria-label="Xóa nội dung tìm kiếm"><RotateCcw size={14} /></button>}
+        </label>
+
+        {lmsLoading && <p role="status">Đang đọc cache học liệu local…</p>}
+        {!lmsLoading && lmsCourses.length === 0 && lmsDocuments.length === 0 && <p className="empty-state">Chưa có dữ liệu LMS local. Mở LMS UTH, đăng nhập và chờ quét hoàn tất.</p>}
+        {lmsCourses.length > 0 && filteredLmsGroups.every((group) => group.documents.length === 0) && <p className="empty-state">Chưa tìm thấy tệp khớp hoặc các môn chưa có học liệu được hỗ trợ.</p>}
+
+        {filteredLmsGroups.length > 0 && <div className="lms-course-list" aria-label="Học liệu theo môn học">
+          {filteredLmsGroups.map((course) => {
+            const expanded = expandedCourses.has(course.id);
+            const panelId = `lms-course-${course.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+            return <details className="lms-course-group" key={course.id} open={expanded} onToggle={(event) => {
+              const isOpen = event.currentTarget.open;
+              setExpandedCourses((current) => {
+                if (current.has(course.id) === isOpen) return current;
+                const next = new Set(current);
+                if (isOpen) next.add(course.id); else next.delete(course.id);
+                return next;
+              });
+            }}>
+              <summary className="lms-course-toggle">
+                <span className="lms-course-icon"><BookOpen size={17} /></span>
+                <span className="lms-course-title">{course.name}</span>
+                <span className="lms-course-count">{course.documents.length} tài liệu</span>
+                <ChevronDown className="lms-course-chevron" size={18} />
+              </summary>
+              <div className="lms-course-documents" id={panelId}>
+                {course.documents.length === 0 ? <p className="lms-course-empty">Chưa có tài liệu được quét trong môn này.</p> : course.documents.map((item) => <article className="lms-document-row" key={item.id}>
+                  <span className="lms-document-icon"><FileText size={16} /></span>
+                  <span className="lms-document-name">{item.name}</span>
+                  <span className={`lms-document-status status-${item.status}`}>{item.status === "downloaded" ? formatBytes(item.sizeBytes) : item.status === "downloading" ? "Đang tải…" : item.status === "error" ? "Tải lỗi" : "Có trên LMS"}</span>
+                  {item.status === "downloaded" ? <button className="settings-btn-secondary" onClick={() => { void openLmsDocument(item.id).catch((error: unknown) => setNotice(`Không mở được tệp: ${String(error)}`)); }} title={item.localPath ?? ""}><FileText size={14} />Mở</button> : <button className="settings-btn-secondary" disabled={item.status === "downloading" || !item.sourcePath} onClick={() => {
+                    void downloadLmsDocument(item.id).then(() => setNotice(`Đang tải “${item.name}” vào Downloads của ứng dụng.`)).catch((error: unknown) => setNotice(`Không tải được tệp LMS: ${String(error)}`));
+                  }}><Download size={14} />Tải</button>}
+                </article>)}
+              </div>
+            </details>;
+          })}
+        </div>}
       </>}
       {activeTab === "samples" && <p>Tài liệu minh họa của ứng dụng, không phải tài liệu đã lấy từ tài khoản trường.</p>}
       

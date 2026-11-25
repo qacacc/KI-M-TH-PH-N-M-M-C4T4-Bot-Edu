@@ -1,5 +1,9 @@
 # FLOW MAP - CAMPUS ASSISTANT LOCAL
 
+## CA-106 ghi chú CURRENT
+
+Trang Ghi chú → Tauri IPC → `open_db` → SQLite `student_notes` v6. Người dùng tạo/lưu/xóa có xác nhận, tìm/lọc, xuất JSON hoặc nhập qua transaction. Lỗi được hiển thị, không biến thành danh sách rỗng. Không có HTTP route Postman cho ghi chú.
+
 ## CA-090.01 - Reset cấu hình và khởi động SQLite CURRENT 2026-10-19
 
 1. App mở SQLite và chạy migration theo `PRAGMA user_version`; foreign key được bật trước khi dùng schema.
@@ -94,9 +98,10 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
    - Nút Gửi trong composer
    - Phím Enter trong textarea
    - Command suggestion
-   - Starter card
+   - Hai lối tắt starter gửi lệnh (Tìm tài liệu, Lệnh nhanh)
    - Composer shortcut
    - Command palette action có gửi chat
+1a. Nếu bấm một trong sáu lối tắt mở trang, App.tsx chỉ đổi `view`; không đi tiếp qua bước 2-5 và không thêm tin nhắn.
 2. App.tsx gọi submitUserMessage(rawValue, source)
 3. submitUserMessage:
    - Trim input
@@ -200,7 +205,10 @@ Tài liệu mô tả luồng thực thi end-to-end phân định rõ **Trạng t
 ```
 1. Backend Rust (trash.rs) triển khai: move_file_to_trash, restore_trash_item, empty_trash_bin, path guard safety check, SQLite metadata tracking.
 2. Frontend (tauriApi.ts) có wrapper IPC: listTrashItems, moveFileToTrash, restoreTrashItem, emptyTrashBin.
-3. UI File (FilesPage.tsx) có tab tài liệu mẫu, tab thùng rác, nút xóa, khôi phục và dọn sạch.
+3. Tài liệu LMS UTH: `FilesPage` → mở WebView riêng `lms-login` → script quét metadata trên trang course Moodle → chỉ gửi metadata (không gửi credential) qua `receive_lms_snapshot` → Rust xác thực source/window/schema/size/path → upsert SQLite → UI nhận event và nhóm tài liệu theo môn. Người dùng chọn Tải → Rust xác minh plugin path và WebView session → file được tải vào managed Downloads; Mở chỉ chấp nhận file đã nằm trong managed root.
+4. UI Files cũng có tab tài liệu mẫu, thùng rác, xác nhận xóa, khôi phục và dọn sạch.
+
+**Giới hạn LMS:** chỉ connector UTH `courses.ut.edu.vn`; `CONFIRMED` automated Rust/IPC/build tests, `UNKNOWN` live login/DOM variants/download trên Windows. WebView remote capability chỉ cho phép `receive_lms_snapshot`. Postman `N/A` vì luồng là Tauri IPC/WebView, không phải REST. Thông báo trường vẫn chỉ là các link kênh; chưa có feed được đồng bộ.
 4. Nút xóa truyền `document.localPath` vào backend, không truyền `document.id`.
 5. Move-to-trash và empty-trash đều yêu cầu xác nhận trước khi chạy thao tác.
 ```

@@ -16,6 +16,24 @@ export type DocumentRecord = {
   updatedAt: string;
 };
 
+export type LmsCourseRecord = {
+  id: string;
+  name: string;
+  updatedAt: string;
+};
+
+export type LmsDocumentRecord = {
+  id: string;
+  courseId: string;
+  courseName: string;
+  name: string;
+  sourcePath: string;
+  localPath: string | null;
+  sizeBytes: number;
+  status: "available" | "downloading" | "downloaded" | "error";
+  updatedAt: string;
+};
+
 export type AnnouncementRecord = {
   id: string;
   title: string;
@@ -186,3 +204,13 @@ export type PublicSearchResponse = {
 };
 
 export type PublicSearchStatus = "success" | "partial" | "no_match" | "error";
+
+export type StudentNoteRecord = {
+  id: string;
+  title: string;
+  content: string;
+  subjectId: string | null;
+  subjectName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
