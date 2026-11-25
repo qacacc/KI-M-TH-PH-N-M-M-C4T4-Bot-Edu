@@ -11,10 +11,15 @@ import { openExternalUrl } from "../tauriApi";
 
 export function AnnouncementsPage() {
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const school = getSchoolOption(readSchoolProfile());
   async function openNews() {
     try {
-      if (school.publicNewsUrl) await openExternalUrl(school.publicNewsUrl);
+      setError("");
+      if (school.publicNewsUrl) {
+        await openExternalUrl(school.publicNewsUrl);
+        setNotice(`Đã mở trang tin ${school.shortName} trong trình duyệt. Tin chưa được đồng bộ vào ứng dụng.`);
+      }
     } catch {
       setError("Không mở được website trường. Vui lòng thử lại.");
     }
@@ -23,6 +28,7 @@ export function AnnouncementsPage() {
     <div className="page-card-header"><div><h2>Thông báo trường</h2><p>Chưa có nguồn thông báo trường được đồng bộ vào ứng dụng.</p></div></div>
     <p className="empty-state">Bạn có thể xem thông báo trên website chính thức của trường đang chọn.</p>
     <button className="settings-btn-secondary" onClick={() => void openNews()} disabled={!school.publicNewsUrl}><ExternalLink size={16} />Website {school.shortName}</button>
+    {notice && <p role="status">{notice}</p>}
     {error && <p role="alert" className="warning-box">{error}</p>}
   </div>;
 }

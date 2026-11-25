@@ -1515,9 +1515,9 @@ export default function App() {
         <div className="sidebar-footer">
           <button className={view === "school" ? "account-footer-button active" : "account-footer-button"} onClick={() => setView("school")}>
             <span className="avatar">
-              {getSchoolProfileInitials(schoolProfile)}
-              {!sidebarExpanded && <span className="sidebar-tooltip">{getSchoolProfileTitle(schoolProfile)}</span>}
+              <span className="avatar-initials">{getSchoolProfileInitials(schoolProfile)}</span>
             </span>
+            {!sidebarExpanded && <span className="sidebar-tooltip">{getSchoolProfileTitle(schoolProfile)}</span>}
             <span className="account-footer-text">
               <strong>{getSchoolProfileTitle(schoolProfile)}</strong>
               <span>{getSchoolProfileSubtitle(schoolProfile)}</span>

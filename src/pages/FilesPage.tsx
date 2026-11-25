@@ -157,7 +157,10 @@ export function FilesPage({ bootstrap }: { bootstrap: BootstrapState | null }) {
       {activeTab === "school" && <>
         <p className="empty-state">Chưa đồng bộ tài liệu từ tài khoản trường. Bạn có thể xem tài liệu trên hệ thống học tập chính thức.</p>
         <button className="settings-btn-secondary" disabled={!school.lmsPortalUrl} onClick={() => {
-          if (school.lmsPortalUrl) void openExternalUrl(school.lmsPortalUrl).catch(() => setNotice("Không mở được hệ thống học tập. Hãy thử lại."));
+          if (!school.lmsPortalUrl) return;
+          void openExternalUrl(school.lmsPortalUrl)
+            .then(() => setNotice(`Đã mở LMS ${school.shortName} trong trình duyệt. Tài liệu LMS chưa được đồng bộ vào ứng dụng.`))
+            .catch(() => setNotice("Không mở được hệ thống học tập. Hãy kiểm tra trình duyệt mặc định rồi thử lại."));
         }}><FolderOpen size={16} />Mở hệ thống học tập {school.shortName}</button>
       </>}
       {activeTab === "samples" && <p>Tài liệu minh họa của ứng dụng, không phải tài liệu đã lấy từ tài khoản trường.</p>}

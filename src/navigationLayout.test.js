@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 const styles = readFileSync(new URL("./styles.css", import.meta.url), "utf8");
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const schoolPage = readFileSync(new URL("./pages/SchoolPage.tsx", import.meta.url), "utf8");
+const historyPage = readFileSync(new URL("./pages/ChatHistoryPage.tsx", import.meta.url), "utf8");
+const filesPage = readFileSync(new URL("./pages/FilesPage.tsx", import.meta.url), "utf8");
+const campusPages = readFileSync(new URL("./pages/CampusDataPages.tsx", import.meta.url), "utf8");
 const layout = styles.slice(styles.lastIndexOf("/* Lối tắt có chiều cao"));
 const starterStart = app.indexOf('<div className="starter-grid">');
 const starter = app.slice(starterStart, app.indexOf("</div>", starterStart));
@@ -76,6 +79,27 @@ describe("Bố cục lối tắt và tìm nhanh", () => {
     expect(schoolPage).not.toContain("Tên sinh viên hiển thị");
     expect(schoolPage).not.toContain("Mã số sinh viên (MSSV nếu có)");
     expect(schoolPage).not.toContain("Lưu hồ sơ");
+  });
+
+  it("avatar rail căn giữa initials và tooltip không nằm trong grid avatar", () => {
+    expect(app).toMatch(/className="avatar"[^]*?<span className="avatar-initials">/);
+    expect(app).toMatch(/className="sidebar-tooltip">\{getSchoolProfileTitle/);
+    expect(styles).toMatch(/\.avatar-initials\s*\{[\s\S]*place-items:\s*center;[\s\S]*line-height:\s*1 !important;/);
+  });
+
+  it("lịch sử hiển thị lỗi và có thao tác thử lại khi đọc hoặc ghi thất bại", () => {
+    expect(historyPage).toContain('invoke<string>("get_setting_cmd"');
+    expect(historyPage).toContain('invoke<ChatSession[]>("list_chat_sessions")');
+    expect(historyPage).toContain('role="alert"');
+    expect(historyPage).toContain('onClick={() => void loadState()}>Thử lại');
+    expect(historyPage).toContain("Bật lưu lịch sử");
+  });
+
+  it("tài liệu và thông báo báo kết quả mở website, không giả vờ đã đồng bộ", () => {
+    expect(filesPage).toContain("openExternalUrl(school.lmsPortalUrl)");
+    expect(filesPage).toContain("Tài liệu LMS chưa được đồng bộ vào ứng dụng");
+    expect(campusPages).toContain("await openExternalUrl(school.publicNewsUrl)");
+    expect(campusPages).toContain("Tin chưa được đồng bộ vào ứng dụng");
   });
 
   it("biểu tượng và phần chữ trong bảng tìm nhanh không ép cột", () => {
